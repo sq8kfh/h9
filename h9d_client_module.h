@@ -1,0 +1,4 @@
+#ifndef _H9D_CLIENT_MODULE_H_
+#define _H9D_CLIENT_MODULE_H_
+
+#endif //_H9D_CLIENT_MODULE_H_
