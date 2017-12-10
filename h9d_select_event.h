@@ -1,19 +1,21 @@
 #ifndef _H9D_SELECT_EVENT_H_
 #define _H9D_SELECT_EVENT_H_
 
-typedef struct h9d_select_event_t {
-    int fd;
+#include <time.h>
 
-    struct h9d_select_event_t *prev;
-    struct h9d_select_event_t *next;
-} h9d_select_event_t;
+#define H9D_SELECT_EVENT_READ (1<<0)
+#define H9D_SELECT_EVENT_TIME (1<<1)
+
+#define H9D_SELECT_EVENT_RETURN_OK  0
+#define H9D_SELECT_EVENT_RETURN_DEL 1
+
+
+typedef int (h9d_select_event_func_t)(void *ev_data, int event_type, time_t elapsed);
 
 void h9d_select_event_init(void);
 void h9d_select_event_loop(void);
 
-h9d_select_event_t *h9d_select_event_create(void);
-void h9d_select_event_free(h9d_select_event_t *ev);
-void h9d_select_event_add(h9d_select_event_t *ev);
-void h9d_select_event_del(h9d_select_event_t *ev);
+void h9d_select_event_add(int fd, int event_types, h9d_select_event_func_t *func, void *ev_data);
+void h9d_select_event_del(int fd);
 
 #endif //_H9D_SELECT_EVENT_H_

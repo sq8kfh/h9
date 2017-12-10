@@ -2,65 +2,96 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <unistd.h>
+#include <strings.h>
+#include <sys/select.h>
 
-h9d_select_event_t *event_list = NULL;
+#include "h9_log.h"
+
+typedef struct h9d_select_event_t {
+    int fd;
+    h9d_select_event_func_t *process_events;
+    void *ev_data;
+    int event_types;
+
+    struct h9d_select_event_t *prev;
+    struct h9d_select_event_t *next;
+} h9d_select_event_t;
+
+h9d_select_event_t *event_list;
+fd_set event_fd_set;
 
 void h9d_select_event_init(void) {
-
+    event_list = NULL;
+    FD_ZERO(&event_fd_set);
 }
 
 void h9d_select_event_loop(void) {
+    time_t last_time = time(NULL);
     while (1) {
-        fd_set rfds;
         struct timeval tv;
+        h9d_select_event_t tmp;
+        fd_set rfds;
+
+        time_t t = 5 + last_time - time(NULL);
+        tv.tv_sec = t > 0 ? t : 0;
+        tv.tv_usec = 1;
+
+        FD_COPY(&event_fd_set, &rfds);
+
         int retval;
+        int max_fd = 0;
+        for (h9d_select_event_t *ev = event_list; ev; ev = ev->next) {
+            if (ev->fd > max_fd) {
+                max_fd = ev->fd;
+            }
+        }
 
-        /* Watch stdin (fd 0) to see when it has input. */
-
-        FD_ZERO(&rfds);
-        FD_SET(0, &rfds);
-
-        /* Wait up to five seconds. */
-
-        tv.tv_sec = 5;
-        tv.tv_usec = 0;
-
-        retval = select(1, &rfds, NULL, NULL, &tv);
-        /* Don't rely on the value of tv now! */
+        retval = select(max_fd+1, &rfds, NULL, NULL, &tv);
 
         if (retval == -1) {
             perror("select()");
             break;
         }
         else if (retval) {
-            printf("Data is available now.\n");
-            char buf[100];
-            read(1, buf, 100);
-            /* FD_ISSET(0, &rfds) will be true. */
+            for (h9d_select_event_t *ev = event_list; ev; ev = ev->next) {
+                if (ev->event_types & H9D_SELECT_EVENT_READ && FD_ISSET(ev->fd, &rfds)) {
+                    int r = ev->process_events(ev->ev_data, H9D_SELECT_EVENT_READ, -1);
+                    if (r == H9D_SELECT_EVENT_RETURN_DEL) {
+                        tmp.next = ev->next;
+                        h9d_select_event_del(ev->fd);
+                        ev = &tmp;
+                    }
+                }
+            }
         }
-        else
-            printf("No data within five seconds.\n");
+        if (retval == 0 || time(NULL) - last_time >= 5) {
+            for (h9d_select_event_t *ev = event_list; ev; ev = ev->next) {
+                if (ev->event_types & H9D_SELECT_EVENT_TIME) {
+                    int r = ev->process_events(ev->ev_data, H9D_SELECT_EVENT_TIME, time(NULL) - last_time);
+                    if (r == H9D_SELECT_EVENT_RETURN_DEL) {
+                        tmp.next = ev->next;
+                        h9d_select_event_del(ev->fd);
+                        ev = &tmp;
+                    }
+                }
+            }
+            h9_log_debug("%s: timer (%ds elapsed)\n", __func__, time(NULL) - last_time);
+            last_time = time(NULL);
+        }
     }
 }
 
-h9d_select_event_t *h9d_select_event_create(void) {
-    h9d_select_event_t *tmp = malloc(sizeof(h9d_select_event_t));
-    tmp->fd = -1;
-    tmp->prev = NULL;
-    tmp->next = NULL;
+void h9d_select_event_add(int fd, int event_types, h9d_select_event_func_t *func, void *ev_data) {
+    h9d_select_event_t *ev = malloc(sizeof(h9d_select_event_t));
 
-    return tmp;
-}
+    ev->fd = fd;
+    ev->process_events = func;
+    ev->event_types = event_types;
+    ev->ev_data = ev_data;
 
-void h9d_select_event_free(h9d_select_event_t *ev) {
-    free(ev);
-}
-
-void h9d_select_event_add(h9d_select_event_t *ev) {
     ev->prev = NULL;
+    ev->next = NULL;
+
     if (event_list) {
         ev->next = event_list;
         event_list->prev = ev;
@@ -70,20 +101,28 @@ void h9d_select_event_add(h9d_select_event_t *ev) {
         event_list = ev;
         ev->next = NULL;
     }
+
+    FD_SET(ev->fd, &event_fd_set);
 }
 
-void h9d_select_event_del(h9d_select_event_t *ev) {
-    if (ev->prev) {
-        ev->prev->next = ev->next;
-    }
-    else {
-        event_list = ev->next;
-    }
+void h9d_select_event_del(int fd) {
+    for (h9d_select_event_t *ev = event_list; ev; ev = ev->next) {
+        if (ev->fd == fd) {
+            if (ev->prev) {
+                ev->prev->next = ev->next;
+            }
+            else {
+                event_list = ev->next;
+            }
 
-    if (ev->next) {
-        ev->next->prev = ev->prev;
-    }
+            if (ev->next) {
+                ev->next->prev = ev->prev;
+            }
 
-    ev->prev = NULL;
-    ev->next = NULL;
+            FD_CLR(ev->fd, &event_fd_set);
+            free(ev);
+
+            break;
+        }
+    }
 }

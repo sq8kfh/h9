@@ -105,6 +105,13 @@ static void savepid(void) {
     }
 }
 
+int tmp_func(void * ud, int event_type, int timer) {
+    printf("Data is available now.\n");
+    char buf[100];
+    read(1, buf, 100);
+    return 0;
+}
+
 int main(int argc, char **argv) {
     int verbose = 0;
     int nodaemonize = 0;
@@ -177,8 +184,10 @@ int main(int argc, char **argv) {
 
     h9d_select_event_init();
 
-    h9d_select_event_t *server_event = h9d_server_module_init(7878);
-    h9d_select_event_add(server_event);
+    h9d_server_module_t *sm = h9d_server_module_init(7878);
+    h9d_select_event_add(sm->socket_d, H9D_SELECT_EVENT_READ, (h9d_select_event_func_t*)h9d_server_module_process_events, sm);
+
+    h9d_select_event_add(0, H9D_SELECT_EVENT_READ, (h9d_select_event_func_t*)tmp_func, NULL);
 
     h9d_select_event_loop();
 
