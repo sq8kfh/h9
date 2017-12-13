@@ -8,7 +8,7 @@
 cfg_opt_t opts[] = {
         CFG_STR("pid_file", NULL, CFGF_NONE),
         CFG_BOOL("daemonize", cfg_true, CFGF_NONE),
-        CFG_INT("verbose", 1, CFGF_NONE),
+        CFG_INT("verbose", H9_LOG_WARN, CFGF_NONE),
         CFG_END()
 };
 

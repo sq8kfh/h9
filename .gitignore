@@ -38,6 +38,7 @@ Makefile
 
 # Project
 config.h
+h9msg.xsd.h
 h9d
 h9send
 h9spy

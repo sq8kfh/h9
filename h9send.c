@@ -1,76 +1,123 @@
 #include <stdio.h>
-#include <stdlib.h>
-#include <getopt.h>
+#include <string.h>
+#include <unistd.h>
+#include <libxml/SAX.h>
 
-int main(int argc, char **argv) {
-    int c;
-    int digit_optind = 0;
+int read_xmlfile(FILE *f);
+xmlSAXHandler make_sax_handler();
 
-    while (1) {
-        int this_option_optind = optind ? optind : 1;
-        int option_index = 0;
-        static struct option long_options[] = {
-                {"add",     required_argument, 0,  0 },
-                {"append",  no_argument,       0,  0 },
-                {"delete",  required_argument, 0,  0 },
-                {"verbose", no_argument,       0,  0 },
-                {"create",  required_argument, 0, 'c'},
-                {"file",    required_argument, 0,  0 },
-                {0,         0,                 0,  0 }
-        };
+static void OnStartElementNs(
+        void *ctx,
+        const xmlChar *localname,
+        const xmlChar *prefix,
+        const xmlChar *URI,
+        int nb_namespaces,
+        const xmlChar **namespaces,
+        int nb_attributes,
+        int nb_defaulted,
+        const xmlChar **attributes
+);
 
-        c = getopt_long(argc, argv, "abc:d:012",
-                        long_options, &option_index);
-        if (c == -1)
-            break;
+static void OnEndElementNs(
+        void* ctx,
+        const xmlChar* localname,
+        const xmlChar* prefix,
+        const xmlChar* URI
+);
 
-        switch (c) {
-            case 0:
-                printf("option %s", long_options[option_index].name);
-                if (optarg)
-                    printf(" with arg %s", optarg);
-                printf("\n");
-                break;
+static void OnCharacters(void* ctx, const xmlChar * ch, int len);
 
-            case '0':
-            case '1':
-            case '2':
-                if (digit_optind != 0 && digit_optind != this_option_optind)
-                    printf("digits occur in two different argv-elements.\n");
-                digit_optind = this_option_optind;
-                printf("option %c\n", c);
-                break;
+int main(int argc, char *argv[]) {
+    FILE *f = NULL;
 
-            case 'a':
-                printf("option a\n");
-                break;
+    if(read_xmlfile(f)) {
+        puts("xml read error.");
+        exit(1);
+    }
 
-            case 'b':
-                printf("option b\n");
-                break;
+    fclose(f);
+    return 0;
+}
 
-            case 'c':
-                printf("option c with value '%s'\n", optarg);
-                break;
+int read_xmlfile(FILE *f) {
+    char chars[1024];
+    int res;
 
-            case 'd':
-                printf("option d with value '%s'\n", optarg);
-                break;
+    xmlSAXHandler SAXHander = make_sax_handler();
 
-            case '?':
-                break;
+    xmlParserCtxtPtr ctxt = xmlCreatePushParserCtxt(
+            &SAXHander, NULL, NULL, 0, NULL
+    );
 
-            default:
-                printf("?? getopt returned character code 0%o ??\n", c);
+    while ((res = read(0, chars, 100)) > 0) {
+        if(xmlParseChunk(ctxt, chars, res, 0)) {
+            xmlParserError(ctxt, "xmlParseChunk");
+            //return 1;
+        }
+        else {
+            printf("parse ok\n");
+            //xmlChar *data = NULL;
+            //int t = 0;
+            xmlDocDump(stdout, ctxt->myDoc);
+            //xmlDocDumpFormatMemory(ctxt->myDoc, &data, &t, 0);
+            //printf("%d %s\n", t, data);
         }
     }
+    xmlParseChunk(ctxt, chars, 0, 1);
+    xmlDocDump(stdout, ctxt->myDoc);
+    xmlFreeParserCtxt(ctxt);
+    xmlCleanupParser();
+    return 0;
+}
 
-    if (optind < argc) {
-        printf("non-option ARGV-elements: ");
-        while (optind < argc)
-            printf("%s ", argv[optind++]);
-        printf("\n");
-    }
+void OnEndDoc(void * ctx) {
+    printf("end doc\n");
+}
 
-    exit(EXIT_SUCCESS);
+void OnEndElement(void * ctx, const xmlChar * name) {
+    printf("end el %s\n", name);
+}
+
+xmlSAXHandler make_sax_handler (){
+    xmlSAXHandler SAXHander;
+
+    memset(&SAXHander, 0, sizeof(xmlSAXHandler));
+
+    SAXHander.initialized = XML_SAX2_MAGIC;
+    SAXHander.startElementNs = OnStartElementNs;
+    SAXHander.endElementNs = OnEndElementNs;
+    SAXHander.characters = OnCharacters;
+    SAXHander.endDocument = OnEndDoc;
+    SAXHander.endElement = OnEndElement;
+    return SAXHander;
+}
+
+static void OnStartElementNs(
+        void *ctx,
+        const xmlChar *localname,
+        const xmlChar *prefix,
+        const xmlChar *URI,
+        int nb_namespaces,
+        const xmlChar **namespaces,
+        int nb_attributes,
+        int nb_defaulted,
+        const xmlChar **attributes
+) {
+    printf("<%s>\n", localname);
+}
+
+static void OnEndElementNs(
+        void* ctx,
+        const xmlChar* localname,
+        const xmlChar* prefix,
+        const xmlChar* URI
+) {
+    printf("</%s>\n", localname);
+}
+
+static void OnCharacters(void *ctx, const xmlChar *ch, int len) {
+    char chars[len + 1];
+    strncpy(chars, (const char *)ch, len);
+    chars[len] = (char)NULL;
+    printf("[%s]\n", chars);
 }

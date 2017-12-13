@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:element name="h9methodCall">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="firstname" type="xs:string"/>
+                <xs:element name="lastname" type="xs:string"/>
+            </xs:sequence>
+            <xs:attribute name="name" type="xs:string" use="required"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="h9methodResponse">
+    </xs:element>
+    <xs:element name="h9sendmsg" type="h9msg_t"/>
+    <xs:element name="h9msg" type="h9recvmsg_t"/>
+
+    <xs:complexType name="h9msg_t">
+        <xs:attribute name="x" type="xs:string" use="required"/>
+        <xs:attribute name="y" type="xs:string" use="required"/>
+    </xs:complexType>
+
+    <xs:complexType name="h9recvmsg_t">
+        <xs:complexContent>
+            <xs:extension base="h9msg_t">
+                <xs:attribute name="endpont_id" type="xs:string" use="required"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+</xs:schema>

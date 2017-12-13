@@ -75,7 +75,7 @@ void h9d_select_event_loop(void) {
                     }
                 }
             }
-            h9_log_debug("%s: timer (%ds elapsed)\n", __func__, time(NULL) - last_time);
+            //h9_log_debug("%s: timer (%ds elapsed)\n", __func__, time(NULL) - last_time);
             last_time = time(NULL);
         }
     }

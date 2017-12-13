@@ -70,7 +70,6 @@ void *get_in_addr(struct sockaddr *sa) {
 
 int h9d_server_module_process_events(h9d_server_module_t *ev_data, int event_type, time_t elapsed) {
     if (event_type == H9D_SELECT_EVENT_READ) {
-        printf("asdasd\n");
         int newfd;
         struct sockaddr_storage remoteaddr;
         socklen_t addrlen;
@@ -86,7 +85,7 @@ int h9d_server_module_process_events(h9d_server_module_t *ev_data, int event_typ
                          inet_ntop(remoteaddr.ss_family, \
                          get_in_addr((struct sockaddr*)&remoteaddr), remoteIP, INET6_ADDRSTRLEN), newfd);
 
-            h9d_client_module_t *new_client = h9d_client_module(newfd);
+            h9d_client_module_t *new_client = h9d_client_module_init(newfd);
             h9d_select_event_add(newfd, H9D_SELECT_EVENT_READ,
                                  (h9d_select_event_func_t*)h9d_client_module_process_events, new_client);
 

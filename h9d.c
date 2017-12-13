@@ -17,6 +17,7 @@ static void help(void) {
     h9_log_stderr("\n");
     h9_log_stderr("Options:\n");
     h9_log_stderr("   -c <cfg_file> --config=<cfg_file>\n");
+    h9_log_stderr("   -d,           --debug\n");
     h9_log_stderr("   -D,           --nodaemonize\n");
     h9_log_stderr("   -h,           --help\n");
     h9_log_stderr("   -p <pid_file> --pidfile=<pid_file>\n");
@@ -26,7 +27,7 @@ static void help(void) {
 }
 
 static void usage(void) {
-    h9_log_stderr("usage: h9d [-DhvV] [-c config_file] [-p pid_file]\n");
+    h9_log_stderr("usage: h9d [-dDhvV] [-c config_file] [-p pid_file]\n");
     exit(EXIT_FAILURE);
 }
 
@@ -113,8 +114,9 @@ int tmp_func(void * ud, int event_type, int timer) {
 }
 
 int main(int argc, char **argv) {
-    int verbose = 0;
+    int verbose = H9_LOG_WARN;
     int nodaemonize = 0;
+    int debug = 0;
     char *pidfile = NULL;
     char *cfgfile = H9D_CONFIG_FILE;
 
@@ -123,6 +125,7 @@ int main(int argc, char **argv) {
         int option_index = 0;
         static struct option long_options[] = {
                 {"config",      required_argument, 0, 'c' },
+                {"debug",       no_argument,       0, 'd' },
                 {"nodaemonize", no_argument,       0, 'D' },
                 {"help",        no_argument,       0, 'h' },
                 {"pidfile",     required_argument, 0, 'p' },
@@ -131,7 +134,7 @@ int main(int argc, char **argv) {
                 {0,             0,                 0,  0  }
         };
 
-        c = getopt_long(argc, argv, "c:Dhp:vV", long_options, &option_index);
+        c = getopt_long(argc, argv, "c:dDhp:vV", long_options, &option_index);
         if (c == -1)
             break;
 
@@ -145,6 +148,9 @@ int main(int argc, char **argv) {
                 break;*/
             case 'c':
                 cfgfile = optarg;
+                break;
+            case 'd':
+                debug = 1;
                 break;
             case 'D':
                 nodaemonize = 1;
@@ -168,7 +174,7 @@ int main(int argc, char **argv) {
     }
 
     h9d_cfg_init(cfgfile);
-    h9_log_init();
+    h9_log_init(verbose, debug);
 
     if (nodaemonize == 1)
         h9d_cfg_setbool("daemonize", h9d_cfg_false);
@@ -178,6 +184,8 @@ int main(int argc, char **argv) {
 
     if (pidfile)
         h9d_cfg_setstr("pid_file", pidfile);
+
+    h9_log_set_verbose(verbose);
 
     daemonize();
     savepid();
