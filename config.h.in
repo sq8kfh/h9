@@ -6,9 +6,13 @@
 #ifndef _CONFIG_H_
 #define _CONFIG_H_
 
+#include <inttypes.h>
+
 #define CMAKE_SYSTEM_NAME "@CMAKE_SYSTEM_NAME@"
 
 #cmakedefine H9D_CONFIG_FILE "@H9D_CONFIG_FILE@"
 #cmakedefine H9D_VERSION "@H9D_VERSION@"
+
+typedef uint32_t h9_counter_t;
 
 #endif

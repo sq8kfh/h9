@@ -11,7 +11,7 @@ set(H9D_VERSION "0.0.0")
 find_package(LibXml2 REQUIRED)
 
 pkg_check_modules(confuse libconfuse)
-#pkg_check_modules(libxml2 libxml-2.0)
+pkg_check_modules(libxml2 libxml-2.0)
 
 configure_file(config.h.in config.h)
 
@@ -24,9 +24,9 @@ add_custom_command (
         DEPENDS h9msg.xsd
 )
 
-set(H9_MSG h9_xmlmsg.c h9_xmlmsg.h h9msg.xsd.h)
+set(H9_MSG h9_xmlmsg.c h9_xmlmsg.h h9msg.xsd.h h9msg.c)
 
-set(SOURCE_FILES h9d.c h9_log.c h9_log.h h9d_cfg.c h9d_cfg.h h9d_select_event.c h9d_select_event.h h9d_server_module.c h9d_server_module.h h9d_client_module.c h9d_client_module.h ${H9_MSG})
+set(SOURCE_FILES h9d.c h9_log.c h9_log.h h9d_cfg.c h9d_cfg.h h9d_select_event.c h9d_select_event.h h9d_server.c h9d_server.h h9d_client.c h9d_client.h ${H9_MSG} h9_xmlsocket.c h9_xmlsocket.h h9d_endpoint.c h9d_endpoint.h h9_msg.c h9_msg.h h9_slcan.c h9_slcan.h h9d_trigger.c h9d_trigger.h)
 
 add_executable(h9d ${SOURCE_FILES})
 TARGET_LINK_LIBRARIES(h9d ${confuse_LIBRARIES} ${libxml2_LIBRARIES})

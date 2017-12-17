@@ -3,7 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <strings.h>
-#include <sys/select.h>
+#include <unistd.h>
+#include <sys/errno.h>
 
 #include "h9_log.h"
 
@@ -17,17 +18,20 @@ typedef struct h9d_select_event_t {
     struct h9d_select_event_t *next;
 } h9d_select_event_t;
 
-h9d_select_event_t *event_list;
-fd_set event_fd_set;
+static h9d_select_event_t *event_list;
+static fd_set event_fd_set;
+static int run;
+
 
 void h9d_select_event_init(void) {
     event_list = NULL;
     FD_ZERO(&event_fd_set);
+    run = 1;
 }
 
-void h9d_select_event_loop(void) {
+int h9d_select_event_loop(void) {
     time_t last_time = time(NULL);
-    while (1) {
+    while (run) {
         struct timeval tv;
         h9d_select_event_t tmp;
         fd_set rfds;
@@ -49,14 +53,20 @@ void h9d_select_event_loop(void) {
         retval = select(max_fd+1, &rfds, NULL, NULL, &tv);
 
         if (retval == -1) {
-            perror("select()");
+            if (errno == EINTR && run == 0) {
+                break;
+            }
+            h9_log_err("select: %s", strerror(errno));
             break;
         }
         else if (retval) {
             for (h9d_select_event_t *ev = event_list; ev; ev = ev->next) {
                 if (ev->event_types & H9D_SELECT_EVENT_READ && FD_ISSET(ev->fd, &rfds)) {
                     int r = ev->process_events(ev->ev_data, H9D_SELECT_EVENT_READ, -1);
-                    if (r == H9D_SELECT_EVENT_RETURN_DEL) {
+                    if (r == H9D_SELECT_EVENT_RETURN_DEL || r == H9D_SELECT_EVENT_RETURN_DISCONNECT) {
+                        if (r == H9D_SELECT_EVENT_RETURN_DISCONNECT) {
+                            ev->process_events(ev->ev_data, H9D_SELECT_EVENT_DISCONNECT, -1);
+                        }
                         tmp.next = ev->next;
                         h9d_select_event_del(ev->fd);
                         ev = &tmp;
@@ -68,7 +78,10 @@ void h9d_select_event_loop(void) {
             for (h9d_select_event_t *ev = event_list; ev; ev = ev->next) {
                 if (ev->event_types & H9D_SELECT_EVENT_TIME) {
                     int r = ev->process_events(ev->ev_data, H9D_SELECT_EVENT_TIME, time(NULL) - last_time);
-                    if (r == H9D_SELECT_EVENT_RETURN_DEL) {
+                    if (r == H9D_SELECT_EVENT_RETURN_DEL || r == H9D_SELECT_EVENT_RETURN_DISCONNECT) {
+                        if (r == H9D_SELECT_EVENT_RETURN_DISCONNECT) {
+                            ev->process_events(ev->ev_data, H9D_SELECT_EVENT_DISCONNECT, -1);
+                        }
                         tmp.next = ev->next;
                         h9d_select_event_del(ev->fd);
                         ev = &tmp;
@@ -78,6 +91,27 @@ void h9d_select_event_loop(void) {
             //h9_log_debug("%s: timer (%ds elapsed)\n", __func__, time(NULL) - last_time);
             last_time = time(NULL);
         }
+    }
+    h9d_select_event_free();
+    if (run == 0) {
+        return 0;
+    }
+    return 1;
+}
+
+void h9d_select_event_stop(void) {
+    run = 0;
+}
+
+void h9d_select_event_free(void) {
+    h9d_select_event_t tmp;
+    for (h9d_select_event_t *ev = event_list; ev; ev = ev->next) {
+        if (ev->event_types & H9D_SELECT_EVENT_DISCONNECT) {
+            ev->process_events(ev->ev_data, H9D_SELECT_EVENT_DISCONNECT, -1);
+        }
+        tmp.next = ev->next;
+        h9d_select_event_del(ev->fd);
+        ev = &tmp;
     }
 }
 

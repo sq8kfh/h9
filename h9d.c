@@ -3,14 +3,16 @@
 #include <stdlib.h>
 #include <getopt.h>
 #include <errno.h>
-#include <unistd.h>
 #include <sys/stat.h>
 #include <sys/file.h>
 
 #include "h9_log.h"
 #include "h9d_cfg.h"
 #include "h9d_select_event.h"
-#include "h9d_server_module.h"
+#include "h9d_server.h"
+#include "h9d_client.h"
+#include "h9d_endpoint.h"
+#include "h9_slcan.h"
 
 static void help(void) {
     h9_log_stderr("usage: h9d [-DhvV] [-c config_file] [-p pid_file]\n");
@@ -85,6 +87,7 @@ static void savepid(void) {
     char *tmp_pidfile = h9d_cfg_getstr("pid_file");
 
     if (tmp_pidfile != NULL) {
+        h9_log_debug("saving pid file %s", tmp_pidfile);
         FILE *pid_file = fopen(tmp_pidfile, "a+");
         if (!pid_file) {
             perror("open pid file");
@@ -111,6 +114,11 @@ int tmp_func(void * ud, int event_type, int timer) {
     char buf[100];
     read(1, buf, 100);
     return 0;
+}
+
+void sighandler(int signum) {
+    h9_log_err("caught signal %d", signum);
+    h9d_select_event_stop();
 }
 
 int main(int argc, char **argv) {
@@ -190,19 +198,32 @@ int main(int argc, char **argv) {
     daemonize();
     savepid();
 
-    h9d_select_event_init();
+    signal(SIGINT, sighandler);
 
-    h9d_server_module_t *sm = h9d_server_module_init(7878);
-    h9d_select_event_add(sm->socket_d, H9D_SELECT_EVENT_READ, (h9d_select_event_func_t*)h9d_server_module_process_events, sm);
+    h9d_select_event_init();
+    h9d_endpoint_init();
+
+    h9d_endpoint_t * endpoint = h9d_endpoint_addnew("/dev/tty.usbserial-DA1ESZ7U");
+    h9d_select_event_add(endpoint->ep_imp->fd, H9D_SELECT_EVENT_READ | H9D_SELECT_EVENT_DISCONNECT,
+                         (h9d_select_event_func_t*)h9d_endpoint_process_events, endpoint);
+
+    h9d_server_t *sm = h9d_server_init(7878);
+    h9d_select_event_add(sm->socket_d, H9D_SELECT_EVENT_READ | H9D_SELECT_EVENT_DISCONNECT,
+                         (h9d_select_event_func_t*)h9d_server_process_events, sm);
 
     h9d_select_event_add(0, H9D_SELECT_EVENT_READ, (h9d_select_event_func_t*)tmp_func, NULL);
 
-    h9d_select_event_loop();
+    h9d_client_init(h9d_cfg_getint("client_recv_buffer_size"));
 
-    sleep(20);
-    struct rusage rusage;
+    if (h9d_select_event_loop() == 0) {
+        h9_log_crit("h9d terminated");
+        return EXIT_SUCCESS;
+    }
+
+    /*struct rusage rusage;
     getrusage(RUSAGE_SELF, &rusage);
-    printf("%d %d\n", rusage.ru_utime.tv_usec, rusage.ru_stime.tv_usec);
+    printf("%d %d\n", rusage.ru_utime.tv_usec, rusage.ru_stime.tv_usec);*/
 
-    return EXIT_SUCCESS;
+    h9_log_crit("h9d terminated abnormally");
+    return EXIT_FAILURE;
 }

@@ -3,27 +3,71 @@
     <xs:element name="h9methodCall">
         <xs:complexType>
             <xs:sequence>
-                <xs:element name="firstname" type="xs:string"/>
-                <xs:element name="lastname" type="xs:string"/>
+                <xs:element name="param" minOccurs="0">
+                    <xs:complexType>
+                        <xs:simpleContent>
+                            <xs:extension base="xs:string">
+                                <xs:attribute name="name" type="xs:string" />
+                            </xs:extension>
+                        </xs:simpleContent>
+                    </xs:complexType>
+                </xs:element>
             </xs:sequence>
             <xs:attribute name="name" type="xs:string" use="required"/>
         </xs:complexType>
     </xs:element>
+
     <xs:element name="h9methodResponse">
     </xs:element>
+
     <xs:element name="h9sendmsg" type="h9msg_t"/>
-    <xs:element name="h9msg" type="h9recvmsg_t"/>
+
+    <xs:element name="h9msg" type="h9msg_t"/>
 
     <xs:complexType name="h9msg_t">
-        <xs:attribute name="x" type="xs:string" use="required"/>
-        <xs:attribute name="y" type="xs:string" use="required"/>
-    </xs:complexType>
-
-    <xs:complexType name="h9recvmsg_t">
-        <xs:complexContent>
-            <xs:extension base="h9msg_t">
-                <xs:attribute name="endpont_id" type="xs:string" use="required"/>
-            </xs:extension>
-        </xs:complexContent>
+        <xs:attribute name="endpoint" type="xs:string"/>
+        <xs:attribute name="priority" use="required">
+            <xs:simpleType>
+                <xs:restriction base="xs:string">
+                    <xs:enumeration value="H"/>
+                    <xs:enumeration value="h"/>
+                    <xs:enumeration value="L"/>
+                    <xs:enumeration value="l"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="type" use="required">
+            <xs:simpleType>
+                <xs:restriction base="xs:nonNegativeInteger">
+                    <xs:minInclusive value="0"/>
+                    <xs:maxInclusive value="255"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="source" use="required">
+            <xs:simpleType>
+                <xs:restriction base="xs:nonNegativeInteger">
+                    <xs:minInclusive value="0"/>
+                    <xs:maxInclusive value="511"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="destination" use="required">
+            <xs:simpleType>
+                <xs:restriction base="xs:nonNegativeInteger">
+                    <xs:minInclusive value="0"/>
+                    <xs:maxInclusive value="511"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="dlc" use="required">
+            <xs:simpleType>
+                <xs:restriction base="xs:nonNegativeInteger">
+                    <xs:minInclusive value="0"/>
+                    <xs:maxInclusive value="8"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="data" type="xs:hexBinary" />
     </xs:complexType>
 </xs:schema>
