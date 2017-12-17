@@ -198,7 +198,9 @@ static h9msg_t *node2h9msg(xmlNode *node) {
 static xmlNode *h9msg2node(h9msg_t *msg, const char *node_name) {
     xmlNode *node = xmlNewNode(NULL, BAD_CAST node_name);
 
-    xmlNewProp(node, BAD_CAST "endpoint", BAD_CAST msg->endpoint);
+    if (msg->endpoint) {
+        xmlNewProp(node, BAD_CAST "endpoint", BAD_CAST msg->endpoint);
+    }
     if (msg->priority == H9_MSG_PRIORITY_HIGH) {
         xmlNewProp(node, BAD_CAST "priority", BAD_CAST "H");
     }
@@ -218,7 +220,9 @@ static xmlNode *h9msg2node(h9msg_t *msg, const char *node_name) {
     for (int i = 0; i < msg->dlc; i++) {
         snprintf(&str[i*2], 24, "%02hhX", msg->data[i]);
     }
-    xmlNewProp(node, BAD_CAST "data", BAD_CAST str);
+    if (msg->dlc) {
+        xmlNewProp(node, BAD_CAST "data", BAD_CAST str);
+    }
 
     return node;
 }

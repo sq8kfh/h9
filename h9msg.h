@@ -19,7 +19,7 @@
 /* 00...... ALL RESERVED, for exampe for bootloader*/
 #define H9_MSG_TYPE_GROUP_0 0
 
-#define H9_MSG_TYPE_U0 0
+#define H9_MSG_TYPE_NOP 0
 #define H9_MSG_TYPE_U1 1
 #define H9_MSG_TYPE_U2 2
 #define H9_MSG_TYPE_U3 3

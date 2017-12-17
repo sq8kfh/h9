@@ -3,7 +3,7 @@
 #include <stdlib.h>
 
 static const char* const h9_type_name[] = {
-        "RESERVED_0",
+        "NOP",
         "RESERVED_1",
         "RESERVED_2",
         "RESERVED_3",
@@ -264,6 +264,9 @@ static const char* const h9_type_name[] = {
 h9msg_t *h9msg_init(void) {
     h9msg_t *msg = malloc(sizeof(h9msg_t));
     msg->endpoint = NULL;
+    msg->priority = H9_MSG_PRIORITY_LOW;
+    msg->type = H9_MSG_TYPE_NOP;
+    msg->dlc = 0;
     return msg;
 }
 

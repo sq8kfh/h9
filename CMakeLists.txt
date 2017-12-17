@@ -24,15 +24,19 @@ add_custom_command (
         DEPENDS h9msg.xsd
 )
 
-set(H9_MSG h9_xmlmsg.c h9_xmlmsg.h h9msg.xsd.h h9msg.c)
+set(H9_LOG_FILES h9_log.c h9_log.h)
+set(H9_MSG_FILES h9_xmlmsg.c h9_xmlmsg.h h9msg.xsd.h h9msg.c)
+set(H9_XMLSOCKET_FILES h9_xmlsocket.c h9_xmlsocket.h)
 
-set(SOURCE_FILES h9d.c h9_log.c h9_log.h h9d_cfg.c h9d_cfg.h h9d_select_event.c h9d_select_event.h h9d_server.c h9d_server.h h9d_client.c h9d_client.h ${H9_MSG} h9_xmlsocket.c h9_xmlsocket.h h9d_endpoint.c h9d_endpoint.h h9_slcan.c h9_slcan.h h9d_trigger.c h9d_trigger.h)
+set(H9D_FILES h9d.c h9d_cfg.c h9d_cfg.h h9d_select_event.c h9d_select_event.h h9d_server.c h9d_server.h h9d_client.c h9d_client.h h9d_endpoint.c h9d_endpoint.h h9_slcan.c h9_slcan.h h9d_trigger.c h9d_trigger.h)
+set(H9SEND_FILES h9send.c)
+set(H9SPY_FILES h9spy.c)
 
-add_executable(h9d ${SOURCE_FILES})
+add_executable(h9d ${H9D_FILES} ${H9_LOG_FILES} ${H9_MSG_FILES} ${H9_XMLSOCKET_FILES})
 TARGET_LINK_LIBRARIES(h9d ${confuse_LIBRARIES} ${libxml2_LIBRARIES})
 
-add_executable(h9send h9send.c)
+add_executable(h9send ${H9SEND_FILES} ${H9_LOG_FILES} ${H9_MSG_FILES} ${H9_XMLSOCKET_FILES})
 TARGET_LINK_LIBRARIES(h9send ${libxml2_LIBRARIES})
 
-add_executable(h9spy h9spy.c h9_log.c h9_log.h h9_xmlsocket.c h9_xmlsocket.h ${H9_MSG})
+add_executable(h9spy ${H9SPY_FILES} ${H9_LOG_FILES} ${H9_MSG_FILES} ${H9_XMLSOCKET_FILES})
 TARGET_LINK_LIBRARIES(h9spy ${libxml2_LIBRARIES})
