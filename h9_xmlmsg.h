@@ -18,7 +18,9 @@
 //    char *value;
 //} h9_xmlmsg_param_t;
 
-int h9_xmlmsg_parse(const char *msg, size_t msg_size, void **params, int xsd_validate);
+//call always in pair with h9_xmlmsg_free_parse_data !
+int h9_xmlmsg_parse(const char *msg, size_t msg_size, void **data, int xsd_validate);
+void h9_xmlmsg_free_parse_data(int parse_result, void *parse_data);
 
 char *h9_xmlmsg_build_h9methodCall(size_t *xml_length, int xsd_validate);
 char *h9_xmlmsg_build_h9methodResponse(size_t *xml_length, int xsd_validate);

@@ -3,7 +3,7 @@
 #include "h9_xmlmsg.h"
 #include "h9_log.h"
 #include "h9d_trigger.h"
-
+#include "h9d_endpoint.h"
 
 static h9d_client_t *client_list_start;
 //static h9d_client_t *client_list_end;
@@ -92,8 +92,8 @@ static unsigned int process_xmlmsg(const char *msg, size_t length, h9d_client_t 
     int ret = h9_xmlmsg_parse(msg, length, &res, xmlmsg_schema_validation);
 
     if (ret == H9_XMLMSG_H9SENDMSG && res) {
-
-        //printf("msg: %d\n", (int)((h9msg_t*)res)->destination_id);
+        h9msg_t *ms = (h9msg_t*)res;
+        h9d_endpoint_send_msg(ms);
     }
     else if (ret == H9_XMLMSG_H9SUBSCRIBE) {
         h9d_trigger_add_listener(H9D_TRIGGER_RECV_MSG, client_struct, (h9d_trigger_callback*)trigger_callback);
@@ -104,6 +104,8 @@ static unsigned int process_xmlmsg(const char *msg, size_t length, h9d_client_t 
     else {
         client_struct->recv_invalid_xmlmsg_counter++;
     }
+
+    h9_xmlmsg_free_parse_data(ret, res);
 
     return 1;
 }

@@ -8,7 +8,10 @@
 #include <sys/errno.h>
 #include <fcntl.h>
 #include <termios.h>
+#include <ctype.h>
 
+static char *strndup_unescaped(const char *ptr, size_t n);
+static size_t build_msg(char *slcan_data, const h9msg_t *msg);
 static int proces_readed_data(h9_slcan_t *slcan, const char *data, size_t length,
                               h9_slcan_recv_callback_t *callback, void *callback_data);
 
@@ -103,30 +106,101 @@ int h9_slcan_recv(h9_slcan_t *slcan, h9_slcan_recv_callback_t *callback, void *c
         slcan->read_byte_counter += nbytes;
         slcan->in_buf += nbytes;
 
-        for (; slcan->buf_ptr < slcan->in_buf; ++slcan->buf_ptr) {
-            if (slcan->buf[slcan->buf_ptr] == '\r' || slcan->buf[slcan->buf_ptr] == '\a') {
-                h9_log_debug("slcan read %d: '%.*s'", slcan->buf_ptr+1,
-                             slcan->buf_ptr,
-                             slcan->buf);
+        while (slcan->buf_ptr < slcan->in_buf) {
+            size_t i;
+            for (i = slcan->buf_ptr; i < slcan->in_buf; ++i) {
+                if (slcan->buf[i] == '\r' || slcan->buf[i] == '\a') {
+                    char *tmp = strndup_unescaped(slcan->buf, i + 1);
+                    h9_log_debug("slcan read %d: '%s'", i + 1, tmp);
+                    free(tmp);
 
-                int res = proces_readed_data(slcan, slcan->buf, slcan->buf_ptr + 1, callback, callback_data);
-                if (res <= 0) { // - 1 bad msg, callback no exec; 0 callbac return error
-                    ret = 0;
+                    int res = proces_readed_data(slcan, slcan->buf, i + 1, callback, callback_data);
+                    if (res <= 0) { // - 1 bad msg, callback no exec; 0 callbac return error
+                        ret = 0;
+                    }
+
+                    memmove(slcan->buf, &slcan->buf[i + 1],
+                            slcan->in_buf - i - 1);
+
+                    slcan->in_buf = slcan->in_buf - i - 1;
+                    i = 0;
+
+                    break;
                 }
-
-                memmove(slcan->buf, &slcan->buf[slcan->buf_ptr+1],
-                        slcan->in_buf - slcan->buf_ptr - 1);
-
-                slcan->in_buf = slcan->in_buf - slcan->buf_ptr - 1;
-                slcan->buf_ptr = 0;
             }
+            slcan->buf_ptr = i;
         }
     }
     return ret;
 }
 
 int h9_slcan_send(h9_slcan_t *slcan, const h9msg_t *msg) {
+    char buf[30];
+    size_t res = build_msg(buf, msg);
+
+    ssize_t nbyte = write(slcan->fd, buf, res);
+    if (nbyte <= 0) {
+        if (nbyte == 0) {
+            h9_log_err("slcan closed fd");
+        } else {
+            h9_log_err("slcan write %s", strerror(errno));
+        }
+        return -1;
+    }
+
+    char *tmp = strndup_unescaped(buf, nbyte);
+    h9_log_debug("slcan write %d: '%s'", nbyte, tmp);
+    free(tmp);
+
+    slcan->write_byte_counter += nbyte;
     return 1;
+}
+
+static char *strndup_unescaped(const char *ptr, size_t n) {
+    if (!ptr) return NULL;
+    char *ret = malloc(n*2);
+    char *p = ret;
+    for (int i = 0; i < n; i++, p++) {
+        switch (ptr[i]) {
+            case '\0': *p++ = '\\'; *p = '0'; break;
+            case '\a': *p++ = '\\'; *p = 'a'; break;
+            case '\b': *p++ = '\\'; *p = 'b'; break;
+            case '\f': *p++ = '\\'; *p = 'f'; break;
+            case '\n': *p++ = '\\'; *p = 'n'; break;
+            case '\r': *p++ = '\\'; *p = 'r'; break;
+            case '\t': *p++ = '\\'; *p = 't'; break;
+            case '\v': *p++ = '\\'; *p = 'v'; break;
+            case '\\': *p++ = '\\'; *p = '\\'; break;
+            case '\?': *p++ = '\\'; *p = '?'; break;
+            case '\'': *p++ = '\\'; *p = '\''; break;
+            case '\"': *p++ = '\\'; *p = '"'; break;
+            default: *p = ptr[i]; break;
+        }
+    }
+    *p = '\0';
+    return ret;
+}
+
+static size_t build_msg(char *slcan_data, const h9msg_t *msg) {
+    uint32_t id = 0;
+    id |= msg->priority & ((1<<H9_MSG_PRIORITY_BIT_LENGTH) - 1);
+    id <<= H9_MSG_TYPE_BIT_LENGTH;
+    id |= msg->type & ((1<<H9_MSG_TYPE_BIT_LENGTH) - 1);
+    id <<= H9_MSG_RESERVED_BIT_LENGTH;
+    id |= H9_MSG_RESERVED_VALUE & ((1<<H9_MSG_RESERVED_BIT_LENGTH) - 1);
+    id <<= H9_MSG_DESTINATION_ID_BIT_LENGTH;
+    id |= msg->destination_id & ((1<<H9_MSG_DESTINATION_ID_BIT_LENGTH) - 1);
+    id <<= H9_MSG_SOURCE_ID_BIT_LENGTH;
+    id |= msg->source_id & ((1<<H9_MSG_SOURCE_ID_BIT_LENGTH) - 1);
+
+    size_t nbyte;
+    nbyte = sprintf(slcan_data, "T%08X%1hhu", id, msg->dlc);
+    for (int i = 0; i < msg->dlc; ++i) {
+        nbyte += sprintf(slcan_data + nbyte, "%02hhX", msg->data[i]);
+    }
+    nbyte += sprintf(slcan_data + nbyte, "\r");
+
+    return nbyte;
 }
 
 static h9msg_t *parse_msg(const char *data, size_t length) {
@@ -134,15 +208,15 @@ static h9msg_t *parse_msg(const char *data, size_t length) {
     uint32_t id;
     sscanf(data + 1, "%8x", &id);
 
-    res->priority = (uint8_t)(id >> (H9_MSG_TYPE_BIT_LENGTH + H9_MSG_RESERVED_BIT_LENGTH +
-                                     H9_MSG_DESTINATION_ID_BIT_LENGTH + H9_MSG_SOURCE_ID_BIT_LENGTH)) & ((1<<H9_MSG_PRIORITY_BIT_LENGTH) - 1);
+    res->priority = (uint8_t)((id >> (H9_MSG_TYPE_BIT_LENGTH + H9_MSG_RESERVED_BIT_LENGTH +
+                                     H9_MSG_DESTINATION_ID_BIT_LENGTH + H9_MSG_SOURCE_ID_BIT_LENGTH)) & ((1<<H9_MSG_PRIORITY_BIT_LENGTH) - 1));
 
-    res->type = (uint8_t)(id >> (H9_MSG_RESERVED_BIT_LENGTH + H9_MSG_DESTINATION_ID_BIT_LENGTH + H9_MSG_SOURCE_ID_BIT_LENGTH)) \
-		                    & ((1<<H9_MSG_TYPE_BIT_LENGTH) - 1);
+    res->type = (uint8_t)((id >> (H9_MSG_RESERVED_BIT_LENGTH + H9_MSG_DESTINATION_ID_BIT_LENGTH + H9_MSG_SOURCE_ID_BIT_LENGTH)) \
+		                    & ((1<<H9_MSG_TYPE_BIT_LENGTH) - 1));
 
-    res->destination_id = (uint16_t)(id >> (H9_MSG_SOURCE_ID_BIT_LENGTH)) & ((1<<H9_MSG_DESTINATION_ID_BIT_LENGTH) - 1);
+    res->destination_id = (uint16_t)((id >> (H9_MSG_SOURCE_ID_BIT_LENGTH)) & ((1<<H9_MSG_DESTINATION_ID_BIT_LENGTH) - 1));
 
-    res->source_id = (uint16_t)(id >> (0)) & ((1<<H9_MSG_SOURCE_ID_BIT_LENGTH) - 1);
+    res->source_id = (uint16_t)((id >> (0)) & ((1<<H9_MSG_SOURCE_ID_BIT_LENGTH) - 1));
 
     uint32_t dlc;
 

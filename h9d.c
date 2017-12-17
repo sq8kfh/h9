@@ -12,7 +12,7 @@
 #include "h9d_server.h"
 #include "h9d_client.h"
 #include "h9d_endpoint.h"
-#include "h9_slcan.h"
+#include "h9d_trigger.h"
 
 static void help(void) {
     h9_log_stderr("usage: h9d [-dDhvV] [-c config_file] [-p pid_file]");
@@ -200,6 +200,7 @@ int main(int argc, char **argv) {
 
     signal(SIGINT, sighandler);
 
+    h9d_trigger_init();
     h9d_select_event_init();
     h9d_endpoint_init();
 
@@ -219,10 +220,10 @@ int main(int argc, char **argv) {
 
     h9d_select_event_add(0, H9D_SELECT_EVENT_READ, (h9d_select_event_func_t*)tmp_func, NULL);
 
-    h9d_client_init(h9d_cfg_getint("client_recv_buffer_size"),
+    h9d_client_init((size_t)h9d_cfg_getint("client_recv_buffer_size"),
                     h9d_cfg_getbool("xmlmsg_schema_validation") == h9d_cfg_true ? 1 : 0);
 
-    if (h9d_select_event_loop() == 0) {
+    if (h9d_select_event_loop(h9d_cfg_getint("time_trigger_period")) == 0) {
         h9_log_crit("h9d terminated");
         return EXIT_SUCCESS;
     }

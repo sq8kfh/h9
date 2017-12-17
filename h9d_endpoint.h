@@ -25,5 +25,6 @@ h9d_endpoint_t *h9d_endpoint_addnew(const char *connect_string, const char *name
 void h9d_endpoint_del(h9d_endpoint_t *endpoint_struct);
 
 int h9d_endpoint_process_events(h9d_endpoint_t *endpoint_struct, int event_type, time_t elapsed);
+int h9d_endpoint_send_msg(h9msg_t *msg);
 
 #endif //_H9D_ENDPOINT_H_

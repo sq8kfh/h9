@@ -15,6 +15,8 @@ static char *build_h9doc(size_t *xml_length, xmlNode *node, int xsd_validate);
 int h9_xmlmsg_parse(const char *msg, size_t msg_size, void **params, int xsd_validate) {
     xmlDocPtr doc;
 
+    *params = NULL;
+
     doc = xmlReadMemory(msg, msg_size, "noname.xml", NULL, 0);
     if (doc == NULL) {
         h9_log_warn("Failed to parse xml msg");
@@ -70,6 +72,17 @@ int h9_xmlmsg_parse(const char *msg, size_t msg_size, void **params, int xsd_val
 
     xmlFreeDoc(doc);
     return ret_msg_type;
+}
+
+void h9_xmlmsg_free_parse_data(int parse_result, void *parse_data) {
+    if (parse_data != NULL) {
+        switch (parse_result) {
+            case H9_XMLMSG_H9SENDMSG:
+            case H9_XMLMSG_H9MSG:
+                h9msg_free(parse_data);
+                break;
+        }
+    }
 }
 
 char *h9_xmlmsg_build_h9methodCall(size_t *xml_length, int xsd_validate) {

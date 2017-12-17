@@ -1,4 +1,5 @@
 #include "h9d_select_event.h"
+#include "h9d_trigger.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,14 +30,14 @@ void h9d_select_event_init(void) {
     run = 1;
 }
 
-int h9d_select_event_loop(void) {
+int h9d_select_event_loop(time_t time_trigger_period) {
     time_t last_time = time(NULL);
     while (run) {
         struct timeval tv;
         h9d_select_event_t tmp;
         fd_set rfds;
 
-        time_t t = 5 + last_time - time(NULL);
+        time_t t = time_trigger_period + last_time - time(NULL);
         tv.tv_sec = t > 0 ? t : 0;
         tv.tv_usec = 1;
 
@@ -74,21 +75,11 @@ int h9d_select_event_loop(void) {
                 }
             }
         }
-        if (retval == 0 || time(NULL) - last_time >= 5) {
-            for (h9d_select_event_t *ev = event_list; ev; ev = ev->next) {
-                if (ev->event_types & H9D_SELECT_EVENT_TIME) {
-                    int r = ev->process_events(ev->ev_data, H9D_SELECT_EVENT_TIME, time(NULL) - last_time);
-                    if (r == H9D_SELECT_EVENT_RETURN_DEL || r == H9D_SELECT_EVENT_RETURN_DISCONNECT) {
-                        if (r == H9D_SELECT_EVENT_RETURN_DISCONNECT) {
-                            ev->process_events(ev->ev_data, H9D_SELECT_EVENT_DISCONNECT, -1);
-                        }
-                        tmp.next = ev->next;
-                        h9d_select_event_del(ev->fd);
-                        ev = &tmp;
-                    }
-                }
-            }
-            //h9_log_debug("%s: timer (%ds elapsed)\n", __func__, time(NULL) - last_time);
+        time_t tmp_time = time(NULL) - last_time;
+        if (retval == 0 || tmp_time >= time_trigger_period) {
+
+            h9d_trigger_call(H9D_TRIGGER_TIMMER, &tmp_time);
+
             last_time = time(NULL);
         }
     }

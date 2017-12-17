@@ -4,7 +4,7 @@
 #include <time.h>
 
 #define H9D_SELECT_EVENT_READ (1<<0)
-#define H9D_SELECT_EVENT_TIME (1<<1)
+//#define H9D_SELECT_EVENT_TIME (1<<1)
 #define H9D_SELECT_EVENT_DISCONNECT (1<<2)
 
 #define H9D_SELECT_EVENT_RETURN_OK  0
@@ -14,7 +14,7 @@
 typedef int (h9d_select_event_func_t)(void *ev_data, int event_type, time_t elapsed);
 
 void h9d_select_event_init(void);
-int h9d_select_event_loop(void);
+int h9d_select_event_loop(time_t time_trigger_period);
 void h9d_select_event_stop(void);
 void h9d_select_event_free(void);
 

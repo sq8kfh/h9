@@ -40,7 +40,7 @@ void h9_log_vwrite(unsigned int level, const char *file, int line_num, const cha
         case H9_LOG_STDERR:
             break;
         default:
-            fprintf(out, "%-6s: ", level_name[level]);
+            fprintf(out, "%-6s ", level_name[level]);
             break;
     }
     if (_debug) {

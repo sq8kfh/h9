@@ -13,8 +13,10 @@
 
 #define INIT_BUF_SIZE 100
 
-void h9d_endpoint_init(void) {
+static h9d_endpoint_t *endpoint_list_start;
 
+void h9d_endpoint_init(void) {
+    endpoint_list_start = NULL;
 }
 
 h9d_endpoint_t *h9d_endpoint_addnew(const char *connect_string, const char *name) {
@@ -30,6 +32,19 @@ h9d_endpoint_t *h9d_endpoint_addnew(const char *connect_string, const char *name
     ep->recv_msg_counter = 0;
     ep->send_msg_counter = 0;
 
+    ep->next = NULL;
+    ep->prev = NULL;
+
+    if (endpoint_list_start) {
+        ep->next = endpoint_list_start;
+        endpoint_list_start->prev = ep;
+        endpoint_list_start = ep;
+    }
+    else {
+        endpoint_list_start = ep;
+        ep->next = NULL;
+    }
+
     return ep;
 }
 
@@ -39,6 +54,23 @@ void h9d_endpoint_del(h9d_endpoint_t *endpoint_struct) {
                  endpoint_struct->send_msg_counter,
                  endpoint_struct->recv_msg_counter,
                  endpoint_struct->recv_invalid_msg_counter);
+
+    for (h9d_endpoint_t *ep = endpoint_list_start; ep; ep = ep->next) {
+        if (ep == endpoint_struct) {
+            if (ep->prev) {
+                ep->prev->next = ep->next;
+            }
+            else {
+                endpoint_list_start = ep->next;
+            }
+
+            if (ep->next) {
+                ep->next->prev = ep->prev;
+            }
+
+            break;
+        }
+    }
 
     h9_slcan_free(endpoint_struct->ep_imp);
     free(endpoint_struct->endpoint_name);
@@ -76,4 +108,17 @@ int h9d_endpoint_process_events(h9d_endpoint_t *endpoint_struct, int event_type,
         return H9D_SELECT_EVENT_RETURN_DEL;
     }
     return H9D_SELECT_EVENT_RETURN_OK;
+}
+
+int h9d_endpoint_send_msg(h9msg_t *msg) {
+    if (msg->endpoint) {
+        free(msg->endpoint);
+    }
+    msg->endpoint = strdup("h9d");
+
+    for (h9d_endpoint_t *ep = endpoint_list_start; ep; ep = ep->next) {
+        h9_slcan_send(ep->ep_imp, msg);
+    }
+
+    return 1;
 }
