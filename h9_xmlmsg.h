@@ -10,12 +10,21 @@
 #define H9_XMLMSG_H9METHODRESPONSE  2
 #define H9_XMLMSG_H9SENDMSG         3
 #define H9_XMLMSG_H9MSG             4
+#define H9_XMLMSG_H9SUBSCRIBE       5
+#define H9_XMLMSG_H9UNSUBSCRIBE     6
 
 //typedef struct {
 //    char *name;
 //    char *value;
 //} h9_xmlmsg_param_t;
 
-int h9_xmlmsg_parse(const char *msg, size_t msg_size, int xsd_validate, void **params);
+int h9_xmlmsg_parse(const char *msg, size_t msg_size, void **params, int xsd_validate);
+
+char *h9_xmlmsg_build_h9methodCall(size_t *xml_length, int xsd_validate);
+char *h9_xmlmsg_build_h9methodResponse(size_t *xml_length, int xsd_validate);
+char *h9_xmlmsg_build_h9subscribe(size_t *xml_length, char *event, int xsd_validate);
+char *h9_xmlmsg_build_h9unsubscribe(size_t *xml_length, char *event, int xsd_validate);
+char *h9_xmlmsg_build_h9sendmsg(size_t *xml_length, h9msg_t *msg, int xsd_validate);
+char *h9_xmlmsg_build_h9msg(size_t *xml_length, h9msg_t *msg, int xsd_validate);
 
 #endif //_H9_XMLMSG_H_

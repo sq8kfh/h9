@@ -15,26 +15,26 @@
 #include "h9_slcan.h"
 
 static void help(void) {
-    h9_log_stderr("usage: h9d [-DhvV] [-c config_file] [-p pid_file]\n");
-    h9_log_stderr("\n");
-    h9_log_stderr("Options:\n");
-    h9_log_stderr("   -c <cfg_file> --config=<cfg_file>\n");
-    h9_log_stderr("   -d,           --debug\n");
-    h9_log_stderr("   -D,           --nodaemonize\n");
-    h9_log_stderr("   -h,           --help\n");
-    h9_log_stderr("   -p <pid_file> --pidfile=<pid_file>\n");
-    h9_log_stderr("   -v,           --verbose\n");
-    h9_log_stderr("   -V,           --Version\n");
+    h9_log_stderr("usage: h9d [-dDhvV] [-c config_file] [-p pid_file]");
+    h9_log_stderr("");
+    h9_log_stderr("Options:");
+    h9_log_stderr("   -c <cfg_file> --config=<cfg_file>");
+    h9_log_stderr("   -d,           --debug");
+    h9_log_stderr("   -D,           --nodaemonize");
+    h9_log_stderr("   -h,           --help");
+    h9_log_stderr("   -p <pid_file> --pidfile=<pid_file>");
+    h9_log_stderr("   -v,           --verbose");
+    h9_log_stderr("   -V,           --Version");
     exit(EXIT_FAILURE);
 }
 
 static void usage(void) {
-    h9_log_stderr("usage: h9d [-dDhvV] [-c config_file] [-p pid_file]\n");
+    h9_log_stderr("usage: h9d [-dDhvV] [-c config_file] [-p pid_file]");
     exit(EXIT_FAILURE);
 }
 
 static void version(void) {
-    h9_log_stderr("h9d version %s by SQ8KFH\n", H9D_VERSION);
+    h9_log_stderr("h9d version %s by SQ8KFH", H9D_VERSION);
     exit(EXIT_FAILURE);
 }
 
@@ -182,7 +182,7 @@ int main(int argc, char **argv) {
     }
 
     h9d_cfg_init(cfgfile);
-    h9_log_init(verbose, debug);
+    h9_log_init(verbose, debug, 0);
 
     if (nodaemonize == 1)
         h9d_cfg_setbool("daemonize", h9d_cfg_false);
@@ -203,7 +203,13 @@ int main(int argc, char **argv) {
     h9d_select_event_init();
     h9d_endpoint_init();
 
-    h9d_endpoint_t * endpoint = h9d_endpoint_addnew("/dev/tty.usbserial-DA1ESZ7U");
+    h9d_endpoint_t *endpoint = h9d_endpoint_addnew("/dev/tty.usbserial-DA1ESZ7U", "slcan0");
+    if (!endpoint) {
+        h9d_select_event_free();
+        h9_log_err("cannot open endpoint");
+        h9_log_crit("h9d terminated abnormally");
+        return EXIT_FAILURE;
+    }
     h9d_select_event_add(endpoint->ep_imp->fd, H9D_SELECT_EVENT_READ | H9D_SELECT_EVENT_DISCONNECT,
                          (h9d_select_event_func_t*)h9d_endpoint_process_events, endpoint);
 
@@ -213,7 +219,8 @@ int main(int argc, char **argv) {
 
     h9d_select_event_add(0, H9D_SELECT_EVENT_READ, (h9d_select_event_func_t*)tmp_func, NULL);
 
-    h9d_client_init(h9d_cfg_getint("client_recv_buffer_size"));
+    h9d_client_init(h9d_cfg_getint("client_recv_buffer_size"),
+                    h9d_cfg_getbool("xmlmsg_schema_validation") == h9d_cfg_true ? 1 : 0);
 
     if (h9d_select_event_loop() == 0) {
         h9_log_crit("h9d terminated");

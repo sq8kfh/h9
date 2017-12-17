@@ -15,7 +15,7 @@
 
 static int prefix_socket_recvxml(h9_xmlsocket_t *xmlsocket, h9_xmlsocket_read_callback_t *callback, void *ud);
 static int raw_socket_recvxml(h9_xmlsocket_t *xmlsocket, h9_xmlsocket_read_callback_t *callback, void *ud);
-static int sendall(h9_xmlsocket_t *xmlsocket, char *buf, size_t length);
+static ssize_t sendall(h9_xmlsocket_t *xmlsocket, char *buf, size_t length);
 static void *get_in_sockaddr(struct sockaddr *sa);
 
 h9_xmlsocket_t *h9_xmlsocket_init(int socket, size_t init_buf_size) {
@@ -109,11 +109,10 @@ int h9_xmlsocket_recv(h9_xmlsocket_t *xmlsocket, h9_xmlsocket_read_callback_t *c
     if (nbytes <= 0) {
         if (nbytes == 0) {
             h9_log_debug("xmlsocket: socket %d hung up", xmlsocket->socket_d);
-            return 0;
         } else {
             h9_log_err("xmlsocket recv %s", strerror(errno));
-            return -1;
         }
+        return -1;
     } else {
         xmlsocket->recv_byte_counter += nbytes;
         xmlsocket->in_buf += nbytes;
@@ -145,7 +144,7 @@ int h9_xmlsocket_recv(h9_xmlsocket_t *xmlsocket, h9_xmlsocket_read_callback_t *c
 
 int h9_xmlsocket_send(h9_xmlsocket_t *xmlsocket, const char *msg, size_t length) {
     if (xmlsocket->state == STATE_PREFIX_TRAN) {
-        uint32_t length_n = htonl(*((uint32_t *) length));
+        uint32_t length_n = htonl((uint32_t) length);
 
         if (sendall(xmlsocket, (char *) &length_n, sizeof(length_n)) <= 0) {
             h9_log_err("xmlsocket: send: %s", strerror(errno));
@@ -176,7 +175,7 @@ static int prefix_socket_recvxml(h9_xmlsocket_t *xmlsocket, h9_xmlsocket_read_ca
             h9_log_debug("recv prefix xml %d: %.*s", xmlsocket->msg_size, xmlsocket->msg_size,
                          &xmlsocket->buf[4]);
 
-            if (callback(xmlsocket->buf, xmlsocket->msg_size, callback_data) <= 0) {
+            if (callback(&xmlsocket->buf[4], xmlsocket->msg_size, callback_data) <= 0) {
                 xmlsocket->msg_size = 0;
                 return 0;
             }
@@ -266,7 +265,7 @@ static int raw_socket_recvxml(h9_xmlsocket_t *xmlsocket, h9_xmlsocket_read_callb
     return 1;
 }
 
-static int sendall(h9_xmlsocket_t *xmlsocket, char *buf, size_t length) {
+static ssize_t sendall(h9_xmlsocket_t *xmlsocket, char *buf, size_t length) {
     size_t total = 0;
     size_t bytesleft = length;
     ssize_t n = 0;
@@ -280,7 +279,7 @@ static int sendall(h9_xmlsocket_t *xmlsocket, char *buf, size_t length) {
         bytesleft -= n;
     }
     xmlsocket->send_byte_counter += total;
-    return n == -1 ? -1 : 0; // return -1 on failure, 0 on success
+    return n == -1 ? 0 : total; // return 0 on failure, 1 on success
 }
 
 // get sockaddr, IPv4 or IPv6:

@@ -4,10 +4,13 @@
 
 static int _verbose;
 static int _debug;
+static int _all_to_stderr = 0;
+static char *level_name[7] = {"", "CRIT", "ERROR", "WARN", "NOTICE", "INFO", "DEBUG"};
 
-void h9_log_init(int verbose, int debug) {
+void h9_log_init(int verbose, int debug, int all_to_stderr) {
     _verbose = verbose;
     _debug = debug;
+    _all_to_stderr = all_to_stderr;
 }
 
 void h9_log_set_verbose(int level) {
@@ -27,24 +30,23 @@ void h9_log_vwrite(unsigned int level, const char *file, int line_num, const cha
     if (_verbose < level) {
         return;
     }
-    if (_debug) {
-        switch (level) {
-            case H9_LOG_STDERR:
-                fprintf(stderr, "%s:%d: ", file, line_num);
-                break;
-            default:
-                printf("%s:%d: ", file, line_num);
-                break;
-        }
+
+    FILE *out = stdout;
+    if (_all_to_stderr || level == H9_LOG_STDERR) {
+        out = stderr;
     }
+
     switch (level) {
         case H9_LOG_STDERR:
-            vfprintf(stderr, fmt, args);
-            fprintf(stderr, "\n");
             break;
         default:
-            vprintf(fmt, args);
-            printf("\n");
+            fprintf(out, "%-6s: ", level_name[level]);
             break;
     }
+    if (_debug) {
+        fprintf(out, "%s:%d: ", file, line_num);
+    }
+
+    vfprintf(out, fmt, args);
+    fprintf(out, "\n");
 }

@@ -17,7 +17,7 @@ typedef struct h9d_client_t{
     h9_counter_t send_xmlmsg_counter;
 } h9d_client_t;
 
-void h9d_client_init(size_t recv_buf_size);
+void h9d_client_init(size_t recv_buf_size, int xsd_validate);
 h9d_client_t *h9d_client_addnew(int socket);
 void h9d_client_del(h9d_client_t *cm);
 int h9d_client_process_events(h9d_client_t *ev_data, int event_type, time_t elapsed);

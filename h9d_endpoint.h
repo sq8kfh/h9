@@ -8,6 +8,7 @@
 #include "h9_slcan.h"
 
 typedef struct h9d_endpoint_t {
+    char *endpoint_name;
     h9_slcan_t *ep_imp;
 
     struct h9d_endpoint_t *next;
@@ -18,10 +19,9 @@ typedef struct h9d_endpoint_t {
     h9_counter_t send_msg_counter;
 } h9d_endpoint_t;
 
-typedef unsigned int (h9d_endpoint_callback_t)(h9msg_t *msg, h9d_endpoint_t *ep);
 
 void h9d_endpoint_init(void);
-h9d_endpoint_t *h9d_endpoint_addnew(char *connect_string);
+h9d_endpoint_t *h9d_endpoint_addnew(const char *connect_string, const char *name);
 void h9d_endpoint_del(h9d_endpoint_t *endpoint_struct);
 
 int h9d_endpoint_process_events(h9d_endpoint_t *endpoint_struct, int event_type, time_t elapsed);

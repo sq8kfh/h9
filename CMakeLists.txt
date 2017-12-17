@@ -26,10 +26,13 @@ add_custom_command (
 
 set(H9_MSG h9_xmlmsg.c h9_xmlmsg.h h9msg.xsd.h h9msg.c)
 
-set(SOURCE_FILES h9d.c h9_log.c h9_log.h h9d_cfg.c h9d_cfg.h h9d_select_event.c h9d_select_event.h h9d_server.c h9d_server.h h9d_client.c h9d_client.h ${H9_MSG} h9_xmlsocket.c h9_xmlsocket.h h9d_endpoint.c h9d_endpoint.h h9_msg.c h9_msg.h h9_slcan.c h9_slcan.h h9d_trigger.c h9d_trigger.h)
+set(SOURCE_FILES h9d.c h9_log.c h9_log.h h9d_cfg.c h9d_cfg.h h9d_select_event.c h9d_select_event.h h9d_server.c h9d_server.h h9d_client.c h9d_client.h ${H9_MSG} h9_xmlsocket.c h9_xmlsocket.h h9d_endpoint.c h9d_endpoint.h h9_slcan.c h9_slcan.h h9d_trigger.c h9d_trigger.h)
 
 add_executable(h9d ${SOURCE_FILES})
 TARGET_LINK_LIBRARIES(h9d ${confuse_LIBRARIES} ${libxml2_LIBRARIES})
+
 add_executable(h9send h9send.c)
 TARGET_LINK_LIBRARIES(h9send ${libxml2_LIBRARIES})
-add_executable(h9spy h9spy.c)
+
+add_executable(h9spy h9spy.c h9_log.c h9_log.h h9_xmlsocket.c h9_xmlsocket.h ${H9_MSG})
+TARGET_LINK_LIBRARIES(h9spy ${libxml2_LIBRARIES})

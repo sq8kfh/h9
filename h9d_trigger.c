@@ -53,7 +53,7 @@ void h9d_trigger_add_listener(uint32_t mask, void *ud, h9d_trigger_callback *cal
         tr->ud = ud;
         tr->callback = callback;
     }
-    tr->mask &= mask;
+    tr->mask |= mask;
 }
 
 void h9d_trigger_del_listener(uint32_t mask, void *ud, h9d_trigger_callback *callback) {

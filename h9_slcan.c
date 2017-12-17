@@ -9,8 +9,8 @@
 #include <fcntl.h>
 #include <termios.h>
 
-static unsigned int proces_readed_data(h9_slcan_t *slcan, const char *data, size_t length,
-                                       h9d_endpoint_callback_t *callback, h9d_endpoint_t *callback_data);
+static int proces_readed_data(h9_slcan_t *slcan, const char *data, size_t length,
+                              h9_slcan_recv_callback_t *callback, void *callback_data);
 
 h9_slcan_t *h9_slcan_connect(const char *connect_string, size_t init_buf_size) {
     int fd = open(connect_string, O_RDWR | O_NOCTTY | O_NDELAY);
@@ -74,7 +74,7 @@ void h9_slcan_free(h9_slcan_t *slcan) {
     free(slcan);
 }
 
-int h9_slcan_recv(h9_slcan_t *slcan, h9d_endpoint_callback_t *callback, h9d_endpoint_t *callback_data) {
+int h9_slcan_recv(h9_slcan_t *slcan, h9_slcan_recv_callback_t *callback, void *callback_data) {
     ssize_t nbytes;
 
     if (slcan->in_buf >= slcan->buf_size) {
@@ -89,6 +89,8 @@ int h9_slcan_recv(h9_slcan_t *slcan, h9d_endpoint_callback_t *callback, h9d_endp
     }
 
     nbytes = read(slcan->fd, &slcan->buf[slcan->in_buf], slcan->buf_size - slcan->in_buf);
+
+    int ret = 1;
 
     if (nbytes <= 0) {
         if (nbytes == 0) {
@@ -107,12 +109,10 @@ int h9_slcan_recv(h9_slcan_t *slcan, h9d_endpoint_callback_t *callback, h9d_endp
                              slcan->buf_ptr,
                              slcan->buf);
 
-                proces_readed_data(slcan, slcan->buf, slcan->buf_ptr + 1, callback, callback_data);
-
-                /*if (callback(xmlsocket->buf, xmlsocket->msg_size, callback_data) <= 0) {
-                    xmlsocket->msg_size = 0;
-                    return 0;
-                }*/
+                int res = proces_readed_data(slcan, slcan->buf, slcan->buf_ptr + 1, callback, callback_data);
+                if (res <= 0) { // - 1 bad msg, callback no exec; 0 callbac return error
+                    ret = 0;
+                }
 
                 memmove(slcan->buf, &slcan->buf[slcan->buf_ptr+1],
                         slcan->in_buf - slcan->buf_ptr - 1);
@@ -122,7 +122,7 @@ int h9_slcan_recv(h9_slcan_t *slcan, h9d_endpoint_callback_t *callback, h9d_endp
             }
         }
     }
-    return 1;
+    return ret;
 }
 
 int h9_slcan_send(h9_slcan_t *slcan, const h9msg_t *msg) {
@@ -158,17 +158,16 @@ static h9msg_t *parse_msg(const char *data, size_t length) {
     return res;
 }
 
-static unsigned int proces_readed_data(h9_slcan_t *slcan, const char *data, size_t length,
-                                       h9d_endpoint_callback_t *callback, h9d_endpoint_t *callback_data) {
-    unsigned int res = 0;
+static int proces_readed_data(h9_slcan_t *slcan, const char *data, size_t length,
+                              h9_slcan_recv_callback_t *callback, void *callback_data) {
+    int res = -1;
     if (data[0] == '\r' && length == 1) {
-
+        res = 0;
     }
     else if (data[0] == '\a' && length == 1) {
-
+        res = 0;
     }
     else if (data[0] == 't' && length <= 22) {
-        callback_data->recv_invalid_msg_counter++;
         h9_log_warn("slcan t command not yet implemented");
     }
     else if (data[0] == 'T' && length <= 27) {
@@ -177,31 +176,24 @@ static unsigned int proces_readed_data(h9_slcan_t *slcan, const char *data, size
         h9msg_free(msg);
     }
     else if (data[0] == 'r' && length <= 6) {
-        callback_data->recv_invalid_msg_counter++;
         h9_log_warn("slcan r command not yet implemented");
     }
     else if (data[0] == 'R' && length <= 11) {
-        callback_data->recv_invalid_msg_counter++;
         h9_log_warn("slcan R command not yet implemented");
     }
     else if (data[0] == 'F' && length == 6) {
-        callback_data->recv_invalid_msg_counter++;
         h9_log_warn("slcan F command not yet implemented");
     }
     else if (data[0] == 'v' && length == 6) {
-        callback_data->recv_invalid_msg_counter++;
         h9_log_warn("slcan v command not yet implemented");
     }
     else if (data[0] == 'V' && length == 6) {
-        callback_data->recv_invalid_msg_counter++;
         h9_log_warn("slcan V command not yet implemented");
     }
     else if (data[0] == 'N' && length == 6) {
-        callback_data->recv_invalid_msg_counter++;
         h9_log_warn("slcan N command not yet implemented");
     }
     else {
-        callback_data->recv_invalid_msg_counter++;
         h9_log_err("slcan unknown command %c", data[0]);
     }
     return res;

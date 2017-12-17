@@ -20,6 +20,18 @@
     <xs:element name="h9methodResponse">
     </xs:element>
 
+    <xs:element name="h9subscribe">
+        <xs:complexType>
+            <xs:attribute name="event" type="xs:string" use="required" />
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="h9unsubscribe">
+        <xs:complexType>
+            <xs:attribute name="event" type="xs:string" use="required" />
+        </xs:complexType>
+    </xs:element>
+
     <xs:element name="h9sendmsg" type="h9msg_t"/>
 
     <xs:element name="h9msg" type="h9msg_t"/>

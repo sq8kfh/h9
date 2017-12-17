@@ -2,6 +2,8 @@
 #include "h9d_select_event.h"
 #include "h9_xmlmsg.h"
 #include "h9_log.h"
+#include "h9d_trigger.h"
+
 
 static h9d_client_t *client_list_start;
 //static h9d_client_t *client_list_end;
@@ -11,11 +13,17 @@ static h9_counter_t global_recv_xmlmsg_counter;
 static h9_counter_t global_recv_invalid_xmlmsg_counter;
 static h9_counter_t global_send_xmlmsg_counter;
 
-void h9d_client_init(size_t recv_buf_size) {
+static int xmlmsg_schema_validation;
+
+static void trigger_callback(h9d_client_t *client, uint32_t mask, void *param);
+
+void h9d_client_init(size_t recv_buf_size, int xsd_validate) {
     init_buffer_size = recv_buf_size;
 
     client_list_start = NULL;
     //client_list_end = NULL;
+
+    xmlmsg_schema_validation = xsd_validate;
 }
 
 h9d_client_t *h9d_client_addnew(int socket) {
@@ -71,6 +79,8 @@ void h9d_client_del(h9d_client_t *client_struct) {
         }
     }
 
+    h9d_trigger_del_listener(H9D_TRIGGER_ALL, client_struct, (h9d_trigger_callback*)trigger_callback);
+
     h9_xmlsocket_free(client_struct->xmlsocket);
     free(client_struct);
 }
@@ -79,10 +89,17 @@ static unsigned int process_xmlmsg(const char *msg, size_t length, h9d_client_t 
     client_struct->recv_xmlmsg_counter++;
 
     void *res;
-    int ret = h9_xmlmsg_parse(msg, length, 1, &res);
+    int ret = h9_xmlmsg_parse(msg, length, &res, xmlmsg_schema_validation);
 
     if (ret == H9_XMLMSG_H9SENDMSG && res) {
+
         //printf("msg: %d\n", (int)((h9msg_t*)res)->destination_id);
+    }
+    else if (ret == H9_XMLMSG_H9SUBSCRIBE) {
+        h9d_trigger_add_listener(H9D_TRIGGER_RECV_MSG, client_struct, (h9d_trigger_callback*)trigger_callback);
+    }
+    else if (ret == H9_XMLMSG_H9UNSUBSCRIBE) {
+        h9d_trigger_del_listener(H9D_TRIGGER_RECV_MSG, client_struct, (h9d_trigger_callback*)trigger_callback);
     }
     else {
         client_struct->recv_invalid_xmlmsg_counter++;
@@ -102,4 +119,17 @@ int h9d_client_process_events(h9d_client_t *client_struct, int event_type, time_
         return H9D_SELECT_EVENT_RETURN_DEL;
     }
     return H9D_SELECT_EVENT_RETURN_OK;
+}
+
+static void trigger_callback(h9d_client_t *client, uint32_t mask, void *param) {
+    size_t length;
+    char *buf;
+    switch (mask) {
+        case H9D_TRIGGER_RECV_MSG:
+            buf = h9_xmlmsg_build_h9msg(&length, param, xmlmsg_schema_validation);
+            if (buf) {
+                h9_xmlsocket_send(client->xmlsocket, buf, length);
+            }
+            break;
+    }
 }

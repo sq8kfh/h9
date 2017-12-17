@@ -19,7 +19,7 @@
 #define h9_log_info(fmt, ...) h9_log_write(H9_LOG_INFO, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
 #define h9_log_debug(fmt, ...) h9_log_write(H9_LOG_DEBUG, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
 
-void h9_log_init(int verbose, int debug);
+void h9_log_init(int verbose, int debug, int all_to_stderr);
 void h9_log_set_verbose(int level);
 void h9_log_write(unsigned int level, const char *file, int line_num, const char *fmt, ...);
 void h9_log_vwrite(unsigned int level, const char *file, int line_num, const char *fmt, va_list args);
