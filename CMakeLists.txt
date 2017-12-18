@@ -15,8 +15,8 @@ pkg_check_modules(libxml2 libxml-2.0)
 
 configure_file(config.h.in config.h)
 
-include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR} ${LIBXML2_INCLUDE_DIR})
-
+include_directories(/usr/local/include/ ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR} ${LIBXML2_INCLUDE_DIR})
+link_directories(/usr/local/lib/)
 
 add_custom_command (
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/h9msg.xsd.h

@@ -2,6 +2,7 @@
 #define _H9_XMLSOCKET_H_
 
 #include <stdlib.h>
+#include <stdint.h>
 
 typedef struct {
     int socket_d;

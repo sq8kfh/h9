@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <getopt.h>
 #include <errno.h>
+#include <signal.h>
 #include <sys/stat.h>
 #include <sys/file.h>
 

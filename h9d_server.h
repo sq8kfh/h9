@@ -2,6 +2,7 @@
 #define _H9D_SERVER_H_
 
 #include <stdlib.h>
+#include <stdint.h>
 #include <time.h>
 
 typedef struct {

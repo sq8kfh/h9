@@ -2,6 +2,7 @@
 #define _H9D_TRIGGER_H_
 
 #include <stdlib.h>
+#include <stdint.h>
 
 #define H9D_TRIGGER_ALL 0xffffffff
 #define H9D_TRIGGER_TIMMER   (1<<0)

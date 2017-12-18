@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>
+#include <signal.h>
 
 #include "h9_log.h"
 #include "h9_xmlsocket.h"
