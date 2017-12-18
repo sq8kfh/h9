@@ -10,12 +10,25 @@
 #include <termios.h>
 #include <ctype.h>
 
+static void send_next(h9_slcan_t *slcan, int ack);
 static char *strndup_unescaped(const char *ptr, size_t n);
 static size_t build_msg(char *slcan_data, const h9msg_t *msg);
 static int proces_readed_data(h9_slcan_t *slcan, const char *data, size_t length,
                               h9_slcan_recv_callback_t *callback, void *callback_data);
 
+typedef struct queue_t {
+    struct queue_t *next;
+    char *msg;
+    size_t length;
+} queue_t;
+
+queue_t *msg_queue_start;
+queue_t *msg_queue_end;
+
 h9_slcan_t *h9_slcan_connect(const char *connect_string, size_t init_buf_size) {
+    msg_queue_start = NULL;
+    msg_queue_end = NULL;
+
     int fd = open(connect_string, O_RDWR | O_NOCTTY | O_NDELAY);
     if (fd == -1) {
         h9_log_err("open tty: %s", strerror(errno));
@@ -110,15 +123,22 @@ int h9_slcan_recv(h9_slcan_t *slcan, h9_slcan_recv_callback_t *callback, void *c
             size_t i;
             for (i = slcan->buf_ptr; i < slcan->in_buf; ++i) {
                 if (slcan->buf[i] == '\r' || slcan->buf[i] == '\a') {
-                    char *tmp = strndup_unescaped(slcan->buf, i + 1);
+                    /*char *tmp = strndup_unescaped(slcan->buf, i + 1);
                     h9_log_debug("slcan read %d: '%s'", i + 1, tmp);
-                    free(tmp);
+                    free(tmp);*/
 
-                    int res = proces_readed_data(slcan, slcan->buf, i + 1, callback, callback_data);
-                    if (res <= 0) { // - 1 bad msg, callback no exec; 0 callbac return error
-                        ret = 0;
+                    if (i > 0) { //length > 1
+                        int res = proces_readed_data(slcan, slcan->buf, i + 1, callback, callback_data);
+                        if (res <= 0) { // - 1 bad msg, callback no exec; 0 callbac return error
+                            char *tmp = strndup_unescaped(slcan->buf, i + 1);
+                            h9_log_warn("slcan read inv %d: '%s'", i + 1, tmp);
+                            free(tmp);
+                            ret = 0;
+                        }
                     }
-
+                    else { //ack, nack
+                        send_next(slcan, 1);
+                    }
                     memmove(slcan->buf, &slcan->buf[i + 1],
                             slcan->in_buf - i - 1);
 
@@ -135,25 +155,55 @@ int h9_slcan_recv(h9_slcan_t *slcan, h9_slcan_recv_callback_t *callback, void *c
 }
 
 int h9_slcan_send(h9_slcan_t *slcan, const h9msg_t *msg) {
-    char buf[30];
-    size_t res = build_msg(buf, msg);
+    queue_t *q = malloc(sizeof(queue_t));
+    q->msg = malloc(sizeof(char) * 30);
+    q->length = build_msg(q->msg, msg);
+    q->next = NULL;
 
-    ssize_t nbyte = write(slcan->fd, buf, res);
-    if (nbyte <= 0) {
-        if (nbyte == 0) {
-            h9_log_err("slcan closed fd");
-        } else {
-            h9_log_err("slcan write %s", strerror(errno));
-        }
-        return -1;
+    if (msg_queue_start == NULL) {
+        msg_queue_start = q;
+        msg_queue_end = q;
+
+        send_next(slcan, 0);
+    }
+    else {
+        msg_queue_end->next = q;
+        msg_queue_end = q;
     }
 
-    char *tmp = strndup_unescaped(buf, nbyte);
-    h9_log_debug("slcan write %d: '%s'", nbyte, tmp);
-    free(tmp);
-
-    slcan->write_byte_counter += nbyte;
     return 1;
+}
+
+static void send_next(h9_slcan_t *slcan, int ack) {
+    if (msg_queue_start != NULL) {
+        if (ack) {
+            queue_t *q = msg_queue_start;
+            msg_queue_start = msg_queue_start->next;
+            if (q == msg_queue_end) {
+                msg_queue_end = NULL;
+            }
+
+            free(q->msg);
+            free(q);
+        }
+        if (msg_queue_start != NULL) {
+            ssize_t nbyte = write(slcan->fd, msg_queue_start->msg, msg_queue_start->length);
+            if (nbyte <= 0) {
+                if (nbyte == 0) {
+                    h9_log_err("slcan closed fd");
+                } else {
+                    h9_log_err("slcan write %s", strerror(errno));
+                }
+                return;
+            }
+
+            char *tmp = strndup_unescaped(msg_queue_start->msg, nbyte);
+            h9_log_debug("slcan write %d: '%s'", nbyte, tmp);
+            free(tmp);
+
+            slcan->write_byte_counter += nbyte;
+        }
+    }
 }
 
 static char *strndup_unescaped(const char *ptr, size_t n) {

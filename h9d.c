@@ -110,13 +110,6 @@ static void savepid(void) {
     }
 }
 
-int tmp_func(void * ud, int event_type, int timer) {
-    printf("Data is available now.\n");
-    char buf[100];
-    read(1, buf, 100);
-    return 0;
-}
-
 void sighandler(int signum) {
     h9_log_err("caught signal %d", signum);
     h9d_select_event_stop();
@@ -219,12 +212,14 @@ int main(int argc, char **argv) {
     h9d_select_event_add(sm->socket_d, H9D_SELECT_EVENT_READ | H9D_SELECT_EVENT_DISCONNECT,
                          (h9d_select_event_func_t*)h9d_server_process_events, sm);
 
-    h9d_select_event_add(0, H9D_SELECT_EVENT_READ, (h9d_select_event_func_t*)tmp_func, NULL);
-
     h9d_client_init((size_t)h9d_cfg_getint("client_recv_buffer_size"),
                     h9d_cfg_getbool("xmlmsg_schema_validation") == h9d_cfg_true ? 1 : 0);
 
     if (h9d_select_event_loop(h9d_cfg_getint("time_trigger_period")) == 0) {
+        //h9d_endpoint_free();
+        //h9d_endpoint_free();
+        h9d_trigger_free();
+
         h9_log_crit("h9d terminated");
         return EXIT_SUCCESS;
     }

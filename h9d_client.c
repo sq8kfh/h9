@@ -131,6 +131,7 @@ static void trigger_callback(h9d_client_t *client, uint32_t mask, void *param) {
             buf = h9_xmlmsg_build_h9msg(&length, param, xmlmsg_schema_validation);
             if (buf) {
                 h9_xmlsocket_send(client->xmlsocket, buf, length);
+                free(buf);
             }
             break;
     }

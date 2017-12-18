@@ -76,6 +76,8 @@ void h9d_trigger_del_listener(uint32_t mask, void *ud, h9d_trigger_callback *cal
             tr->next->prev = tr->prev;
         }
     }
+
+    free(tr);
 }
 
 static h9d_trigger_t *find(void *ud, h9d_trigger_callback *callback) {

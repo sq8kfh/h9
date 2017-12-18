@@ -35,7 +35,7 @@ static void version(void) {
 }
 
 int main(int argc, char **argv) {
-    int verbose = H9_LOG_WARN;
+    int verbose = H9_LOG_STDERR;
     int debug = 0;
 
     h9msg_t *msg = h9msg_init();
@@ -85,6 +85,7 @@ int main(int argc, char **argv) {
                 //port = optarg;
                 break;
             case 'v':
+                if (!verbose) verbose = H9_LOG_WARN;
                 ++verbose;
                 break;
             case 'V':
@@ -143,6 +144,10 @@ int main(int argc, char **argv) {
     }
 
     h9_xmlsocket_t *xmlsocket = h9_xmlsocket_connect("127.0.0.1", "7878", 100);
+    if (! xmlsocket) {
+        h9_log_stderr("Connection error");
+        return EXIT_FAILURE;
+    }
 
     if (! h9_xmlsocket_send(xmlsocket, xmlmsg, length)) {
         h9_log_stderr("Send error");

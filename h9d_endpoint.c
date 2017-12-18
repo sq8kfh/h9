@@ -79,6 +79,9 @@ void h9d_endpoint_del(h9d_endpoint_t *endpoint_struct) {
 
 static unsigned int process_msg(h9msg_t *msg, h9d_endpoint_t *endpoint_struct) {
     endpoint_struct->recv_msg_counter++;
+    if (msg->endpoint) {
+        free(msg->endpoint);
+    }
     msg->endpoint = strdup(endpoint_struct->endpoint_name);
 
     h9_log_info("rcv msg: priority: %u type: %u src: %u dest: %u",
@@ -118,6 +121,7 @@ int h9d_endpoint_send_msg(h9msg_t *msg) {
 
     for (h9d_endpoint_t *ep = endpoint_list_start; ep; ep = ep->next) {
         h9_slcan_send(ep->ep_imp, msg);
+        ep->send_msg_counter++;
     }
 
     return 1;
