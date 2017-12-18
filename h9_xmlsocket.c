@@ -110,7 +110,7 @@ int h9_xmlsocket_recv(h9_xmlsocket_t *xmlsocket, h9_xmlsocket_read_callback_t *c
 
     if (nbytes <= 0) {
         if (nbytes == 0) {
-            h9_log_debug("xmlsocket: socket %d hung up", xmlsocket->socket_d);
+            h9_log_notice("xmlsocket: socket %d hung up", xmlsocket->socket_d);
         } else {
             h9_log_err("xmlsocket recv %s", strerror(errno));
         }

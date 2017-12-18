@@ -190,6 +190,7 @@ int main(int argc, char **argv) {
     h9_log_set_verbose(verbose);
 
     daemonize();
+    h9_log_notice("h9d started");
     savepid();
 
     signal(SIGINT, sighandler);

@@ -10,15 +10,16 @@
 #include <termios.h>
 #include <ctype.h>
 
-static void send_next(h9_slcan_t *slcan, int ack);
+static int send_first(h9_slcan_t *slcan);
+static int send_ack(h9_slcan_t *slcan, onselect_callback_t *send_callback, void *callback_data);
 static char *strndup_unescaped(const char *ptr, size_t n);
 static size_t build_msg(char *slcan_data, const h9msg_t *msg);
 static int proces_readed_data(h9_slcan_t *slcan, const char *data, size_t length,
-                              h9_slcan_recv_callback_t *callback, void *callback_data);
+                              onselect_callback_t *callback, void *callback_data);
 
 typedef struct queue_t {
     struct queue_t *next;
-    char *msg;
+    char msg[30];
     size_t length;
 } queue_t;
 
@@ -90,7 +91,10 @@ void h9_slcan_free(h9_slcan_t *slcan) {
     free(slcan);
 }
 
-int h9_slcan_recv(h9_slcan_t *slcan, h9_slcan_recv_callback_t *callback, void *callback_data) {
+int h9_slcan_onselect_event(h9_slcan_t *slcan,
+                            onselect_callback_t *recv_callback,
+                            onselect_callback_t *send_callback,
+                            void *callback_data) {
     ssize_t nbytes;
 
     if (slcan->in_buf >= slcan->buf_size) {
@@ -100,13 +104,13 @@ int h9_slcan_recv(h9_slcan_t *slcan, h9_slcan_recv_callback_t *callback, void *c
 
         if (slcan->buf == NULL) {
             h9_log_err("slcan: realloc: %s", strerror(errno));
-            return -1;
+            return ONSELECT_CRITICAL;
         }
     }
 
     nbytes = read(slcan->fd, &slcan->buf[slcan->in_buf], slcan->buf_size - slcan->in_buf);
 
-    int ret = 1;
+    int ret = ONSELECT_SUCCESS;
 
     if (nbytes <= 0) {
         if (nbytes == 0) {
@@ -114,7 +118,7 @@ int h9_slcan_recv(h9_slcan_t *slcan, h9_slcan_recv_callback_t *callback, void *c
         } else {
             h9_log_err("slcan read %s", strerror(errno));
         }
-        return -1;
+        return ONSELECT_CRITICAL;
     } else {
         slcan->read_byte_counter += nbytes;
         slcan->in_buf += nbytes;
@@ -123,21 +127,21 @@ int h9_slcan_recv(h9_slcan_t *slcan, h9_slcan_recv_callback_t *callback, void *c
             size_t i;
             for (i = slcan->buf_ptr; i < slcan->in_buf; ++i) {
                 if (slcan->buf[i] == '\r' || slcan->buf[i] == '\a') {
-                    /*char *tmp = strndup_unescaped(slcan->buf, i + 1);
-                    h9_log_debug("slcan read %d: '%s'", i + 1, tmp);
-                    free(tmp);*/
-
-                    if (i > 0) { //length > 1
-                        int res = proces_readed_data(slcan, slcan->buf, i + 1, callback, callback_data);
-                        if (res <= 0) { // - 1 bad msg, callback no exec; 0 callbac return error
+                    if (i > 0) { //length > 1 - message
+                        if (!proces_readed_data(slcan, slcan->buf, i + 1, recv_callback, callback_data)) {
                             char *tmp = strndup_unescaped(slcan->buf, i + 1);
-                            h9_log_warn("slcan read inv %d: '%s'", i + 1, tmp);
+                            h9_log_warn("slcan read invalid %d: '%s'", i + 1, tmp);
                             free(tmp);
-                            ret = 0;
+                        }
+                        else {
+                            char *tmp = strndup_unescaped(slcan->buf, i + 1);
+                            h9_log_debug("slcan read %d: '%s'", i + 1, tmp);
+                            free(tmp);
                         }
                     }
                     else { //ack, nack
-                        send_next(slcan, 1);
+                        h9_log_debug("slcan read: %s", slcan->buf[i] == '\r' ? "ACK" : "NACK");
+                        ret = send_ack(slcan, send_callback, callback_data);
                     }
                     memmove(slcan->buf, &slcan->buf[i + 1],
                             slcan->in_buf - i - 1);
@@ -156,54 +160,59 @@ int h9_slcan_recv(h9_slcan_t *slcan, h9_slcan_recv_callback_t *callback, void *c
 
 int h9_slcan_send(h9_slcan_t *slcan, const h9msg_t *msg) {
     queue_t *q = malloc(sizeof(queue_t));
-    q->msg = malloc(sizeof(char) * 30);
     q->length = build_msg(q->msg, msg);
     q->next = NULL;
+
+    int ret = ONSELECT_SUCCESS;
 
     if (msg_queue_start == NULL) {
         msg_queue_start = q;
         msg_queue_end = q;
 
-        send_next(slcan, 0);
+        ret = send_first(slcan);
     }
     else {
         msg_queue_end->next = q;
         msg_queue_end = q;
     }
 
-    return 1;
+    return ret;
 }
 
-static void send_next(h9_slcan_t *slcan, int ack) {
+static int send_first(h9_slcan_t *slcan) {
     if (msg_queue_start != NULL) {
-        if (ack) {
-            queue_t *q = msg_queue_start;
-            msg_queue_start = msg_queue_start->next;
-            if (q == msg_queue_end) {
-                msg_queue_end = NULL;
+        ssize_t nbyte = write(slcan->fd, msg_queue_start->msg, msg_queue_start->length);
+        if (nbyte <= 0) {
+            if (nbyte == 0) {
+                h9_log_err("slcan closed fd");
+            } else {
+                h9_log_err("slcan write %s", strerror(errno));
             }
-
-            free(q->msg);
-            free(q);
+            return ONSELECT_CRITICAL;
         }
-        if (msg_queue_start != NULL) {
-            ssize_t nbyte = write(slcan->fd, msg_queue_start->msg, msg_queue_start->length);
-            if (nbyte <= 0) {
-                if (nbyte == 0) {
-                    h9_log_err("slcan closed fd");
-                } else {
-                    h9_log_err("slcan write %s", strerror(errno));
-                }
-                return;
-            }
 
-            char *tmp = strndup_unescaped(msg_queue_start->msg, nbyte);
-            h9_log_debug("slcan write %d: '%s'", nbyte, tmp);
-            free(tmp);
+        char *tmp = strndup_unescaped(msg_queue_start->msg, nbyte);
+        h9_log_debug("slcan write %d: '%s'", nbyte, tmp);
+        free(tmp);
 
-            slcan->write_byte_counter += nbyte;
-        }
+        slcan->write_byte_counter += nbyte;
     }
+    return ONSELECT_SUCCESS;
+}
+
+static int send_ack(h9_slcan_t *slcan, onselect_callback_t *send_callback, void *callback_data) {
+    if (msg_queue_start != NULL) {
+        queue_t *q = msg_queue_start;
+        msg_queue_start = msg_queue_start->next;
+        if (q == msg_queue_end) {
+            msg_queue_end = NULL;
+        }
+
+        send_callback(NULL, callback_data);
+
+        free(q);
+    }
+    return send_first(slcan);
 }
 
 static char *strndup_unescaped(const char *ptr, size_t n) {
@@ -283,21 +292,16 @@ static h9msg_t *parse_msg(const char *data, size_t length) {
 }
 
 static int proces_readed_data(h9_slcan_t *slcan, const char *data, size_t length,
-                              h9_slcan_recv_callback_t *callback, void *callback_data) {
-    int res = -1;
-    if (data[0] == '\r' && length == 1) {
-        res = 0;
-    }
-    else if (data[0] == '\a' && length == 1) {
-        res = 0;
-    }
-    else if (data[0] == 't' && length <= 22) {
+                              onselect_callback_t *callback, void *callback_data) {
+    int res = 0;
+    if (data[0] == 't' && length <= 22) {
         h9_log_warn("slcan t command not yet implemented");
     }
     else if (data[0] == 'T' && length <= 27) {
         h9msg_t *msg = parse_msg(data, length);
-        res = callback(msg, callback_data);
+        callback(msg, callback_data);
         h9msg_free(msg);
+        res = 1;
     }
     else if (data[0] == 'r' && length <= 6) {
         h9_log_warn("slcan r command not yet implemented");
@@ -319,6 +323,9 @@ static int proces_readed_data(h9_slcan_t *slcan, const char *data, size_t length
     }
     else {
         h9_log_err("slcan unknown command %c", data[0]);
+    }
+    if (res == 0) {
+        callback(NULL, callback_data);
     }
     return res;
 }

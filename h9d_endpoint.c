@@ -32,6 +32,9 @@ h9d_endpoint_t *h9d_endpoint_addnew(const char *connect_string, const char *name
     ep->recv_msg_counter = 0;
     ep->send_msg_counter = 0;
 
+    ep->msq_in_queue = 0;
+    ep->throttle = 0;
+
     ep->next = NULL;
     ep->prev = NULL;
 
@@ -77,33 +80,41 @@ void h9d_endpoint_del(h9d_endpoint_t *endpoint_struct) {
     free(endpoint_struct);
 }
 
-static unsigned int process_msg(h9msg_t *msg, h9d_endpoint_t *endpoint_struct) {
+static void on_recv(h9msg_t *msg, h9d_endpoint_t *endpoint_struct) {
     endpoint_struct->recv_msg_counter++;
+    if (msg == NULL) {
+        endpoint_struct->recv_invalid_msg_counter++;
+        return;
+    }
+
     if (msg->endpoint) {
         free(msg->endpoint);
     }
     msg->endpoint = strdup(endpoint_struct->endpoint_name);
 
-    h9_log_info("rcv msg: priority: %u type: %u src: %u dest: %u",
-                  (uint32_t)msg->priority, (uint32_t)msg->type,
-                  (uint32_t)msg->source_id, (uint32_t)msg->destination_id);
-    //endpoint_struct->recv_invalid_msg_counter++;
+    h9_log_info("receive msg: %hu->%hu priority: %c; type: %hhu; dlc: %hhu; endpoint '%s'",
+           msg->source_id, msg->destination_id,
+           msg->priority == H9_MSG_PRIORITY_HIGH ? 'H' : 'L',
+           msg->type, msg->dlc,
+           msg->endpoint);
 
     h9d_trigger_call(H9D_TRIGGER_RECV_MSG, msg);
+}
 
-    return 1;
+static void on_send(h9msg_t *msg, h9d_endpoint_t *endpoint_struct) {
+    endpoint_struct->send_msg_counter++;
+    endpoint_struct->msq_in_queue--;
+
 }
 
 int h9d_endpoint_process_events(h9d_endpoint_t *endpoint_struct, int event_type, time_t elapsed){
     if (event_type & H9D_SELECT_EVENT_READ) {
-        int res = h9_slcan_recv(endpoint_struct->ep_imp, (h9_slcan_recv_callback_t*)process_msg, endpoint_struct);
-        if (res <= 0) {
-            if (res < 0) {
-                return H9D_SELECT_EVENT_RETURN_DISCONNECT;
-            }
-            else {
-                endpoint_struct->recv_invalid_msg_counter++;
-            }
+        int res = h9_slcan_onselect_event(endpoint_struct->ep_imp,
+                                          (onselect_callback_t*)on_recv,
+                                          (onselect_callback_t*)on_send,
+                                          endpoint_struct);
+        if (res == ONSELECT_CRITICAL) {
+            return H9D_SELECT_EVENT_RETURN_DISCONNECT;
         }
     }
     if (event_type & H9D_SELECT_EVENT_DISCONNECT) {
@@ -120,8 +131,19 @@ int h9d_endpoint_send_msg(h9msg_t *msg) {
     msg->endpoint = strdup("h9d");
 
     for (h9d_endpoint_t *ep = endpoint_list_start; ep; ep = ep->next) {
-        h9_slcan_send(ep->ep_imp, msg);
-        ep->send_msg_counter++;
+        if (ep->throttle) {
+            if (ep->msq_in_queue < ep->throttle) {
+                ep->msq_in_queue++;
+                h9_slcan_send(ep->ep_imp, msg);
+            }
+            else {
+                return 0; //throttled
+            }
+        }
+        else {
+            ep->msq_in_queue++;
+            h9_slcan_send(ep->ep_imp, msg);
+        }
     }
 
     return 1;

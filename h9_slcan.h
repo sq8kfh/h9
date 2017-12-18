@@ -16,13 +16,21 @@ typedef struct {
     uint32_t write_byte_counter;
 } h9_slcan_t;
 
-typedef unsigned int (h9_slcan_recv_callback_t)(h9msg_t *msg, void *callback_data);
 
+#define ONSELECT_SUCCESS  0
+#define ONSELECT_ERROR    1
+#define ONSELECT_CRITICAL 2
+
+typedef void (onselect_callback_t)(h9msg_t *msg, void *callback_data);
 
 h9_slcan_t *h9_slcan_connect(const char *connect_string, size_t init_buf_size);
 void h9_slcan_free(h9_slcan_t *slcan);
 
-int h9_slcan_recv(h9_slcan_t *slcan, h9_slcan_recv_callback_t *callback, void *callback_data);
+int h9_slcan_onselect_event(h9_slcan_t *slcan,
+                            onselect_callback_t *recv_callback,
+                            onselect_callback_t *send_callback,
+                            void *callback_data);
+
 int h9_slcan_send(h9_slcan_t *slcan, const h9msg_t *msg);
 
 #endif //_H9_SLCAN_H_

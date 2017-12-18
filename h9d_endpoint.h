@@ -14,6 +14,9 @@ typedef struct h9d_endpoint_t {
     struct h9d_endpoint_t *next;
     struct h9d_endpoint_t *prev;
 
+    unsigned int msq_in_queue;
+    unsigned int throttle;
+
     h9_counter_t recv_msg_counter;
     h9_counter_t recv_invalid_msg_counter;
     h9_counter_t send_msg_counter;

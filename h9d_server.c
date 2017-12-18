@@ -84,7 +84,7 @@ int h9d_server_process_events(h9d_server_t *ev_data, int event_type, time_t elap
         if (newfd == -1) {
             perror("accept");
         } else {
-            h9_log_debug("selectserver: new connection from %s on socket %d",
+            h9_log_notice("selectserver: new connection from %s on socket %d",
                          inet_ntop(remoteaddr.ss_family, \
                          get_in_addr((struct sockaddr*)&remoteaddr), remoteIP, INET6_ADDRSTRLEN), newfd);
 
