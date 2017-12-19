@@ -16,6 +16,8 @@
 #include "h9d_trigger.h"
 #include "h9d_metricses.h"
 
+#define DEFAULT_LOG_LEVEL H9_LOG_WARN
+
 static void help(void) {
     h9_log_stderr("usage: h9d [-dDhvV] [-c config_file] [-p pid_file]");
     h9_log_stderr("");
@@ -117,7 +119,7 @@ void sighandler(int signum) {
 }
 
 int main(int argc, char **argv) {
-    int verbose = H9_LOG_WARN;
+    int verbose = DEFAULT_LOG_LEVEL;
     int nodaemonize = 0;
     int debug = 0;
     char *pidfile = NULL;
@@ -182,7 +184,9 @@ int main(int argc, char **argv) {
     if (nodaemonize == 1)
         h9d_cfg_setbool("daemonize", h9d_cfg_false);
 
-    if (verbose > 0)
+    if (verbose == DEFAULT_LOG_LEVEL)
+        verbose = h9d_cfg_getint("verbose");
+    else
         h9d_cfg_setint("verbose", verbose + 1);
 
     if (pidfile)
