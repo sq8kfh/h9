@@ -23,7 +23,9 @@ typedef struct {
 
 typedef void (onselect_callback_t)(h9msg_t *msg, void *callback_data);
 
-h9_slcan_t *h9_slcan_connect(const char *connect_string, size_t init_buf_size);
+h9_slcan_t *h9_slcan_connect(const char *connect_string,
+                             size_t init_buf_size,
+                             int nonblock);
 void h9_slcan_free(h9_slcan_t *slcan);
 
 int h9_slcan_onselect_event(h9_slcan_t *slcan,

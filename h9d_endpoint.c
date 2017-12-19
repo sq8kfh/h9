@@ -11,7 +11,6 @@
 #include <fcntl.h>
 #include <termios.h>
 
-#define INIT_BUF_SIZE 100
 
 static h9d_endpoint_t *endpoint_list_start;
 
@@ -19,21 +18,29 @@ void h9d_endpoint_init(void) {
     endpoint_list_start = NULL;
 }
 
-h9d_endpoint_t *h9d_endpoint_addnew(const char *connect_string, const char *name) {
+h9d_endpoint_t *h9d_endpoint_addnew(const char *connect_string, const char *name,
+                                    size_t recv_buf_size,
+                                    unsigned int throttle_level,
+                                    int nonblock) {
     h9d_endpoint_t *ep = malloc(sizeof(h9d_endpoint_t));
     ep->endpoint_name = strdup(name);
 
-    ep->ep_imp = h9_slcan_connect(connect_string, INIT_BUF_SIZE);
+    ep->ep_imp = h9_slcan_connect(connect_string, recv_buf_size, nonblock);
     if (!ep->ep_imp) {
         free(ep);
         return NULL;
     }
     ep->recv_invalid_msg_counter = 0;
+    ep->last_readed_throttled_counter = 0;
     ep->recv_msg_counter = 0;
+    ep->last_readed_recv_msg_counter = 0;
     ep->send_msg_counter = 0;
+    ep->last_readed_send_msg_counter = 0;
+    ep->throttled_counter = 0;
+    ep->last_readed_throttled_counter = 0;
 
     ep->msq_in_queue = 0;
-    ep->throttle = 0;
+    ep->throttle_level = throttle_level;
 
     ep->next = NULL;
     ep->prev = NULL;
@@ -107,7 +114,7 @@ static void on_send(h9msg_t *msg, h9d_endpoint_t *endpoint_struct) {
 
 }
 
-int h9d_endpoint_process_events(h9d_endpoint_t *endpoint_struct, int event_type, time_t elapsed){
+int h9d_endpoint_process_events(h9d_endpoint_t *endpoint_struct, int event_type){
     if (event_type & H9D_SELECT_EVENT_READ) {
         int res = h9_slcan_onselect_event(endpoint_struct->ep_imp,
                                           (onselect_callback_t*)on_recv,
@@ -131,12 +138,13 @@ int h9d_endpoint_send_msg(h9msg_t *msg) {
     msg->endpoint = strdup("h9d");
 
     for (h9d_endpoint_t *ep = endpoint_list_start; ep; ep = ep->next) {
-        if (ep->throttle) {
-            if (ep->msq_in_queue < ep->throttle) {
+        if (ep->throttle_level) {
+            if (ep->msq_in_queue < ep->throttle_level) {
                 ep->msq_in_queue++;
                 h9_slcan_send(ep->ep_imp, msg);
             }
             else {
+                ep->throttled_counter++;
                 return 0; //throttled
             }
         }
@@ -147,4 +155,15 @@ int h9d_endpoint_send_msg(h9msg_t *msg) {
     }
 
     return 1;
+}
+
+h9d_endpoint_t *h9d_endpoint_first_endpoint(void) {
+    return endpoint_list_start;
+}
+
+h9d_endpoint_t *h9d_endpoint_getnext_endpoint(const h9d_endpoint_t *ep) {
+    if (ep) {
+        return ep->next;
+    }
+    return NULL;
 }

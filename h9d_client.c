@@ -35,8 +35,11 @@ h9d_client_t *h9d_client_addnew(int socket) {
     client_struct->prev = NULL;
 
     client_struct->recv_invalid_xmlmsg_counter = 0;
+    client_struct->last_readed_recv_invalid_xmlmsg_counter = 0;
     client_struct->recv_xmlmsg_counter = 0;
+    client_struct->last_readed_recv_xmlmsg_counter = 0;
     client_struct->send_xmlmsg_counter = 0;
+    client_struct->last_readed_send_xmlmsg_counter = 0;
 
     if (client_list_start) {
         client_struct->next = client_list_start;
@@ -110,7 +113,7 @@ static unsigned int process_xmlmsg(const char *msg, size_t length, h9d_client_t 
     return 1;
 }
 
-int h9d_client_process_events(h9d_client_t *client_struct, int event_type, time_t elapsed) {
+int h9d_client_process_events(h9d_client_t *client_struct, int event_type) {
     if (event_type & H9D_SELECT_EVENT_READ) {
         if (h9_xmlsocket_recv(client_struct->xmlsocket, (h9_xmlsocket_read_callback_t*)process_xmlmsg, client_struct) <= 0) {
             return H9D_SELECT_EVENT_RETURN_DISCONNECT;
@@ -121,6 +124,17 @@ int h9d_client_process_events(h9d_client_t *client_struct, int event_type, time_
         return H9D_SELECT_EVENT_RETURN_DEL;
     }
     return H9D_SELECT_EVENT_RETURN_OK;
+}
+
+h9d_client_t *h9d_client_first_endpoint(void) {
+    return client_list_start;
+}
+
+h9d_client_t *h9d_client_getnext_endpoint(const h9d_client_t *c) {
+    if (c) {
+        return c->next;
+    }
+    return NULL;
 }
 
 static void trigger_callback(h9d_client_t *client, uint32_t mask, void *param) {

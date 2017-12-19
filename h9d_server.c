@@ -71,7 +71,7 @@ void h9d_server_free(h9d_server_t *server) {
     free(server);
 }
 
-int h9d_server_process_events(h9d_server_t *ev_data, int event_type, time_t elapsed) {
+int h9d_server_process_events(h9d_server_t *ev_data, int event_type) {
     if (event_type & H9D_SELECT_EVENT_READ) {
         int newfd;
         struct sockaddr_storage remoteaddr;

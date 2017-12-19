@@ -26,17 +26,22 @@ typedef struct queue_t {
 queue_t *msg_queue_start;
 queue_t *msg_queue_end;
 
-h9_slcan_t *h9_slcan_connect(const char *connect_string, size_t init_buf_size) {
+h9_slcan_t *h9_slcan_connect(const char *connect_string,
+                             size_t init_buf_size,
+                             int nonblock) {
     msg_queue_start = NULL;
     msg_queue_end = NULL;
 
     int fd = open(connect_string, O_RDWR | O_NOCTTY | O_NDELAY);
     if (fd == -1) {
-        h9_log_err("open tty: %s", strerror(errno));
+        h9_log_err("open tty[%s]: %s", connect_string, strerror(errno));
         return NULL;
     }
     else {
-        fcntl(fd, F_SETFL, 0);
+        if (nonblock)
+            fcntl(fd, F_SETFL, O_NONBLOCK);
+        else
+            fcntl(fd, F_SETFL, 0);
     }
 
     struct termios options;

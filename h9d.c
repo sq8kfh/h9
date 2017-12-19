@@ -14,6 +14,7 @@
 #include "h9d_client.h"
 #include "h9d_endpoint.h"
 #include "h9d_trigger.h"
+#include "h9d_metricses.h"
 
 static void help(void) {
     h9_log_stderr("usage: h9d [-dDhvV] [-c config_file] [-p pid_file]");
@@ -196,18 +197,25 @@ int main(int argc, char **argv) {
     signal(SIGINT, sighandler);
 
     h9d_trigger_init();
+    h9d_metrices_init();
     h9d_select_event_init();
     h9d_endpoint_init();
 
-    h9d_endpoint_t *endpoint = h9d_endpoint_addnew("/dev/tty.usbserial-DA1ESZ7U", "slcan0");
-    if (!endpoint) {
-        h9d_select_event_free();
-        h9_log_err("cannot open endpoint");
-        h9_log_crit("h9d terminated abnormally");
-        return EXIT_FAILURE;
+    for (const char *endpoint_name = h9d_cfg_endpoint(); endpoint_name; endpoint_name = h9d_cfg_endpoint()) {
+        h9d_endpoint_t *endpoint = h9d_endpoint_addnew(h9d_cfg_endpoint_getstr("connect"),
+                                                       endpoint_name,
+                                                       (size_t)h9d_cfg_endpoint_getint("recv_buf_size"),
+                                                       (unsigned int)h9d_cfg_endpoint_getint("throttle_level"),
+                                                       h9d_cfg_endpoint_getbool("nonblock"));
+        if (!endpoint) {
+            h9d_select_event_free();
+            h9_log_err("cannot open endpoint");
+            h9_log_crit("h9d terminated abnormally");
+            return EXIT_FAILURE;
+        }
+        h9d_select_event_add(endpoint->ep_imp->fd, H9D_SELECT_EVENT_READ | H9D_SELECT_EVENT_DISCONNECT,
+                             (h9d_select_event_func_t *) h9d_endpoint_process_events, endpoint);
     }
-    h9d_select_event_add(endpoint->ep_imp->fd, H9D_SELECT_EVENT_READ | H9D_SELECT_EVENT_DISCONNECT,
-                         (h9d_select_event_func_t*)h9d_endpoint_process_events, endpoint);
 
     h9d_server_t *sm = h9d_server_init(7878);
     h9d_select_event_add(sm->socket_d, H9D_SELECT_EVENT_READ | H9D_SELECT_EVENT_DISCONNECT,

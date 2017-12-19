@@ -63,10 +63,10 @@ int h9d_select_event_loop(time_t time_trigger_period) {
         else if (retval) {
             for (h9d_select_event_t *ev = event_list; ev; ev = ev->next) {
                 if (ev->event_types & H9D_SELECT_EVENT_READ && FD_ISSET(ev->fd, &rfds)) {
-                    int r = ev->process_events(ev->ev_data, H9D_SELECT_EVENT_READ, -1);
+                    int r = ev->process_events(ev->ev_data, H9D_SELECT_EVENT_READ);
                     if (r == H9D_SELECT_EVENT_RETURN_DEL || r == H9D_SELECT_EVENT_RETURN_DISCONNECT) {
                         if (r == H9D_SELECT_EVENT_RETURN_DISCONNECT) {
-                            ev->process_events(ev->ev_data, H9D_SELECT_EVENT_DISCONNECT, -1);
+                            ev->process_events(ev->ev_data, H9D_SELECT_EVENT_DISCONNECT);
                         }
                         tmp.next = ev->next;
                         h9d_select_event_del(ev->fd);
@@ -98,7 +98,7 @@ void h9d_select_event_free(void) {
     h9d_select_event_t tmp;
     for (h9d_select_event_t *ev = event_list; ev; ev = ev->next) {
         if (ev->event_types & H9D_SELECT_EVENT_DISCONNECT) {
-            ev->process_events(ev->ev_data, H9D_SELECT_EVENT_DISCONNECT, -1);
+            ev->process_events(ev->ev_data, H9D_SELECT_EVENT_DISCONNECT);
         }
         tmp.next = ev->next;
         h9d_select_event_del(ev->fd);

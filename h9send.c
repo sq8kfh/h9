@@ -149,7 +149,7 @@ int main(int argc, char **argv) {
         return EXIT_FAILURE;
     }
 
-    if (! h9_xmlsocket_send(xmlsocket, xmlmsg, length)) {
+    if (!h9_xmlsocket_send(xmlsocket, xmlmsg, length)) {
         h9_log_stderr("Send error");
         h9_xmlsocket_free(xmlsocket);
         return EXIT_FAILURE;

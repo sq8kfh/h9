@@ -15,19 +15,30 @@ typedef struct h9d_endpoint_t {
     struct h9d_endpoint_t *prev;
 
     unsigned int msq_in_queue;
-    unsigned int throttle;
+    unsigned int throttle_level;
 
+    h9_counter_t throttled_counter;
+    h9_counter_t last_readed_throttled_counter;
     h9_counter_t recv_msg_counter;
+    h9_counter_t last_readed_recv_msg_counter;
     h9_counter_t recv_invalid_msg_counter;
+    h9_counter_t last_readed_recv_invalid_msg_counter;
     h9_counter_t send_msg_counter;
+    h9_counter_t last_readed_send_msg_counter;
 } h9d_endpoint_t;
 
 
 void h9d_endpoint_init(void);
-h9d_endpoint_t *h9d_endpoint_addnew(const char *connect_string, const char *name);
+h9d_endpoint_t *h9d_endpoint_addnew(const char *connect_string, const char *name,
+                                    size_t recv_buf_size,
+                                    unsigned throttle_level,
+                                    int nonblock);
 void h9d_endpoint_del(h9d_endpoint_t *endpoint_struct);
 
-int h9d_endpoint_process_events(h9d_endpoint_t *endpoint_struct, int event_type, time_t elapsed);
+int h9d_endpoint_process_events(h9d_endpoint_t *endpoint_struct, int event_type);
 int h9d_endpoint_send_msg(h9msg_t *msg);
+
+h9d_endpoint_t *h9d_endpoint_first_endpoint(void);
+h9d_endpoint_t *h9d_endpoint_getnext_endpoint(const h9d_endpoint_t *e);
 
 #endif //_H9D_ENDPOINT_H_

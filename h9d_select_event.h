@@ -11,7 +11,7 @@
 #define H9D_SELECT_EVENT_RETURN_DEL 1
 #define H9D_SELECT_EVENT_RETURN_DISCONNECT 2
 
-typedef int (h9d_select_event_func_t)(void *ev_data, int event_type, time_t elapsed);
+typedef int (h9d_select_event_func_t)(void *ev_data, int event_type);
 
 void h9d_select_event_init(void);
 int h9d_select_event_loop(time_t time_trigger_period);
