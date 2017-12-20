@@ -12,24 +12,45 @@
 #include <termios.h>
 
 
-static h9d_endpoint_t *endpoint_list_start;
+static h9d_endpoint_t *endpoint_list_start = NULL;
 
-void h9d_endpoint_init(void) {
-    endpoint_list_start = NULL;
+static h9d_endpoint_t *h9d_endpoint_create(const h9d_endpoint_init_parameters_t *ip) {
+    return h9d_endpoint_addnew(ip->connect_string,
+                               ip->name,
+                               ip->recv_buf_size,
+                               ip->throttle_level,
+                               ip->nonblock,
+                               ip->auto_respawn);
 }
 
-h9d_endpoint_t *h9d_endpoint_addnew(const char *connect_string, const char *name,
+h9d_endpoint_t *h9d_endpoint_addnew(const char *connect_string,
+                                    const char *name,
                                     size_t recv_buf_size,
                                     unsigned int throttle_level,
-                                    int nonblock) {
-    h9d_endpoint_t *ep = malloc(sizeof(h9d_endpoint_t));
-    ep->endpoint_name = strdup(name);
+                                    int nonblock,
+                                    int auto_respawn) {
 
-    ep->ep_imp = h9_slcan_connect(connect_string, recv_buf_size, nonblock);
-    if (!ep->ep_imp) {
-        free(ep);
+    h9_slcan_t *imp_tmp = h9_slcan_connect(connect_string, recv_buf_size, nonblock);
+
+    if (!imp_tmp) {
         return NULL;
     }
+
+    h9d_endpoint_t *ep = malloc(sizeof(h9d_endpoint_t));
+
+    ep->ep_imp = imp_tmp;
+
+    ep->init_parameters = h9d_endpoint_init_parameters_init(connect_string,
+                                                            name,
+                                                            recv_buf_size,
+                                                            throttle_level,
+                                                            nonblock,
+                                                            auto_respawn);
+
+    ep->auto_respawn = auto_respawn;
+
+    ep->endpoint_name = strdup(name);
+
     ep->recv_invalid_msg_counter = 0;
     ep->last_readed_throttled_counter = 0;
     ep->recv_msg_counter = 0;
@@ -83,8 +104,55 @@ void h9d_endpoint_del(h9d_endpoint_t *endpoint_struct) {
     }
 
     h9_slcan_free(endpoint_struct->ep_imp);
+    h9d_endpoint_init_parameters_free(endpoint_struct->init_parameters);
     free(endpoint_struct->endpoint_name);
     free(endpoint_struct);
+}
+
+h9d_endpoint_init_parameters_t *h9d_endpoint_init_parameters_init(const char *connect_string,
+                                                                  const char *name,
+                                                                  size_t recv_buf_size,
+                                                                  unsigned throttle_level,
+                                                                  int nonblock,
+                                                                  int auto_respawn) {
+    h9d_endpoint_init_parameters_t *ip = malloc(sizeof(h9d_endpoint_init_parameters_t));
+
+    ip->connect_string = strdup(connect_string);
+    ip->name = strdup(name);
+    ip->recv_buf_size = recv_buf_size;
+    ip->throttle_level = throttle_level;
+    ip->nonblock = nonblock;
+    ip->auto_respawn = auto_respawn;
+
+    return ip;
+}
+
+void h9d_endpoint_init_parameters_free(h9d_endpoint_init_parameters_t *ip) {
+    free((void *)ip->connect_string);
+    free((void *)ip->name);
+    free(ip);
+}
+
+h9d_endpoint_init_parameters_t *h9d_endpoint_init_parameters_cpy(const h9d_endpoint_init_parameters_t *ip) {
+    return h9d_endpoint_init_parameters_init(ip->connect_string,
+                                             ip->name,
+                                             ip->recv_buf_size,
+                                             ip->throttle_level,
+                                             ip->nonblock,
+                                             ip->auto_respawn);
+}
+
+static void endpoint_respawn(h9d_endpoint_init_parameters_t *init_parameters, uint32_t mask, void *param) {
+    h9d_endpoint_t *endpoint = h9d_endpoint_create(init_parameters);
+    if (!endpoint) {
+        h9_log_err("cannot open endpoint");
+    }
+    else {
+        h9d_select_event_add(endpoint->ep_imp->fd, H9D_SELECT_EVENT_READ | H9D_SELECT_EVENT_DISCONNECT,
+                             (h9d_select_event_func_t *) h9d_endpoint_process_events, endpoint);
+        h9d_trigger_del_listener(mask, init_parameters, (h9d_trigger_callback*)endpoint_respawn);
+        h9d_endpoint_init_parameters_free(init_parameters);
+    }
 }
 
 static void on_recv(h9msg_t *msg, h9d_endpoint_t *endpoint_struct) {
@@ -125,7 +193,15 @@ int h9d_endpoint_process_events(h9d_endpoint_t *endpoint_struct, int event_type)
         }
     }
     if (event_type & H9D_SELECT_EVENT_DISCONNECT) {
-        h9d_endpoint_del(endpoint_struct);
+        if (endpoint_struct->auto_respawn) {
+            h9d_endpoint_init_parameters_t *tmp = h9d_endpoint_init_parameters_cpy(endpoint_struct->init_parameters);
+            h9d_endpoint_del(endpoint_struct);
+            h9d_trigger_add_listener(H9D_TRIGGER_TIMMER, tmp, (h9d_trigger_callback*)endpoint_respawn);
+        }
+        else {
+            h9d_endpoint_del(endpoint_struct);
+        }
+
         return H9D_SELECT_EVENT_RETURN_DEL;
     }
     return H9D_SELECT_EVENT_RETURN_OK;

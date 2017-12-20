@@ -203,14 +203,15 @@ int main(int argc, char **argv) {
     h9d_trigger_init();
     h9d_metrices_init();
     h9d_select_event_init();
-    h9d_endpoint_init();
+    //h9d_endpoint_init();
 
     for (const char *endpoint_name = h9d_cfg_endpoint(); endpoint_name; endpoint_name = h9d_cfg_endpoint()) {
         h9d_endpoint_t *endpoint = h9d_endpoint_addnew(h9d_cfg_endpoint_getstr("connect"),
                                                        endpoint_name,
                                                        (size_t)h9d_cfg_endpoint_getint("recv_buf_size"),
                                                        (unsigned int)h9d_cfg_endpoint_getint("throttle_level"),
-                                                       h9d_cfg_endpoint_getbool("nonblock"));
+                                                       h9d_cfg_endpoint_getbool("nonblock"),
+                                                       h9d_cfg_endpoint_getbool("auto_respawn"));
         if (!endpoint) {
             h9d_select_event_free();
             h9_log_err("cannot open endpoint");

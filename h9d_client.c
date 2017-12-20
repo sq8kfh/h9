@@ -126,11 +126,17 @@ int h9d_client_process_events(h9d_client_t *client_struct, int event_type) {
     return H9D_SELECT_EVENT_RETURN_OK;
 }
 
-h9d_client_t *h9d_client_first_endpoint(void) {
+int h9d_client_send_msg(h9d_client_t *client, const char *msg, size_t length) {
+    client->send_xmlmsg_counter++;
+    h9_xmlsocket_send(client->xmlsocket, msg, length);
+    return 0;
+}
+
+h9d_client_t *h9d_client_first_client(void) {
     return client_list_start;
 }
 
-h9d_client_t *h9d_client_getnext_endpoint(const h9d_client_t *c) {
+h9d_client_t *h9d_client_getnext_client(const h9d_client_t *c) {
     if (c) {
         return c->next;
     }
@@ -144,7 +150,7 @@ static void trigger_callback(h9d_client_t *client, uint32_t mask, void *param) {
         case H9D_TRIGGER_RECV_MSG:
             buf = h9_xmlmsg_build_h9msg(&length, param, xmlmsg_schema_validation);
             if (buf) {
-                h9_xmlsocket_send(client->xmlsocket, buf, length);
+                h9d_client_send_msg(client, buf, length);
                 free(buf);
             }
             break;

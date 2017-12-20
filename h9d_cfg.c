@@ -10,6 +10,7 @@ static cfg_opt_t endpoint_opts[] = {
         CFG_INT("recv_buf_size", 20, CFGF_NONE),
         CFG_INT("throttle_level", 10, CFGF_NONE),
         CFG_BOOL("nonblock", cfg_false, CFGF_NONE),
+        CFG_BOOL("auto_respawn", cfg_false, CFGF_NONE),
         CFG_END()
 };
 
