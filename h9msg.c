@@ -1,6 +1,7 @@
 #include "h9msg.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 static const char* const h9_type_name[] = {
         "NOP",
@@ -275,6 +276,13 @@ void h9msg_free(h9msg_t * msg) {
         free(msg->endpoint);
     }
     free(msg);
+}
+
+h9msg_t *h9msg_copy(h9msg_t * msg) {
+    h9msg_t *ret = h9msg_init();
+    *ret = *msg;
+    ret->endpoint = strdup(msg->endpoint);
+    return ret;
 }
 
 const char *h9msg_type_name(uint8_t type) {

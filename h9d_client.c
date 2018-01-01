@@ -94,14 +94,14 @@ static unsigned int process_xmlmsg(const char *msg, size_t length, h9d_client_t 
     void *res;
     int ret = h9_xmlmsg_parse(msg, length, &res, xmlmsg_schema_validation);
 
-    if (ret == H9_XMLMSG_H9SENDMSG && res) {
+    if (ret == H9_XMLMSG_SENDMSG && res) {
         h9msg_t *ms = (h9msg_t*)res;
         h9d_endpoint_send_msg(ms);
     }
-    else if (ret == H9_XMLMSG_H9SUBSCRIBE) {
+    else if (ret == H9_XMLMSG_SUBSCRIBE) {
         h9d_trigger_add_listener(H9D_TRIGGER_RECV_MSG, client_struct, (h9d_trigger_callback*)trigger_callback);
     }
-    else if (ret == H9_XMLMSG_H9UNSUBSCRIBE) {
+    else if (ret == H9_XMLMSG_UNSUBSCRIBE) {
         h9d_trigger_del_listener(H9D_TRIGGER_RECV_MSG, client_struct, (h9d_trigger_callback*)trigger_callback);
     }
     else {

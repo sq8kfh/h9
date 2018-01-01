@@ -2,6 +2,7 @@
 #define _H9_SLCAN_H_
 
 #include <stdlib.h>
+#include "config.h"
 #include "h9msg.h"
 
 typedef struct {
@@ -12,8 +13,10 @@ typedef struct {
     char *buf;
     size_t buf_ptr;
 
-    uint32_t read_byte_counter;
-    uint32_t write_byte_counter;
+    h9_counter_t read_byte_counter;
+    h9_counter_t last_readed_read_byte_counter;
+    h9_counter_t write_byte_counter;
+    h9_counter_t last_readed_write_byte_counter;
 } h9_slcan_t;
 
 
@@ -33,6 +36,6 @@ int h9_slcan_onselect_event(h9_slcan_t *slcan,
                             onselect_callback_t *send_callback,
                             void *callback_data);
 
-int h9_slcan_send(h9_slcan_t *slcan, const h9msg_t *msg);
+int h9_slcan_send(h9_slcan_t *slcan, h9msg_t *msg);
 
 #endif //_H9_SLCAN_H_

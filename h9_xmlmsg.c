@@ -40,23 +40,23 @@ int h9_xmlmsg_parse(const char *msg, size_t msg_size, void **params, int xsd_val
             ret_msg_type = H9_XMLMSG_METHODCALL;
         }
         else if (strcasecmp((const char *) root_element->name, "h9methodResponse") == 0) {
-            ret_msg_type = H9_XMLMSG_H9METHODRESPONSE;
+            ret_msg_type = H9_XMLMSG_METHODRESPONSE;
         }
         else if (strcasecmp((const char *) root_element->name, "h9sendmsg") == 0) {
             *params = node2h9msg(root_element);
 
-            ret_msg_type = H9_XMLMSG_H9SENDMSG;
+            ret_msg_type = H9_XMLMSG_SENDMSG;
         }
         else if (strcasecmp((const char *) root_element->name, "h9msg") == 0) {
             *params = node2h9msg(root_element);
 
-            ret_msg_type = H9_XMLMSG_H9MSG;
+            ret_msg_type = H9_XMLMSG_MSG;
         }
         else if (strcasecmp((const char *) root_element->name, "h9subscribe") == 0){
-            ret_msg_type = H9_XMLMSG_H9SUBSCRIBE;
+            ret_msg_type = H9_XMLMSG_SUBSCRIBE;
         }
         else if (strcasecmp((const char *) root_element->name, "h9unsubscribe") == 0){
-            ret_msg_type = H9_XMLMSG_H9UNSUBSCRIBE;
+            ret_msg_type = H9_XMLMSG_UNSUBSCRIBE;
         }
         else {
             h9_log_warn("Invalid XML root node: %s", (const char *) root_element->name);
@@ -77,8 +77,8 @@ int h9_xmlmsg_parse(const char *msg, size_t msg_size, void **params, int xsd_val
 void h9_xmlmsg_free_parse_data(int parse_result, void *parse_data) {
     if (parse_data != NULL) {
         switch (parse_result) {
-            case H9_XMLMSG_H9SENDMSG:
-            case H9_XMLMSG_H9MSG:
+            case H9_XMLMSG_SENDMSG:
+            case H9_XMLMSG_MSG:
                 h9msg_free(parse_data);
                 break;
         }

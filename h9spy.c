@@ -133,7 +133,7 @@ static unsigned int xmlsocket_read_callback(const char *msg, size_t length, void
     void *res;
     int ret = h9_xmlmsg_parse(msg, length, &res, 1);
 
-    if (ret == H9_XMLMSG_H9MSG && res) {
+    if (ret == H9_XMLMSG_MSG && res) {
         h9msg_t *msg = (h9msg_t*)res;
         print_msg(msg, extended_output);
         h9msg_free(msg);

@@ -5,6 +5,7 @@
 #include "h9d_client.h"
 
 #include "config.h"
+#include "h9_slcan.h"
 #include <time.h>
 #include <mach/mach_time.h>
 
@@ -24,6 +25,7 @@ static h9_counter_t calc_diff_and_update_last(h9_counter_t *last_readed, h9_coun
     *last_readed = counter;
     return counter - counter_tmp;
 }
+
 
 void h9d_metrices_trigger_callback(void *ud, uint32_t mask, void *param) {
     if (mask == H9D_TRIGGER_TIMMER) {
@@ -53,6 +55,17 @@ void h9d_metrices_trigger_callback(void *ud, uint32_t mask, void *param) {
                        (double)delta_recv_invalid_msg_counter/delta_time*1000000000,
                        (double)delta_send_msg_counter/delta_time*1000000000,
                        (double)delta_throttled_counter/delta_time*1000000000);
+
+            h9_counter_t delta_r =
+                    calc_diff_and_update_last(&i->ep_imp->last_readed_read_byte_counter, i->ep_imp->read_byte_counter);
+
+            h9_counter_t delta_w =
+                    calc_diff_and_update_last(&i->ep_imp->last_readed_write_byte_counter, i->ep_imp->write_byte_counter);
+
+            h9_log_err("slcan metrices: %s; read %.1lf B/s; write %.1lf B/s",
+                       "slcan0",
+                       (double)delta_r/delta_time*1000000000,
+                       (double)delta_w/delta_time*1000000000);
         }
 
         for (h9d_client_t *i = h9d_client_first_client(); i; i = h9d_client_getnext_client(i)) {
@@ -70,5 +83,6 @@ void h9d_metrices_trigger_callback(void *ud, uint32_t mask, void *param) {
                        (double)delta_recv_invalid_xmlmsg_counter/delta_time*1000000000,
                        (double)delta_send_msg_counter/delta_time*1000000000);
         }
+
     }
 }

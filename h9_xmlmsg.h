@@ -5,13 +5,13 @@
 
 #include "h9msg.h"
 
-#define H9_XMLMSG_UNKNOWN           0
-#define H9_XMLMSG_METHODCALL        1
-#define H9_XMLMSG_H9METHODRESPONSE  2
-#define H9_XMLMSG_H9SENDMSG         3
-#define H9_XMLMSG_H9MSG             4
-#define H9_XMLMSG_H9SUBSCRIBE       5
-#define H9_XMLMSG_H9UNSUBSCRIBE     6
+#define H9_XMLMSG_UNKNOWN         0
+#define H9_XMLMSG_METHODCALL      1
+#define H9_XMLMSG_METHODRESPONSE  2
+#define H9_XMLMSG_SENDMSG         3
+#define H9_XMLMSG_MSG             4
+#define H9_XMLMSG_SUBSCRIBE       5
+#define H9_XMLMSG_UNSUBSCRIBE     6
 
 //typedef struct {
 //    char *name;

@@ -19,6 +19,7 @@ static int proces_readed_data(h9_slcan_t *slcan, const char *data, size_t length
 
 typedef struct queue_t {
     struct queue_t *next;
+    h9msg_t *h9msg;
     char msg[30];
     size_t length;
 } queue_t;
@@ -48,13 +49,15 @@ h9_slcan_t *h9_slcan_connect(const char *connect_string,
 
     tcgetattr(fd, &options);
 
-    cfsetispeed(&options, B230400);
-    cfsetospeed(&options, B230400);
+    cfsetispeed(&options, B115200);
+    cfsetospeed(&options, B115200);
 
     options.c_cflag |= (CLOCAL | CREAD); /* Enable the receiver and set local mode */
     /*
      * Select 8N1
      */
+    options.c_iflag &= ~IGNBRK;         // disable break processing
+
     options.c_cflag &= ~PARENB;
     options.c_cflag &= ~CSTOPB;
     options.c_cflag &= ~CSIZE;
@@ -65,12 +68,16 @@ h9_slcan_t *h9_slcan_connect(const char *connect_string,
 
     options.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG); /* Raw Input */
 
-    options.c_oflag &= ~OPOST; /* Raw Output */
+    options.c_iflag = 0;
+    options.c_lflag = 0;
+    options.c_oflag = 0; /* Raw Output */
 
-    //options.c_cc[VMIN]  = 0;
-    //options.c_cc[VTIME] = 10;
+    options.c_cc[VMIN]  = nonblock ? 0 : 1;
+    options.c_cc[VTIME] = 1;
 
-    tcsetattr(fd, TCSANOW, &options);
+    if (tcsetattr(fd, TCSANOW, &options) != 0) {
+        h9_log_err("slcan: tcsetattr: %s", strerror(errno));
+    }
 
     h9_slcan_t *sl = malloc(sizeof(h9_slcan_t));
 
@@ -163,8 +170,9 @@ int h9_slcan_onselect_event(h9_slcan_t *slcan,
     return ret;
 }
 
-int h9_slcan_send(h9_slcan_t *slcan, const h9msg_t *msg) {
+int h9_slcan_send(h9_slcan_t *slcan, h9msg_t *msg) {
     queue_t *q = malloc(sizeof(queue_t));
+    q->h9msg = h9msg_copy(msg);
     q->length = build_msg(q->msg, msg);
     q->next = NULL;
 
@@ -213,7 +221,8 @@ static int send_ack(h9_slcan_t *slcan, onselect_callback_t *send_callback, void 
             msg_queue_end = NULL;
         }
 
-        send_callback(NULL, callback_data);
+        send_callback(q->h9msg, callback_data);
+        h9msg_free(q->h9msg);
 
         free(q);
     }

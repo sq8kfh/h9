@@ -180,6 +180,8 @@ static void on_send(h9msg_t *msg, h9d_endpoint_t *endpoint_struct) {
     endpoint_struct->send_msg_counter++;
     endpoint_struct->msq_in_queue--;
 
+
+    h9d_trigger_call(H9D_TRIGGER_RECV_MSG, msg);
 }
 
 int h9d_endpoint_process_events(h9d_endpoint_t *endpoint_struct, int event_type){
