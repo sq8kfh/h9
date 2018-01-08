@@ -24,7 +24,7 @@ h9d_server_t * h9d_server_init(uint16_t port) {
     struct addrinfo hints, *ai, *p;
 
     memset(&hints, 0, sizeof(hints));
-    hints.ai_family = AF_UNSPEC;
+    hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_PASSIVE;
     if ((rv = getaddrinfo(NULL, "7878", &hints, &ai)) != 0) {
