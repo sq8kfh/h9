@@ -94,21 +94,21 @@ int main(int argc, char **argv) {
             case 'P':
                 sscanf(optarg, "%c", &tmp_ch);
                 if (tmp_ch == 'H' || tmp_ch == 'h')
-                    msg->priority = H9_MSG_PRIORITY_HIGH;
+                    msg->priority = H9MSG_PRIORITY_HIGH;
                 else
-                    msg->priority = H9_MSG_PRIORITY_LOW;
+                    msg->priority = H9MSG_PRIORITY_LOW;
                 break;
             case 't':
                 sscanf(optarg, "%hu", &tmp_ui);
-                msg->type = (uint8_t)tmp_ui & (uint8_t)((1<<H9_MSG_TYPE_BIT_LENGTH) - 1);
+                msg->type = (uint8_t)tmp_ui & (uint8_t)((1<<H9MSG_TYPE_BIT_LENGTH) - 1);
                 break;
             case 'i':
                 sscanf(optarg, "%hu", &tmp_ui);
-                msg->destination_id = tmp_ui & (uint16_t)((1<<H9_MSG_DESTINATION_ID_BIT_LENGTH) - 1);
+                msg->destination_id = tmp_ui & (uint16_t)((1<<H9MSG_DESTINATION_ID_BIT_LENGTH) - 1);
                 break;
             case 's':
                 sscanf(optarg, "%hu", &tmp_ui);
-                msg->source_id = tmp_ui & (uint16_t)((1<<H9_MSG_SOURCE_ID_BIT_LENGTH) - 1);
+                msg->source_id = tmp_ui & (uint16_t)((1<<H9MSG_SOURCE_ID_BIT_LENGTH) - 1);
                 break;
             default:
                 usage();

@@ -124,14 +124,14 @@ static unsigned int xmlsocket_read_callback(const char *msg, size_t length, void
 
     if (ret == H9_XMLMSG_MSG && res) {
         h9msg_t *msg = (h9msg_t*)res;
-        if (msg->type == H9_MSG_TYPE_ENTER_INTO_BOOTLOADER || msg->type == H9_MSG_TYPE_PAGE_WRITED) {
-            if (msg->type == H9_MSG_TYPE_PAGE_WRITED) {
+        if (msg->type == H9MSG_TYPE_ENTER_INTO_BOOTLOADER || msg->type == H9MSG_TYPE_PAGE_WRITED) {
+            if (msg->type == H9MSG_TYPE_PAGE_WRITED) {
                 h9_log_stderr("Writted page %hu, byte %u", page, fw_idx);
                 if (fw_idx >= fw_size) {
                     h9msg_t *m = h9msg_init();
                     m->source_id = 10;
                     m->destination_id = dst_id;
-                    m->type = H9_MSG_TYPE_QUIT_BOOTLOADER;
+                    m->type = H9MSG_TYPE_QUIT_BOOTLOADER;
                     send_msg(xmlsocket, m);
 
                     exit(EXIT_SUCCESS);
@@ -141,17 +141,17 @@ static unsigned int xmlsocket_read_callback(const char *msg, size_t length, void
             h9msg_t *m = h9msg_init();
             m->source_id = 10;
             m->destination_id = dst_id;
-            m->type = H9_MSG_TYPE_PAGE_START;
+            m->type = H9MSG_TYPE_PAGE_START;
             m->dlc = 2;
             m->data[0] = (uint8_t)((page >> 8) & 0xff);
             m->data[1] = (uint8_t)((page) & 0xff);
             send_msg(xmlsocket, m);
         }
-        else if (msg->type == H9_MSG_TYPE_PAGE_FILL_NEXT) {
+        else if (msg->type == H9MSG_TYPE_PAGE_FILL_NEXT) {
             h9msg_t *m = h9msg_init();
             m->source_id = 10;
             m->destination_id = dst_id;
-            m->type = H9_MSG_TYPE_PAGE_FILL;
+            m->type = H9MSG_TYPE_PAGE_FILL;
             m->dlc = 8;
             m->data[0] = fw[fw_idx++];
             m->data[1] = fw[fw_idx++];
@@ -227,7 +227,7 @@ int main(int argc, char **argv) {
                 break;
             case 'i':
                 sscanf(optarg, "%hu", &dst_id);
-                dst_id = dst_id & (uint16_t)((1<<H9_MSG_DESTINATION_ID_BIT_LENGTH) - 1);
+                dst_id = dst_id & (uint16_t)((1<<H9MSG_DESTINATION_ID_BIT_LENGTH) - 1);
                 break;
             default:
                 usage();
@@ -261,13 +261,13 @@ int main(int argc, char **argv) {
     m->destination_id = dst_id;
 
     if (noupgrademsg) {
-        m->type = H9_MSG_TYPE_PAGE_START;
+        m->type = H9MSG_TYPE_PAGE_START;
         m->dlc = 2;
         m->data[0] = (uint8_t)((page >> 8) & 0xff);
         m->data[1] = (uint8_t)((page) & 0xff);
     }
     else {
-        m->type = H9_MSG_TYPE_NODE_UPGRADE;
+        m->type = H9MSG_TYPE_NODE_UPGRADE;
     }
     send_msg(xmlsocket, m);
 

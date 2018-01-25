@@ -1,7 +1,6 @@
 #include "h9_xmlmsg.h"
 #include <string.h>
 #include <libxml/parser.h>
-#include <libxml/xmlschemas.h>
 
 #include "h9msg.xsd.h"
 
@@ -9,8 +8,7 @@
 
 static int invalid_xml(xmlDocPtr doc);
 static h9msg_t *node2h9msg(xmlNode *node);
-static xmlNode *h9msg2node(h9msg_t *msg, const char *node_name);
-static char *build_h9doc(size_t *xml_length, xmlNode *node, int xsd_validate);
+static void h9msg2node(h9msg_t *msg, h9_xmlmsg_t *xmlmsg);
 
 int h9_xmlmsg_parse(const char *msg, size_t msg_size, void **params, int xsd_validate) {
     xmlDocPtr doc;
@@ -85,34 +83,123 @@ void h9_xmlmsg_free_parse_data(int parse_result, void *parse_data) {
     }
 }
 
-char *h9_xmlmsg_build_h9methodCall(size_t *xml_length, int xsd_validate) {
-    return NULL;
+h9_xmlmsg_t *h9_xmlmsg_init(int type) {
+    xmlNode *node = NULL;
+    switch (type) {
+        case H9_XMLMSG_METHODCALL:
+            node = xmlNewNode(NULL, BAD_CAST "h9methodCall");
+            break;
+        case H9_XMLMSG_METHODRESPONSE:
+            node = xmlNewNode(NULL, BAD_CAST "h9methodResponse");
+            break;
+        case H9_XMLMSG_SENDMSG:
+            node = xmlNewNode(NULL, BAD_CAST "h9sendmsg");
+            break;
+        case H9_XMLMSG_MSG:
+            node = xmlNewNode(NULL, BAD_CAST "h9msg");
+            break;
+        case H9_XMLMSG_SUBSCRIBE:
+            node = xmlNewNode(NULL, BAD_CAST "h9subscribe");
+            break;
+        case H9_XMLMSG_UNSUBSCRIBE:
+            node = xmlNewNode(NULL, BAD_CAST "h9unsubscribe");
+            break;
+        case H9_XMLMSG_METRICSES:
+            node = xmlNewNode(NULL, BAD_CAST "h9metricses");
+            break;
+        default:
+            return NULL;
+    }
+    h9_xmlmsg_t *ret = malloc(sizeof(h9_xmlmsg_t));
+    ret->node = node;
+    ret->type = type;
+    return ret;
 }
 
-char *h9_xmlmsg_build_h9methodResponse(size_t *xml_length, int xsd_validate) {
-    return NULL;
+void h9_xmlmsg_free(h9_xmlmsg_t *xmlmsg) {
+    if (xmlmsg) {
+        xmlFreeNode(xmlmsg->node);
+        free(xmlmsg);
+    }
 }
+
+char *h9_xmlmsg_build(h9_xmlmsg_t *xmlmsg, size_t *xml_length, int xsd_validate) {
+    xmlDocPtr doc = xmlNewDoc(BAD_CAST "1.0");
+    xmlDocSetRootElement(doc, xmlmsg->node);
+
+    if (xsd_validate) {
+        if (invalid_xml(doc)) {
+            h9_log_warn("xmlmsg build: invalid XML message");
+            xmlFreeDoc(doc);
+            return NULL;
+        }
+    }
+
+    xmlBufferPtr buffer = xmlBufferCreate();
+    //*xml_length = xmlNodeDump(buffer, NULL, node, 0, 1);
+    int res = xmlNodeDump(buffer, doc, xmlmsg->node, 0, 1);
+    char *ret = NULL;
+
+    if (res > 0) {
+        ret = strdup((char*) buffer->content);
+        *xml_length = (size_t)res;
+        //h9_log_debug("xmlmsg build(%d): %s", *xml_length, ret);
+    }
+
+    xmlUnlinkNode(xmlmsg->node);
+
+    xmlBufferFree(buffer);
+    xmlFreeDoc(doc);
+
+    return ret;
+}
+
+//char *h9_xmlmsg_build_h9methodCall(size_t *xml_length, int xsd_validate) {
+//    return NULL;
+//}
+//
+//char *h9_xmlmsg_build_h9methodResponse(size_t *xml_length, int xsd_validate) {
+//    return NULL;
+//}
 
 char *h9_xmlmsg_build_h9subscribe(size_t *xml_length, char *event, int xsd_validate) {
-    xmlNode *node = xmlNewNode(NULL, BAD_CAST "h9subscribe");
-    xmlNewProp(node, BAD_CAST "event", BAD_CAST event);
-    return build_h9doc(xml_length, node, xsd_validate);
+    h9_xmlmsg_t *xmlmsg = h9_xmlmsg_init(H9_XMLMSG_SUBSCRIBE);
+    xmlNewProp(xmlmsg->node, BAD_CAST "event", BAD_CAST event);
+
+    char *ret = h9_xmlmsg_build(xmlmsg, xml_length, xsd_validate);
+
+    h9_xmlmsg_free(xmlmsg);
+    return ret;
 }
 
 char *h9_xmlmsg_build_h9unsubscribe(size_t *xml_length, char *event, int xsd_validate) {
-    xmlNode *node = xmlNewNode(NULL, BAD_CAST "h9subscribe");
-    xmlNewProp(node, BAD_CAST "event", BAD_CAST event);
-    return build_h9doc(xml_length, node, xsd_validate);
+    h9_xmlmsg_t *xmlmsg = h9_xmlmsg_init(H9_XMLMSG_UNSUBSCRIBE);
+    xmlNewProp(xmlmsg->node, BAD_CAST "event", BAD_CAST event);
+
+    char *ret = h9_xmlmsg_build(xmlmsg, xml_length, xsd_validate);
+
+    h9_xmlmsg_free(xmlmsg);
+    return ret;
 }
 
 char *h9_xmlmsg_build_h9sendmsg(size_t *xml_length, h9msg_t *msg, int xsd_validate) {
-    xmlNode *node = h9msg2node(msg, "h9sendmsg");
-    return build_h9doc(xml_length, node, xsd_validate);
+    h9_xmlmsg_t *xmlmsg = h9_xmlmsg_init(H9_XMLMSG_SENDMSG);
+    h9msg2node(msg, xmlmsg);
+
+    char *ret = h9_xmlmsg_build(xmlmsg, xml_length, xsd_validate);
+
+    h9_xmlmsg_free(xmlmsg);
+    return ret;
 }
 
 char *h9_xmlmsg_build_h9msg(size_t *xml_length, h9msg_t *msg, int xsd_validate) {
-    xmlNode *node = h9msg2node(msg, "h9msg");
-    return build_h9doc(xml_length, node, xsd_validate);
+    h9_xmlmsg_t *xmlmsg = h9_xmlmsg_init(H9_XMLMSG_MSG);
+    h9msg2node(msg, xmlmsg);
+
+    char *ret = h9_xmlmsg_build(xmlmsg, xml_length, xsd_validate);
+
+    h9_xmlmsg_free(xmlmsg);
+    return ret;
 }
 
 static int invalid_xml(xmlDocPtr doc) {
@@ -159,9 +246,9 @@ static h9msg_t *node2h9msg(xmlNode *node) {
         return NULL;
     }
     if (tmp[0] == 'H' || tmp[0] == 'h') {
-        msg->priority = H9_MSG_PRIORITY_HIGH;
+        msg->priority = H9MSG_PRIORITY_HIGH;
     } else {
-        msg->priority = H9_MSG_PRIORITY_LOW;
+        msg->priority = H9MSG_PRIORITY_LOW;
     }
     xmlFree(tmp);
 
@@ -208,13 +295,12 @@ static h9msg_t *node2h9msg(xmlNode *node) {
     return msg;
 }
 
-static xmlNode *h9msg2node(h9msg_t *msg, const char *node_name) {
-    xmlNode *node = xmlNewNode(NULL, BAD_CAST node_name);
-
+static void h9msg2node(h9msg_t *msg, h9_xmlmsg_t *xmlmsg) {
+    xmlNode *node = xmlmsg->node;
     if (msg->endpoint) {
         xmlNewProp(node, BAD_CAST "endpoint", BAD_CAST msg->endpoint);
     }
-    if (msg->priority == H9_MSG_PRIORITY_HIGH) {
+    if (msg->priority == H9MSG_PRIORITY_HIGH) {
         xmlNewProp(node, BAD_CAST "priority", BAD_CAST "H");
     }
     else {
@@ -236,35 +322,9 @@ static xmlNode *h9msg2node(h9msg_t *msg, const char *node_name) {
     if (msg->dlc) {
         xmlNewProp(node, BAD_CAST "data", BAD_CAST str);
     }
-
-    return node;
 }
 
-static char *build_h9doc(size_t *xml_length, xmlNode *node, int xsd_validate) {
-    xmlDocPtr doc = xmlNewDoc(BAD_CAST "1.0");
-    xmlDocSetRootElement(doc, node);
-
-    if (xsd_validate) {
-        if (invalid_xml(doc)) {
-            h9_log_warn("xmlmsg build: invalid XML message");
-            xmlFreeDoc(doc);
-            return NULL;
-        }
-    }
-
-    xmlBufferPtr buffer = xmlBufferCreate();
-    //*xml_length = xmlNodeDump(buffer, NULL, node, 0, 1);
-    int res = xmlNodeDump(buffer, doc, node, 0, 1);
-    char *ret = NULL;
-
-    if (res > 0) {
-        ret = strdup((char*) buffer->content);
-        *xml_length = (size_t)res;
-        h9_log_debug("xmlmsg build(%d): %s", *xml_length, ret);
-    }
-
-    xmlBufferFree(buffer);
-    xmlFreeDoc(doc);
-
-    return ret;
+void h9_xmlmsg_add_metrics(h9_xmlmsg_t *xmlmsg, char *name, char *val) {
+    xmlNode *metrics = xmlNewChild(xmlmsg->node, NULL, BAD_CAST "metrics", BAD_CAST val);
+    xmlNewProp(metrics, BAD_CAST "name", BAD_CAST name);
 }

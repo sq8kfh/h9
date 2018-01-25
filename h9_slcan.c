@@ -256,15 +256,15 @@ static char *strndup_unescaped(const char *ptr, size_t n) {
 
 static size_t build_msg(char *slcan_data, const h9msg_t *msg) {
     uint32_t id = 0;
-    id |= msg->priority & ((1<<H9_MSG_PRIORITY_BIT_LENGTH) - 1);
-    id <<= H9_MSG_TYPE_BIT_LENGTH;
-    id |= msg->type & ((1<<H9_MSG_TYPE_BIT_LENGTH) - 1);
-    id <<= H9_MSG_RESERVED_BIT_LENGTH;
-    id |= H9_MSG_RESERVED_VALUE & ((1<<H9_MSG_RESERVED_BIT_LENGTH) - 1);
-    id <<= H9_MSG_DESTINATION_ID_BIT_LENGTH;
-    id |= msg->destination_id & ((1<<H9_MSG_DESTINATION_ID_BIT_LENGTH) - 1);
-    id <<= H9_MSG_SOURCE_ID_BIT_LENGTH;
-    id |= msg->source_id & ((1<<H9_MSG_SOURCE_ID_BIT_LENGTH) - 1);
+    id |= msg->priority & ((1<<H9MSG_PRIORITY_BIT_LENGTH) - 1);
+    id <<= H9MSG_TYPE_BIT_LENGTH;
+    id |= msg->type & ((1<<H9MSG_TYPE_BIT_LENGTH) - 1);
+    id <<= H9MSG_RESERVED_BIT_LENGTH;
+    id |= H9MSG_RESERVED_VALUE & ((1<<H9MSG_RESERVED_BIT_LENGTH) - 1);
+    id <<= H9MSG_DESTINATION_ID_BIT_LENGTH;
+    id |= msg->destination_id & ((1<<H9MSG_DESTINATION_ID_BIT_LENGTH) - 1);
+    id <<= H9MSG_SOURCE_ID_BIT_LENGTH;
+    id |= msg->source_id & ((1<<H9MSG_SOURCE_ID_BIT_LENGTH) - 1);
 
     size_t nbyte;
     nbyte = sprintf(slcan_data, "T%08X%1hhu", id, msg->dlc);
@@ -281,15 +281,15 @@ static h9msg_t *parse_msg(const char *data, size_t length) {
     uint32_t id;
     sscanf(data + 1, "%8x", &id);
 
-    res->priority = (uint8_t)((id >> (H9_MSG_TYPE_BIT_LENGTH + H9_MSG_RESERVED_BIT_LENGTH +
-                                     H9_MSG_DESTINATION_ID_BIT_LENGTH + H9_MSG_SOURCE_ID_BIT_LENGTH)) & ((1<<H9_MSG_PRIORITY_BIT_LENGTH) - 1));
+    res->priority = (uint8_t)((id >> (H9MSG_TYPE_BIT_LENGTH + H9MSG_RESERVED_BIT_LENGTH +
+                                     H9MSG_DESTINATION_ID_BIT_LENGTH + H9MSG_SOURCE_ID_BIT_LENGTH)) & ((1<<H9MSG_PRIORITY_BIT_LENGTH) - 1));
 
-    res->type = (uint8_t)((id >> (H9_MSG_RESERVED_BIT_LENGTH + H9_MSG_DESTINATION_ID_BIT_LENGTH + H9_MSG_SOURCE_ID_BIT_LENGTH)) \
-		                    & ((1<<H9_MSG_TYPE_BIT_LENGTH) - 1));
+    res->type = (uint8_t)((id >> (H9MSG_RESERVED_BIT_LENGTH + H9MSG_DESTINATION_ID_BIT_LENGTH + H9MSG_SOURCE_ID_BIT_LENGTH)) \
+		                    & ((1<<H9MSG_TYPE_BIT_LENGTH) - 1));
 
-    res->destination_id = (uint16_t)((id >> (H9_MSG_SOURCE_ID_BIT_LENGTH)) & ((1<<H9_MSG_DESTINATION_ID_BIT_LENGTH) - 1));
+    res->destination_id = (uint16_t)((id >> (H9MSG_SOURCE_ID_BIT_LENGTH)) & ((1<<H9MSG_DESTINATION_ID_BIT_LENGTH) - 1));
 
-    res->source_id = (uint16_t)((id >> (0)) & ((1<<H9_MSG_SOURCE_ID_BIT_LENGTH) - 1));
+    res->source_id = (uint16_t)((id >> (0)) & ((1<<H9MSG_SOURCE_ID_BIT_LENGTH) - 1));
 
     uint32_t dlc;
 

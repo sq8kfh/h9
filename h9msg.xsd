@@ -36,6 +36,22 @@
 
     <xs:element name="h9msg" type="h9msg_t"/>
 
+    <xs:element name="h9metricses">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="metrics" minOccurs="0" maxOccurs="unbounded">
+                    <xs:complexType>
+                        <xs:simpleContent>
+                            <xs:extension base="xs:string">
+                                <xs:attribute name="name" type="xs:string" />
+                            </xs:extension>
+                        </xs:simpleContent>
+                    </xs:complexType>
+                </xs:element>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
     <xs:complexType name="h9msg_t">
         <xs:attribute name="endpoint" type="xs:string"/>
         <xs:attribute name="priority" use="required">
@@ -52,7 +68,7 @@
             <xs:simpleType>
                 <xs:restriction base="xs:nonNegativeInteger">
                     <xs:minInclusive value="0"/>
-                    <xs:maxInclusive value="255"/>
+                    <xs:maxInclusive value="31"/>
                 </xs:restriction>
             </xs:simpleType>
         </xs:attribute>

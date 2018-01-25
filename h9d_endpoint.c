@@ -60,6 +60,10 @@ h9d_endpoint_t *h9d_endpoint_addnew(const char *connect_string,
     ep->throttled_counter = 0;
     ep->last_readed_throttled_counter = 0;
 
+    for (int i = 0; i < H9MSG_TYPE_COUNT; ++i) {
+        ep->recv_msg_by_type_counter[i] = 0;
+    }
+
     ep->msq_in_queue = 0;
     ep->throttle_level = throttle_level;
 
@@ -161,6 +165,7 @@ static void on_recv(h9msg_t *msg, h9d_endpoint_t *endpoint_struct) {
         endpoint_struct->recv_invalid_msg_counter++;
         return;
     }
+    endpoint_struct->recv_msg_by_type_counter[msg->type]++;
 
     if (msg->endpoint) {
         free(msg->endpoint);
@@ -169,7 +174,7 @@ static void on_recv(h9msg_t *msg, h9d_endpoint_t *endpoint_struct) {
 
     h9_log_info("receive msg: %hu->%hu priority: %c; type: %hhu; dlc: %hhu; endpoint '%s'",
            msg->source_id, msg->destination_id,
-           msg->priority == H9_MSG_PRIORITY_HIGH ? 'H' : 'L',
+           msg->priority == H9MSG_PRIORITY_HIGH ? 'H' : 'L',
            msg->type, msg->dlc,
            msg->endpoint);
 

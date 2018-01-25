@@ -5,6 +5,8 @@
 #include "h9d_trigger.h"
 #include "h9d_endpoint.h"
 
+#include <string.h>
+
 static h9d_client_t *client_list_start;
 //static h9d_client_t *client_list_end;
 static size_t init_buffer_size;
@@ -100,9 +102,11 @@ static unsigned int process_xmlmsg(const char *msg, size_t length, h9d_client_t 
     }
     else if (ret == H9_XMLMSG_SUBSCRIBE) {
         h9d_trigger_add_listener(H9D_TRIGGER_RECV_MSG, client_struct, (h9d_trigger_callback*)trigger_callback);
+        h9d_trigger_add_listener(H9D_TRIGGER_METRICSES, client_struct, (h9d_trigger_callback*)trigger_callback);
     }
     else if (ret == H9_XMLMSG_UNSUBSCRIBE) {
         h9d_trigger_del_listener(H9D_TRIGGER_RECV_MSG, client_struct, (h9d_trigger_callback*)trigger_callback);
+        h9d_trigger_del_listener(H9D_TRIGGER_METRICSES, client_struct, (h9d_trigger_callback*)trigger_callback);
     }
     else {
         client_struct->recv_invalid_xmlmsg_counter++;
@@ -152,6 +156,11 @@ static void trigger_callback(h9d_client_t *client, uint32_t mask, void *param) {
             if (buf) {
                 h9d_client_send_msg(client, buf, length);
                 free(buf);
+            }
+            break;
+        case H9D_TRIGGER_METRICSES:
+            if (param) {
+                h9d_client_send_msg(client, (char*)param, strlen((char*)param));
             }
             break;
     }
