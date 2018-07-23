@@ -87,6 +87,7 @@ typedef struct h9msg h9msg_t;
 h9msg_t *h9msg_init(void);
 void h9msg_free(h9msg_t * msg);
 h9msg_t *h9msg_copy(h9msg_t * msg);
+char *h9msg_replace_endpoint(h9msg_t * msg, const char *name);
 const char *h9msg_type_name(uint8_t type);
 
 #endif /* _H9MSG_H_ */

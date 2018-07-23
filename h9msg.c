@@ -62,6 +62,13 @@ h9msg_t *h9msg_copy(h9msg_t * msg) {
     return ret;
 }
 
+char *h9msg_replace_endpoint(h9msg_t * msg, const char *name) {
+    if (msg->endpoint != NULL)
+        free(msg->endpoint);
+    msg->endpoint = strdup(name);
+    return msg->endpoint;
+}
+
 const char *h9msg_type_name(uint8_t type) {
     return h9_type_name[type];
 }
