@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "h9_endpoint/slcan.h"
+#include "h9_endpoint/loop.h"
 
 endpoint_t *endpoint_create(const char *name, const char *connect_string) {
     if(strncmp(name, "slcan", 5) == 0) {
@@ -19,6 +20,22 @@ endpoint_t *endpoint_create(const char *name, const char *connect_string) {
         tmp->onselect_func = (endpoint_onselect_func_t*) slcan_onselect_event;
         tmp->send_func = (endpoint_send_func_t*) slcan_send;
         tmp->getfd_func = (endpoint_getfd_func_t*) slcan_getfd;
+
+        tmp->endpoint_data = tmp_endpoint_data;
+        return tmp;
+    }
+    else if(strncmp(name, "loop", 4) == 0) {
+        void *tmp_endpoint_data = loop_create(connect_string);
+        if (!tmp_endpoint_data) {
+            return NULL;
+        }
+        endpoint_t *tmp = malloc(sizeof(endpoint_t));
+
+        tmp->create_func = (endpoint_create_func_t*) loop_create;
+        tmp->destroy_func = (endpoint_destroy_func_t*) loop_free;
+        tmp->onselect_func = (endpoint_onselect_func_t*) loop_onselect_event;
+        tmp->send_func = (endpoint_send_func_t*) loop_send;
+        tmp->getfd_func = (endpoint_getfd_func_t*) loop_getfd;
 
         tmp->endpoint_data = tmp_endpoint_data;
         return tmp;
