@@ -208,9 +208,7 @@ int main(int argc, char **argv) {
     for (const char *endpoint_name = h9d_cfg_endpoint(); endpoint_name; endpoint_name = h9d_cfg_endpoint()) {
         h9d_endpoint_t *endpoint = h9d_endpoint_addnew(h9d_cfg_endpoint_getstr("connect"),
                                                        endpoint_name,
-                                                       (size_t)h9d_cfg_endpoint_getint("recv_buf_size"),
                                                        (unsigned int)h9d_cfg_endpoint_getint("throttle_level"),
-                                                       h9d_cfg_endpoint_getbool("nonblock"),
                                                        h9d_cfg_endpoint_getbool("auto_respawn"));
         if (!endpoint) {
             h9d_select_event_free();
@@ -218,7 +216,7 @@ int main(int argc, char **argv) {
             h9_log_crit("h9d terminated abnormally");
             return EXIT_FAILURE;
         }
-        h9d_select_event_add(endpoint->ep_imp->fd, H9D_SELECT_EVENT_READ | H9D_SELECT_EVENT_DISCONNECT,
+        h9d_select_event_add(endpoint_getfd(endpoint->endpoint), H9D_SELECT_EVENT_READ | H9D_SELECT_EVENT_DISCONNECT,
                              (h9d_select_event_func_t *) h9d_endpoint_process_events, endpoint);
     }
 

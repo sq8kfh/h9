@@ -5,14 +5,12 @@
 #include <time.h>
 
 #include "h9msg.h"
-#include "h9_slcan.h"
+#include "h9_endpoint/endpoint.h"
 
 typedef struct {
     const char *connect_string;
     const char *name;
-    size_t recv_buf_size;
     unsigned throttle_level;
-    int nonblock;
     int auto_respawn;
 } h9d_endpoint_init_parameters_t;
 
@@ -22,7 +20,7 @@ typedef struct h9d_endpoint_t {
     int auto_respawn;
 
     char *endpoint_name;
-    h9_slcan_t *ep_imp;
+    endpoint_t *endpoint;
 
     struct h9d_endpoint_t *next;
     struct h9d_endpoint_t *prev;
@@ -43,17 +41,13 @@ typedef struct h9d_endpoint_t {
 
 
 h9d_endpoint_t *h9d_endpoint_addnew(const char *connect_string, const char *name,
-                                    size_t recv_buf_size,
                                     unsigned throttle_level,
-                                    int nonblock,
                                     int auto_respawn);
 void h9d_endpoint_del(h9d_endpoint_t *endpoint_struct);
 
 h9d_endpoint_init_parameters_t *h9d_endpoint_init_parameters_init(const char *connect_string,
                                                                   const char *name,
-                                                                  size_t recv_buf_size,
                                                                   unsigned throttle_level,
-                                                                  int nonblock,
                                                                   int auto_respawn);
 void h9d_endpoint_init_parameters_free(h9d_endpoint_init_parameters_t *ip);
 h9d_endpoint_init_parameters_t *h9d_endpoint_init_parameters_cpy(const h9d_endpoint_init_parameters_t *ip);

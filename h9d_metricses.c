@@ -6,7 +6,6 @@
 #include "h9_xmlmsg.h"
 
 #include "config.h"
-#include "h9_slcan.h"
 #include <time.h>
 
 #ifdef __APPLE__
@@ -74,14 +73,6 @@ void h9d_metrices_trigger_callback(void *ud, uint32_t mask, void *param) {
             snprintf(value_buffer, buffer_size, "%u", i->throttled_counter);
             h9_xmlmsg_add_metrics(xmlmsg, name_buffer, value_buffer);
 
-            snprintf(name_buffer, buffer_size, "endpoint.%s.%s", i->endpoint_name, "readed_byte_counter");
-            snprintf(value_buffer, buffer_size, "%u", i->ep_imp->read_byte_counter);
-            h9_xmlmsg_add_metrics(xmlmsg, name_buffer, value_buffer);
-
-            snprintf(name_buffer, buffer_size, "endpoint.%s.%s", i->endpoint_name, "written_byte_counter");
-            snprintf(value_buffer, buffer_size, "%u", i->ep_imp->write_byte_counter);
-            h9_xmlmsg_add_metrics(xmlmsg, name_buffer, value_buffer);
-
             h9_counter_t delta_recv_msg_counter =
                     calc_diff_and_update_last(&i->last_readed_recv_msg_counter, i->recv_msg_counter);
 
@@ -94,20 +85,12 @@ void h9d_metrices_trigger_callback(void *ud, uint32_t mask, void *param) {
             h9_counter_t delta_throttled_counter =
                     calc_diff_and_update_last(&i->last_readed_throttled_counter, i->throttled_counter);
 
-            h9_counter_t delta_r =
-                    calc_diff_and_update_last(&i->ep_imp->last_readed_read_byte_counter, i->ep_imp->read_byte_counter);
-
-            h9_counter_t delta_w =
-                    calc_diff_and_update_last(&i->ep_imp->last_readed_write_byte_counter, i->ep_imp->write_byte_counter);
-
-            h9_log_debug("endpoint %s metrices: recv %.1lf m/s; inv %.1lf m/s; send %.1lf m/s; throttled %.1lf m/s; read %.1lf B/s; write %.1lf B/s",
+            h9_log_debug("endpoint %s metrices: recv %.1lf m/s; inv %.1lf m/s; send %.1lf m/s; throttled %.1lf m/s",
                        i->endpoint_name,
                        (double)delta_recv_msg_counter/delta_time*TICKS_PER_SECOND,
                        (double)delta_recv_invalid_msg_counter/delta_time*TICKS_PER_SECOND,
                        (double)delta_send_msg_counter/delta_time*TICKS_PER_SECOND,
-                       (double)delta_throttled_counter/delta_time*TICKS_PER_SECOND,
-                       (double)delta_r/delta_time*TICKS_PER_SECOND,
-                       (double)delta_w/delta_time*TICKS_PER_SECOND);
+                       (double)delta_throttled_counter/delta_time*TICKS_PER_SECOND);
         }
 
         for (h9d_client_t *i = h9d_client_first_client(); i; i = h9d_client_getnext_client(i)) {
