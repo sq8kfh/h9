@@ -46,7 +46,7 @@ void h9d_metrices_trigger_callback(void *ud, uint32_t mask, void *param) {
     char value_buffer [buffer_size];
 
     if (mask == H9D_TRIGGER_TIMMER) {
-        h9_xmlmsg_t *xmlmsg = h9_xmlmsg_init(H9_XMLMSG_METRICSES);
+        h9_xmlmsg_t *xmlmsg = h9_xmlmsg_init(H9_XMLMSG_METRICS);
 
         uint64_t tmp = metrices_clock;
         metrices_clock = get_metrices_clock();
@@ -123,9 +123,9 @@ void h9d_metrices_trigger_callback(void *ud, uint32_t mask, void *param) {
         }
 
         size_t xml_length;
-        char *msg = h9_xmlmsg_build(xmlmsg, &xml_length, 1);
+        char *msg = h9_xmlmsg2xml(xmlmsg, &xml_length, 1);
 
-        h9d_trigger_call(H9D_TRIGGER_METRICSES, msg);
+        h9d_trigger_call(H9D_TRIGGER_METRICS, msg);
 
         h9_xmlmsg_free(xmlmsg);
         free(msg);

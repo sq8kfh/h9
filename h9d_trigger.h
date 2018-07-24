@@ -7,7 +7,7 @@
 #define H9D_TRIGGER_ALL 0xffffffff
 #define H9D_TRIGGER_TIMMER    (1<<0)
 #define H9D_TRIGGER_RECV_MSG  (1<<1)
-#define H9D_TRIGGER_METRICSES (1<<2)
+#define H9D_TRIGGER_METRICS   (1<<2)
 
 typedef void (h9d_trigger_callback)(void *ud, uint32_t mask, void *param);
 

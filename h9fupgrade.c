@@ -118,12 +118,16 @@ static void send_msg(h9_xmlsocket_t *xmlsocket, h9msg_t *msg) {
 uint16_t page = 0;
 size_t fw_idx = 0;
 
-static unsigned int xmlsocket_read_callback(const char *msg, size_t length, void *ud) {
-    void *res;
-    int ret = h9_xmlmsg_parse(msg, length, &res, 1);
+static unsigned int xmlsocket_read_callback(const char *xmlmsg, size_t length, void *ud) {
+    h9_xmlmsg_t *tmp_xmlmsg = h9_xmlmsg_parse(xmlmsg, length, 1);
 
-    if (ret == H9_XMLMSG_MSG && res) {
-        h9msg_t *msg = (h9msg_t*)res;
+    if (!tmp_xmlmsg) {
+        return 1;
+    }
+
+    h9msg_t *msg = NULL;
+    if (tmp_xmlmsg->type == H9_XMLMSG_MSG && (msg = h9_xmlmsg2h9msg(tmp_xmlmsg))) {
+        h9_xmlmsg_free(tmp_xmlmsg);
         if (msg->type == H9MSG_TYPE_ENTER_INTO_BOOTLOADER || msg->type == H9MSG_TYPE_PAGE_WRITED) {
             if (msg->type == H9MSG_TYPE_PAGE_WRITED) {
                 h9_log_stderr("Writted page %hu, byte %u", page, fw_idx);

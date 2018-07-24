@@ -90,29 +90,40 @@ void h9d_client_del(h9d_client_t *client_struct) {
     free(client_struct);
 }
 
-static unsigned int process_xmlmsg(const char *msg, size_t length, h9d_client_t *client_struct) {
+static unsigned int process_xmlmsg(const char *xmlmsg, size_t length, h9d_client_t *client_struct) {
     client_struct->recv_xmlmsg_counter++;
 
-    void *res;
-    int ret = h9_xmlmsg_parse(msg, length, &res, xmlmsg_schema_validation);
+    h9_xmlmsg_t *tmp_xmlmsg = h9_xmlmsg_parse(xmlmsg, length, xmlmsg_schema_validation);
+    if (!tmp_xmlmsg) {
+        client_struct->recv_invalid_xmlmsg_counter++;
+        return 1;
+    }
 
-    if (ret == H9_XMLMSG_SENDMSG && res) {
-        h9msg_t *ms = (h9msg_t*)res;
-        h9d_endpoint_send_msg(ms);
+    h9msg_t *msg = NULL;
+    char *event = NULL;
+    if (tmp_xmlmsg->type == H9_XMLMSG_SENDMSG && (msg = h9_xmlmsg2h9msg(tmp_xmlmsg))) {
+        h9d_endpoint_send_msg(msg);
+        h9msg_free(msg);
     }
-    else if (ret == H9_XMLMSG_SUBSCRIBE) {
-        h9d_trigger_add_listener(H9D_TRIGGER_RECV_MSG, client_struct, (h9d_trigger_callback*)trigger_callback);
-        h9d_trigger_add_listener(H9D_TRIGGER_METRICSES, client_struct, (h9d_trigger_callback*)trigger_callback);
+    else if (tmp_xmlmsg->type  == H9_XMLMSG_SUBSCRIBE && (event = h9_xmlmsg2event(tmp_xmlmsg))) {
+        if (strcmp(event, "msg") == 0)
+            h9d_trigger_add_listener(H9D_TRIGGER_RECV_MSG, client_struct, (h9d_trigger_callback*)trigger_callback);
+        else if (strcmp(event, "metrics") == 0)
+            h9d_trigger_add_listener(H9D_TRIGGER_METRICS, client_struct, (h9d_trigger_callback*)trigger_callback);
+        free(event);
     }
-    else if (ret == H9_XMLMSG_UNSUBSCRIBE) {
-        h9d_trigger_del_listener(H9D_TRIGGER_RECV_MSG, client_struct, (h9d_trigger_callback*)trigger_callback);
-        h9d_trigger_del_listener(H9D_TRIGGER_METRICSES, client_struct, (h9d_trigger_callback*)trigger_callback);
+    else if (tmp_xmlmsg->type  == H9_XMLMSG_UNSUBSCRIBE && (event = h9_xmlmsg2event(tmp_xmlmsg))) {
+        if (strcmp(event, "msg") == 0)
+            h9d_trigger_del_listener(H9D_TRIGGER_RECV_MSG, client_struct, (h9d_trigger_callback*)trigger_callback);
+        else if (strcmp(event, "metrics") == 0)
+            h9d_trigger_del_listener(H9D_TRIGGER_METRICS, client_struct, (h9d_trigger_callback*)trigger_callback);
+        free(event);
     }
     else {
         client_struct->recv_invalid_xmlmsg_counter++;
     }
 
-    h9_xmlmsg_free_parse_data(ret, res);
+    h9_xmlmsg_free(tmp_xmlmsg);
 
     return 1;
 }
@@ -158,7 +169,7 @@ static void trigger_callback(h9d_client_t *client, uint32_t mask, void *param) {
                 free(buf);
             }
             break;
-        case H9D_TRIGGER_METRICSES:
+        case H9D_TRIGGER_METRICS:
             if (param) {
                 h9d_client_send_msg(client, (char*)param, strlen((char*)param));
             }

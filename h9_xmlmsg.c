@@ -10,79 +10,6 @@ static int invalid_xml(xmlDocPtr doc);
 static h9msg_t *node2h9msg(xmlNode *node);
 static void h9msg2node(const h9msg_t *msg, h9_xmlmsg_t *xmlmsg);
 
-int h9_xmlmsg_parse(const char *msg, size_t msg_size, void **params, int xsd_validate) {
-    xmlDocPtr doc;
-
-    *params = NULL;
-
-    doc = xmlReadMemory(msg, msg_size, "noname.xml", NULL, 0);
-    if (doc == NULL) {
-        h9_log_warn("Failed to parse xml msg");
-        return H9_XMLMSG_UNKNOWN;
-    }
-
-    if (xsd_validate) {
-        if (invalid_xml(doc)) {
-            h9_log_warn("Invalid XML message");
-            xmlFreeDoc(doc);
-            return H9_XMLMSG_UNKNOWN;
-        }
-    }
-
-    xmlNode *root_element = xmlDocGetRootElement(doc);
-
-    int ret_msg_type = H9_XMLMSG_UNKNOWN;
-
-    if (root_element && root_element->type == XML_ELEMENT_NODE) {
-        if (strcasecmp((const char *) root_element->name, "h9methodCall") == 0) {
-            ret_msg_type = H9_XMLMSG_METHODCALL;
-        }
-        else if (strcasecmp((const char *) root_element->name, "h9methodResponse") == 0) {
-            ret_msg_type = H9_XMLMSG_METHODRESPONSE;
-        }
-        else if (strcasecmp((const char *) root_element->name, "h9sendmsg") == 0) {
-            *params = node2h9msg(root_element);
-
-            ret_msg_type = H9_XMLMSG_SENDMSG;
-        }
-        else if (strcasecmp((const char *) root_element->name, "h9msg") == 0) {
-            *params = node2h9msg(root_element);
-
-            ret_msg_type = H9_XMLMSG_MSG;
-        }
-        else if (strcasecmp((const char *) root_element->name, "h9subscribe") == 0){
-            ret_msg_type = H9_XMLMSG_SUBSCRIBE;
-        }
-        else if (strcasecmp((const char *) root_element->name, "h9unsubscribe") == 0){
-            ret_msg_type = H9_XMLMSG_UNSUBSCRIBE;
-        }
-        else {
-            h9_log_warn("Invalid XML root node: %s", (const char *) root_element->name);
-            xmlFreeDoc(doc);
-            return H9_XMLMSG_UNKNOWN;
-        }
-    }
-    else {
-        h9_log_warn("Invalid XML root node");
-        xmlFreeDoc(doc);
-        return H9_XMLMSG_UNKNOWN;
-    }
-
-    xmlFreeDoc(doc);
-    return ret_msg_type;
-}
-
-void h9_xmlmsg_free_parse_data(int parse_result, void *parse_data) {
-    if (parse_data != NULL) {
-        switch (parse_result) {
-            case H9_XMLMSG_SENDMSG:
-            case H9_XMLMSG_MSG:
-                h9msg_free(parse_data);
-                break;
-        }
-    }
-}
-
 h9_xmlmsg_t *h9_xmlmsg_init(int type) {
     xmlNode *node = NULL;
     switch (type) {
@@ -104,8 +31,8 @@ h9_xmlmsg_t *h9_xmlmsg_init(int type) {
         case H9_XMLMSG_UNSUBSCRIBE:
             node = xmlNewNode(NULL, BAD_CAST "h9unsubscribe");
             break;
-        case H9_XMLMSG_METRICSES:
-            node = xmlNewNode(NULL, BAD_CAST "h9metricses");
+        case H9_XMLMSG_METRICS:
+            node = xmlNewNode(NULL, BAD_CAST "h9metrics");
             break;
         default:
             return NULL;
@@ -116,6 +43,71 @@ h9_xmlmsg_t *h9_xmlmsg_init(int type) {
     return ret;
 }
 
+h9_xmlmsg_t *h9_xmlmsg_parse(const char *msg, size_t msg_size, int xsd_validate) {
+    xmlDocPtr doc;
+
+    doc = xmlReadMemory(msg, msg_size, "noname.xml", NULL, 0);
+    if (doc == NULL) {
+        h9_log_warn("Failed to parse xml msg");
+        return NULL;
+    }
+
+    if (xsd_validate) {
+        if (invalid_xml(doc)) {
+            h9_log_warn("Invalid XML message");
+            xmlFreeDoc(doc);
+            return NULL;
+        }
+    }
+
+    xmlNode *root_element = xmlDocGetRootElement(doc);
+
+    int ret_msg_type = H9_XMLMSG_UNKNOWN;
+
+    if (root_element && root_element->type == XML_ELEMENT_NODE) {
+        if (strcasecmp((const char *) root_element->name, "h9methodCall") == 0) {
+            ret_msg_type = H9_XMLMSG_METHODCALL;
+        }
+        else if (strcasecmp((const char *) root_element->name, "h9methodResponse") == 0) {
+            ret_msg_type = H9_XMLMSG_METHODRESPONSE;
+        }
+        else if (strcasecmp((const char *) root_element->name, "h9sendmsg") == 0) {
+            ret_msg_type = H9_XMLMSG_SENDMSG;
+        }
+        else if (strcasecmp((const char *) root_element->name, "h9msg") == 0) {
+            ret_msg_type = H9_XMLMSG_MSG;
+        }
+        else if (strcasecmp((const char *) root_element->name, "h9subscribe") == 0){
+            ret_msg_type = H9_XMLMSG_SUBSCRIBE;
+        }
+        else if (strcasecmp((const char *) root_element->name, "h9unsubscribe") == 0){
+            ret_msg_type = H9_XMLMSG_UNSUBSCRIBE;
+        }
+        else if (strcasecmp((const char *) root_element->name, "h9metrics") == 0){
+            ret_msg_type = H9_XMLMSG_METRICS;
+        }
+        else {
+            h9_log_warn("Invalid XML root node: %s", (const char *) root_element->name);
+            xmlFreeDoc(doc);
+            return NULL;
+        }
+    }
+    else {
+        h9_log_warn("Invalid XML root node");
+        xmlFreeDoc(doc);
+        return NULL;
+    }
+    //xmlUnlinkNode(root_element); //probably not work well
+    //xmlFreeDoc(doc);
+
+    h9_xmlmsg_t *ret = malloc(sizeof(h9_xmlmsg_t));
+    //ret->node = root_element;
+    ret->node = xmlCopyNodeList(root_element);
+    ret->type = ret_msg_type;
+    xmlFreeDoc(doc);
+    return ret;
+}
+
 void h9_xmlmsg_free(h9_xmlmsg_t *xmlmsg) {
     if (xmlmsg) {
         xmlFreeNode(xmlmsg->node);
@@ -123,7 +115,7 @@ void h9_xmlmsg_free(h9_xmlmsg_t *xmlmsg) {
     }
 }
 
-char *h9_xmlmsg_build(h9_xmlmsg_t *xmlmsg, size_t *xml_length, int xsd_validate) {
+char *h9_xmlmsg2xml(const h9_xmlmsg_t *xmlmsg, size_t *xml_length, int xsd_validate) {
     xmlDocPtr doc = xmlNewDoc(BAD_CAST "1.0");
     xmlDocSetRootElement(doc, xmlmsg->node);
 
@@ -154,86 +146,11 @@ char *h9_xmlmsg_build(h9_xmlmsg_t *xmlmsg, size_t *xml_length, int xsd_validate)
     return ret;
 }
 
-//char *h9_xmlmsg_build_h9methodCall(size_t *xml_length, int xsd_validate) {
-//    return NULL;
-//}
-//
-//char *h9_xmlmsg_build_h9methodResponse(size_t *xml_length, int xsd_validate) {
-//    return NULL;
-//}
+h9msg_t *h9_xmlmsg2h9msg(const h9_xmlmsg_t *xmlms) {
+    if (xmlms->type != H9_XMLMSG_MSG && xmlms->type != H9_XMLMSG_SENDMSG)
+        return NULL;
 
-char *h9_xmlmsg_build_h9subscribe(size_t *xml_length, const char *event, int xsd_validate) {
-    h9_xmlmsg_t *xmlmsg = h9_xmlmsg_init(H9_XMLMSG_SUBSCRIBE);
-    xmlNewProp(xmlmsg->node, BAD_CAST "event", BAD_CAST event);
-
-    char *ret = h9_xmlmsg_build(xmlmsg, xml_length, xsd_validate);
-
-    h9_xmlmsg_free(xmlmsg);
-    return ret;
-}
-
-char *h9_xmlmsg_build_h9unsubscribe(size_t *xml_length, const char *event, int xsd_validate) {
-    h9_xmlmsg_t *xmlmsg = h9_xmlmsg_init(H9_XMLMSG_UNSUBSCRIBE);
-    xmlNewProp(xmlmsg->node, BAD_CAST "event", BAD_CAST event);
-
-    char *ret = h9_xmlmsg_build(xmlmsg, xml_length, xsd_validate);
-
-    h9_xmlmsg_free(xmlmsg);
-    return ret;
-}
-
-char *h9_xmlmsg_build_h9sendmsg(size_t *xml_length, const h9msg_t *msg, int xsd_validate) {
-    h9_xmlmsg_t *xmlmsg = h9_xmlmsg_init(H9_XMLMSG_SENDMSG);
-    h9msg2node(msg, xmlmsg);
-
-    char *ret = h9_xmlmsg_build(xmlmsg, xml_length, xsd_validate);
-
-    h9_xmlmsg_free(xmlmsg);
-    return ret;
-}
-
-char *h9_xmlmsg_build_h9msg(size_t *xml_length, const h9msg_t *msg, int xsd_validate) {
-    h9_xmlmsg_t *xmlmsg = h9_xmlmsg_init(H9_XMLMSG_MSG);
-    h9msg2node(msg, xmlmsg);
-
-    char *ret = h9_xmlmsg_build(xmlmsg, xml_length, xsd_validate);
-
-    h9_xmlmsg_free(xmlmsg);
-    return ret;
-}
-
-static int invalid_xml(xmlDocPtr doc) {
-    //xmlSchemaParserCtxtPtr parser_ctxt = xmlSchemaNewParserCtxt("./h9msg.xsd");
-    xmlSchemaParserCtxtPtr parser_ctxt = xmlSchemaNewMemParserCtxt((char*)h9msg_xsd, h9msg_xsd_len);
-    if (parser_ctxt == NULL) {
-        h9_log_crit("unable to create a parser context for the schema");
-        exit(EXIT_FAILURE);
-    }
-    xmlSchemaPtr schema = xmlSchemaParse(parser_ctxt);
-    if (schema == NULL) {
-        xmlSchemaFreeParserCtxt(parser_ctxt);
-        h9_log_crit("the schema itself is not valid");
-        exit(EXIT_FAILURE);
-    }
-    xmlSchemaValidCtxtPtr valid_ctxt = xmlSchemaNewValidCtxt(schema);
-    if (valid_ctxt == NULL) {
-        xmlSchemaFree(schema);
-        xmlSchemaFreeParserCtxt(parser_ctxt);
-        h9_log_crit("unable to create a validation context for the schema");
-        exit(EXIT_FAILURE);
-    }
-
-    int res = xmlSchemaValidateDoc(valid_ctxt, doc);
-
-    xmlSchemaFreeValidCtxt(valid_ctxt);
-    xmlSchemaFree(schema);
-    xmlSchemaFreeParserCtxt(parser_ctxt);
-    xmlCleanupParser();
-
-    return res;
-}
-
-static h9msg_t *node2h9msg(xmlNode *node) {
+    xmlNode *node = xmlms->node;
     h9msg_t *msg = h9msg_init();
 
     xmlChar *tmp;
@@ -293,6 +210,96 @@ static h9msg_t *node2h9msg(xmlNode *node) {
     }
 
     return msg;
+}
+
+char *h9_xmlmsg2event(const h9_xmlmsg_t *xmlms) {
+    if (xmlms->type != H9_XMLMSG_SUBSCRIBE && xmlms->type != H9_XMLMSG_UNSUBSCRIBE)
+        return NULL;
+
+    xmlChar *tmp;
+    if ((tmp = xmlGetProp(xmlms->node, (const xmlChar *) "event"))) {
+        return strdup((char *)tmp);
+    }
+    return NULL;
+}
+
+//char *h9_xmlmsg_build_h9methodCall(size_t *xml_length, int xsd_validate) {
+//    return NULL;
+//}
+//
+//char *h9_xmlmsg_build_h9methodResponse(size_t *xml_length, int xsd_validate) {
+//    return NULL;
+//}
+
+char *h9_xmlmsg_build_h9subscribe(size_t *xml_length, const char *event, int xsd_validate) {
+    h9_xmlmsg_t *xmlmsg = h9_xmlmsg_init(H9_XMLMSG_SUBSCRIBE);
+    xmlNewProp(xmlmsg->node, BAD_CAST "event", BAD_CAST event);
+
+    char *ret = h9_xmlmsg2xml(xmlmsg, xml_length, xsd_validate);
+
+    h9_xmlmsg_free(xmlmsg);
+    return ret;
+}
+
+char *h9_xmlmsg_build_h9unsubscribe(size_t *xml_length, const char *event, int xsd_validate) {
+    h9_xmlmsg_t *xmlmsg = h9_xmlmsg_init(H9_XMLMSG_UNSUBSCRIBE);
+    xmlNewProp(xmlmsg->node, BAD_CAST "event", BAD_CAST event);
+
+    char *ret = h9_xmlmsg2xml(xmlmsg, xml_length, xsd_validate);
+
+    h9_xmlmsg_free(xmlmsg);
+    return ret;
+}
+
+char *h9_xmlmsg_build_h9sendmsg(size_t *xml_length, const h9msg_t *msg, int xsd_validate) {
+    h9_xmlmsg_t *xmlmsg = h9_xmlmsg_init(H9_XMLMSG_SENDMSG);
+    h9msg2node(msg, xmlmsg);
+
+    char *ret = h9_xmlmsg2xml(xmlmsg, xml_length, xsd_validate);
+
+    h9_xmlmsg_free(xmlmsg);
+    return ret;
+}
+
+char *h9_xmlmsg_build_h9msg(size_t *xml_length, const h9msg_t *msg, int xsd_validate) {
+    h9_xmlmsg_t *xmlmsg = h9_xmlmsg_init(H9_XMLMSG_MSG);
+    h9msg2node(msg, xmlmsg);
+
+    char *ret = h9_xmlmsg2xml(xmlmsg, xml_length, xsd_validate);
+
+    h9_xmlmsg_free(xmlmsg);
+    return ret;
+}
+
+static int invalid_xml(xmlDocPtr doc) {
+    //xmlSchemaParserCtxtPtr parser_ctxt = xmlSchemaNewParserCtxt("./h9msg.xsd");
+    xmlSchemaParserCtxtPtr parser_ctxt = xmlSchemaNewMemParserCtxt((char*)h9msg_xsd, h9msg_xsd_len);
+    if (parser_ctxt == NULL) {
+        h9_log_crit("unable to create a parser context for the schema");
+        exit(EXIT_FAILURE);
+    }
+    xmlSchemaPtr schema = xmlSchemaParse(parser_ctxt);
+    if (schema == NULL) {
+        xmlSchemaFreeParserCtxt(parser_ctxt);
+        h9_log_crit("the schema itself is not valid");
+        exit(EXIT_FAILURE);
+    }
+    xmlSchemaValidCtxtPtr valid_ctxt = xmlSchemaNewValidCtxt(schema);
+    if (valid_ctxt == NULL) {
+        xmlSchemaFree(schema);
+        xmlSchemaFreeParserCtxt(parser_ctxt);
+        h9_log_crit("unable to create a validation context for the schema");
+        exit(EXIT_FAILURE);
+    }
+
+    int res = xmlSchemaValidateDoc(valid_ctxt, doc);
+
+    xmlSchemaFreeValidCtxt(valid_ctxt);
+    xmlSchemaFree(schema);
+    xmlSchemaFreeParserCtxt(parser_ctxt);
+    xmlCleanupParser();
+
+    return res;
 }
 
 static void h9msg2node(const h9msg_t *msg, h9_xmlmsg_t *xmlmsg) {

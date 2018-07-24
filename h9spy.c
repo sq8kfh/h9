@@ -129,18 +129,21 @@ static void sighandler(int signum) {
     exit(EXIT_SUCCESS);
 }
 
-static unsigned int xmlsocket_read_callback(const char *msg, size_t length, void *ud) {
-    void *res;
-    int ret = h9_xmlmsg_parse(msg, length, &res, 1);
+static unsigned int xmlsocket_read_callback(const char *xmlmsg, size_t length, void *ud) {
+    h9_xmlmsg_t *tmp_xmlmsg = h9_xmlmsg_parse(xmlmsg, length, 1);
+    if (!tmp_xmlmsg) {
+        return 1;
+    }
 
-    if (ret == H9_XMLMSG_MSG && res) {
-        h9msg_t *msg = (h9msg_t*)res;
+    h9msg_t *msg = NULL;
+    if (tmp_xmlmsg->type == H9_XMLMSG_MSG && (msg = h9_xmlmsg2h9msg(tmp_xmlmsg))) {
         print_msg(msg, extended_output);
         h9msg_free(msg);
     }
     else {
-        h9_log_stderr("unknown message: %d", ret);
+        h9_log_stderr("unknown message: %d", tmp_xmlmsg->type);
     }
+    h9_xmlmsg_free(tmp_xmlmsg);
 
     return 1;
 }
