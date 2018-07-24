@@ -8,7 +8,7 @@
 
 static int invalid_xml(xmlDocPtr doc);
 static h9msg_t *node2h9msg(xmlNode *node);
-static void h9msg2node(h9msg_t *msg, h9_xmlmsg_t *xmlmsg);
+static void h9msg2node(const h9msg_t *msg, h9_xmlmsg_t *xmlmsg);
 
 int h9_xmlmsg_parse(const char *msg, size_t msg_size, void **params, int xsd_validate) {
     xmlDocPtr doc;
@@ -162,7 +162,7 @@ char *h9_xmlmsg_build(h9_xmlmsg_t *xmlmsg, size_t *xml_length, int xsd_validate)
 //    return NULL;
 //}
 
-char *h9_xmlmsg_build_h9subscribe(size_t *xml_length, char *event, int xsd_validate) {
+char *h9_xmlmsg_build_h9subscribe(size_t *xml_length, const char *event, int xsd_validate) {
     h9_xmlmsg_t *xmlmsg = h9_xmlmsg_init(H9_XMLMSG_SUBSCRIBE);
     xmlNewProp(xmlmsg->node, BAD_CAST "event", BAD_CAST event);
 
@@ -172,7 +172,7 @@ char *h9_xmlmsg_build_h9subscribe(size_t *xml_length, char *event, int xsd_valid
     return ret;
 }
 
-char *h9_xmlmsg_build_h9unsubscribe(size_t *xml_length, char *event, int xsd_validate) {
+char *h9_xmlmsg_build_h9unsubscribe(size_t *xml_length, const char *event, int xsd_validate) {
     h9_xmlmsg_t *xmlmsg = h9_xmlmsg_init(H9_XMLMSG_UNSUBSCRIBE);
     xmlNewProp(xmlmsg->node, BAD_CAST "event", BAD_CAST event);
 
@@ -182,7 +182,7 @@ char *h9_xmlmsg_build_h9unsubscribe(size_t *xml_length, char *event, int xsd_val
     return ret;
 }
 
-char *h9_xmlmsg_build_h9sendmsg(size_t *xml_length, h9msg_t *msg, int xsd_validate) {
+char *h9_xmlmsg_build_h9sendmsg(size_t *xml_length, const h9msg_t *msg, int xsd_validate) {
     h9_xmlmsg_t *xmlmsg = h9_xmlmsg_init(H9_XMLMSG_SENDMSG);
     h9msg2node(msg, xmlmsg);
 
@@ -192,7 +192,7 @@ char *h9_xmlmsg_build_h9sendmsg(size_t *xml_length, h9msg_t *msg, int xsd_valida
     return ret;
 }
 
-char *h9_xmlmsg_build_h9msg(size_t *xml_length, h9msg_t *msg, int xsd_validate) {
+char *h9_xmlmsg_build_h9msg(size_t *xml_length, const h9msg_t *msg, int xsd_validate) {
     h9_xmlmsg_t *xmlmsg = h9_xmlmsg_init(H9_XMLMSG_MSG);
     h9msg2node(msg, xmlmsg);
 
@@ -295,7 +295,7 @@ static h9msg_t *node2h9msg(xmlNode *node) {
     return msg;
 }
 
-static void h9msg2node(h9msg_t *msg, h9_xmlmsg_t *xmlmsg) {
+static void h9msg2node(const h9msg_t *msg, h9_xmlmsg_t *xmlmsg) {
     xmlNode *node = xmlmsg->node;
     if (msg->endpoint) {
         xmlNewProp(node, BAD_CAST "endpoint", BAD_CAST msg->endpoint);
@@ -324,7 +324,7 @@ static void h9msg2node(h9msg_t *msg, h9_xmlmsg_t *xmlmsg) {
     }
 }
 
-void h9_xmlmsg_add_metrics(h9_xmlmsg_t *xmlmsg, char *name, char *val) {
+void h9_xmlmsg_add_metrics(h9_xmlmsg_t *xmlmsg, const char *name, const char *val) {
     xmlNode *metrics = xmlNewChild(xmlmsg->node, NULL, BAD_CAST "metrics", BAD_CAST val);
     xmlNewProp(metrics, BAD_CAST "name", BAD_CAST name);
 }

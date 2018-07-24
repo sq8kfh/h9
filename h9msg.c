@@ -54,7 +54,7 @@ void h9msg_free(h9msg_t * msg) {
     free(msg);
 }
 
-h9msg_t *h9msg_copy(h9msg_t * msg) {
+h9msg_t *h9msg_copy(const h9msg_t * msg) {
     h9msg_t *ret = h9msg_init();
     *ret = *msg;
     if (msg->endpoint != NULL)

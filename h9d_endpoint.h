@@ -53,7 +53,7 @@ void h9d_endpoint_init_parameters_free(h9d_endpoint_init_parameters_t *ip);
 h9d_endpoint_init_parameters_t *h9d_endpoint_init_parameters_cpy(const h9d_endpoint_init_parameters_t *ip);
 
 int h9d_endpoint_process_events(h9d_endpoint_t *endpoint_struct, int event_type);
-int h9d_endpoint_send_msg(h9msg_t *msg);
+int h9d_endpoint_send_msg(const h9msg_t *msg);
 
 h9d_endpoint_t *h9d_endpoint_first_endpoint(void);
 h9d_endpoint_t *h9d_endpoint_getnext_endpoint(const h9d_endpoint_t *e);

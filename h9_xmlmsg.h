@@ -31,12 +31,12 @@ char *h9_xmlmsg_build(h9_xmlmsg_t *xmlmsg, size_t *xml_length, int xsd_validate)
 //char *h9_xmlmsg_build_h9methodCall(size_t *xml_length, int xsd_validate);
 //char *h9_xmlmsg_build_h9methodResponse(size_t *xml_length, int xsd_validate);
 
-char *h9_xmlmsg_build_h9subscribe(size_t *xml_length, char *event, int xsd_validate);
-char *h9_xmlmsg_build_h9unsubscribe(size_t *xml_length, char *event, int xsd_validate);
-char *h9_xmlmsg_build_h9sendmsg(size_t *xml_length, h9msg_t *msg, int xsd_validate);
-char *h9_xmlmsg_build_h9msg(size_t *xml_length, h9msg_t *msg, int xsd_validate);
+char *h9_xmlmsg_build_h9subscribe(size_t *xml_length, const char *event, int xsd_validate);
+char *h9_xmlmsg_build_h9unsubscribe(size_t *xml_length, const char *event, int xsd_validate);
+char *h9_xmlmsg_build_h9sendmsg(size_t *xml_length, const h9msg_t *msg, int xsd_validate);
+char *h9_xmlmsg_build_h9msg(size_t *xml_length, const h9msg_t *msg, int xsd_validate);
 
 //H9_XMLMSG_METRICSES
-void h9_xmlmsg_add_metrics(h9_xmlmsg_t *xmlmsg, char *name, char *val);
+void h9_xmlmsg_add_metrics(h9_xmlmsg_t *xmlmsg, const char *name, const char *val);
 
 #endif //_H9_XMLMSG_H_

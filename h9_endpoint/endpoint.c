@@ -56,7 +56,7 @@ int endpoint_onselect(endpoint_t *endpoint, endpoint_onselect_callback_t *onrecv
     return endpoint->onselect_func(endpoint->endpoint_data, onrecv_callback, onsend_callback, callback_data);
 }
 
-int endpoint_send(endpoint_t *endpoint, h9msg_t *msg) {
+int endpoint_send(endpoint_t *endpoint, const h9msg_t *msg) {
     return endpoint->send_func(endpoint->endpoint_data, msg);
 }
 

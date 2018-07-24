@@ -146,7 +146,7 @@ static void endpoint_respawn(h9d_endpoint_init_parameters_t *init_parameters, ui
     }
 }
 
-static void on_recv(h9msg_t *msg, h9d_endpoint_t *endpoint_struct) {
+static void on_recv(const h9msg_t *msg, h9d_endpoint_t *endpoint_struct) {
     endpoint_struct->recv_msg_counter++;
     if (msg == NULL) {
         endpoint_struct->recv_invalid_msg_counter++;
@@ -154,32 +154,32 @@ static void on_recv(h9msg_t *msg, h9d_endpoint_t *endpoint_struct) {
     }
     endpoint_struct->recv_msg_by_type_counter[msg->type]++;
 
-    msg = h9msg_copy(msg);
-    h9msg_replace_endpoint(msg, endpoint_struct->endpoint_name);
+    h9msg_t *local_msg = h9msg_copy(msg);
+    h9msg_replace_endpoint(local_msg, endpoint_struct->endpoint_name);
 
     h9_log_info("receive msg: %hu->%hu priority: %c; type: %hhu; dlc: %hhu; endpoint '%s'",
-           msg->source_id, msg->destination_id,
-           msg->priority == H9MSG_PRIORITY_HIGH ? 'H' : 'L',
-           msg->type, msg->dlc,
-           msg->endpoint);
+                local_msg->source_id, local_msg->destination_id,
+                local_msg->priority == H9MSG_PRIORITY_HIGH ? 'H' : 'L',
+                local_msg->type, local_msg->dlc,
+                local_msg->endpoint);
 
-    h9d_trigger_call(H9D_TRIGGER_RECV_MSG, msg);
+    h9d_trigger_call(H9D_TRIGGER_RECV_MSG, local_msg);
 
-    h9msg_free(msg);
+    h9msg_free(local_msg);
 }
 
-static void on_send(h9msg_t *msg, h9d_endpoint_t *endpoint_struct) {
+static void on_send(const h9msg_t *msg, h9d_endpoint_t *endpoint_struct) {
     endpoint_struct->send_msg_counter++;
     endpoint_struct->msq_in_queue--;
 
-    //msg = h9msg_copy(msg);
+    h9msg_t *local_msg = h9msg_copy(msg);
 
-    h9d_trigger_call(H9D_TRIGGER_RECV_MSG, msg);
+    h9d_trigger_call(H9D_TRIGGER_RECV_MSG, local_msg);
 
-    //h9msg_free(msg);
+    h9msg_free(local_msg);
 }
 
-int h9d_endpoint_process_events(h9d_endpoint_t *endpoint_struct, int event_type){
+int h9d_endpoint_process_events(h9d_endpoint_t *endpoint_struct, int event_type) {
     if (event_type & H9D_SELECT_EVENT_READ) {
         int res = endpoint_onselect(endpoint_struct->endpoint,
                                           (endpoint_onselect_callback_t*)on_recv,
@@ -204,28 +204,28 @@ int h9d_endpoint_process_events(h9d_endpoint_t *endpoint_struct, int event_type)
     return H9D_SELECT_EVENT_RETURN_OK;
 }
 
-int h9d_endpoint_send_msg(h9msg_t *msg) {
-    msg = h9msg_copy(msg);
-    h9msg_replace_endpoint(msg, "h9d");
+int h9d_endpoint_send_msg(const h9msg_t *msg) {
+    h9msg_t *local_msg = h9msg_copy(msg);
+    h9msg_replace_endpoint(local_msg, "h9d");
 
     for (h9d_endpoint_t *ep = endpoint_list_start; ep; ep = ep->next) {
         if (ep->throttle_level) {
             if (ep->msq_in_queue < ep->throttle_level) {
                 ep->msq_in_queue++;
-                endpoint_send(ep->endpoint, msg);
+                endpoint_send(ep->endpoint, local_msg);
             }
             else {
                 ep->throttled_counter++;
-                h9msg_free(msg);
+                h9msg_free(local_msg);
                 return 0; //throttled
             }
         }
         else {
             ep->msq_in_queue++;
-            endpoint_send(ep->endpoint, msg);
+            endpoint_send(ep->endpoint, local_msg);
         }
     }
-    h9msg_free(msg);
+    h9msg_free(local_msg);
     return 1;
 }
 
