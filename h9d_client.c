@@ -110,6 +110,8 @@ static unsigned int process_xmlmsg(const char *xmlmsg, size_t length, h9d_client
             h9d_trigger_add_listener(H9D_TRIGGER_RECV_MSG, client_struct, (h9d_trigger_callback*)trigger_callback);
         else if (strcmp(event, "metrics") == 0)
             h9d_trigger_add_listener(H9D_TRIGGER_METRICS, client_struct, (h9d_trigger_callback*)trigger_callback);
+        else if (strcmp(event, "all") == 0)
+            h9d_trigger_add_listener(H9D_TRIGGER_RECV_MSG | H9D_TRIGGER_METRICS, client_struct, (h9d_trigger_callback*)trigger_callback);
         free(event);
     }
     else if (tmp_xmlmsg->type  == H9_XMLMSG_UNSUBSCRIBE && (event = h9_xmlmsg2event(tmp_xmlmsg))) {
@@ -117,6 +119,8 @@ static unsigned int process_xmlmsg(const char *xmlmsg, size_t length, h9d_client
             h9d_trigger_del_listener(H9D_TRIGGER_RECV_MSG, client_struct, (h9d_trigger_callback*)trigger_callback);
         else if (strcmp(event, "metrics") == 0)
             h9d_trigger_del_listener(H9D_TRIGGER_METRICS, client_struct, (h9d_trigger_callback*)trigger_callback);
+        else if (strcmp(event, "all") == 0)
+            h9d_trigger_del_listener(H9D_TRIGGER_RECV_MSG | H9D_TRIGGER_METRICS, client_struct, (h9d_trigger_callback*)trigger_callback);
         free(event);
     }
     else {
