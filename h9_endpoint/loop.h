@@ -20,7 +20,7 @@ int loop_onselect_event(loop_t *slcan,
                          endpoint_onselect_callback_t *send_callback,
                          void *callback_data);
 
-int loop_send(loop_t *loop, h9msg_t *msg);
+int loop_send(loop_t *loop, const h9msg_t *msg);
 int loop_getfd(loop_t *loop);
 
 #endif //_LOOP_H_

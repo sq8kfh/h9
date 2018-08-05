@@ -35,7 +35,7 @@ int loop_onselect_event(loop_t *loop,
     return ENDPOINT_ONSELECT_OK;
 }
 
-int loop_send(loop_t *loop, h9msg_t *msg) {
+int loop_send(loop_t *loop, const h9msg_t *msg) {
     loop->buf = h9msg_copy(msg);
     send(loop->fd[1], msg, sizeof(h9msg_t), 0);
     return ENDPOINT_ONSELECT_OK;

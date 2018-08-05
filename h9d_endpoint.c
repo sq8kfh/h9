@@ -157,10 +157,10 @@ static void on_recv(const h9msg_t *msg, h9d_endpoint_t *endpoint_struct) {
     h9msg_t *local_msg = h9msg_copy(msg);
     h9msg_replace_endpoint(local_msg, endpoint_struct->endpoint_name);
 
-    h9_log_info("receive msg: %hu->%hu priority: %c; type: %hhu; dlc: %hhu; endpoint '%s'",
+    h9_log_info("receive msg: %hu->%hu priority: %c; type: %hhu; seqnum: %hhu; dlc: %hhu; endpoint '%s'",
                 local_msg->source_id, local_msg->destination_id,
                 local_msg->priority == H9MSG_PRIORITY_HIGH ? 'H' : 'L',
-                local_msg->type, local_msg->dlc,
+                local_msg->type, local_msg->seqnum, local_msg->dlc,
                 local_msg->endpoint);
 
     h9d_trigger_call(H9D_TRIGGER_RECV_MSG, local_msg);

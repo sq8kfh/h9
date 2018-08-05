@@ -176,6 +176,13 @@ h9msg_t *h9_xmlmsg2h9msg(const h9_xmlmsg_t *xmlms) {
     msg->type = (uint8_t)strtol((char *)tmp, (char **)NULL, 10);
     xmlFree(tmp);
 
+    if ((tmp = xmlGetProp(node, (const xmlChar *) "seqnum")) == NULL) {
+        h9msg_free(msg);
+        return NULL;
+    }
+    msg->seqnum = (uint8_t)strtol((char *)tmp, (char **)NULL, 10);
+    xmlFree(tmp);
+
     if ((tmp = xmlGetProp(node, (const xmlChar *) "source")) == NULL) {
         h9msg_free(msg);
         return NULL;
@@ -316,6 +323,8 @@ static void h9msg2node(const h9msg_t *msg, h9_xmlmsg_t *xmlmsg) {
     char str[24];
     snprintf(str, 24, "%u", (unsigned int)msg->type);
     xmlNewProp(node, BAD_CAST "type", BAD_CAST str);
+    snprintf(str, 24, "%u", (unsigned int)msg->seqnum);
+    xmlNewProp(node, BAD_CAST "seqnum", BAD_CAST str);
     snprintf(str, 24, "%u", (unsigned int)msg->source_id);
     xmlNewProp(node, BAD_CAST "source", BAD_CAST str);
     snprintf(str, 24, "%u", (unsigned int)msg->destination_id);

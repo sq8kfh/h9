@@ -29,7 +29,7 @@ int slcan_onselect_event(slcan_t *slcan,
                             endpoint_onselect_callback_t *send_callback,
                             void *callback_data);
 
-int slcan_send(slcan_t *slcan, h9msg_t *msg);
+int slcan_send(slcan_t *slcan, const h9msg_t *msg);
 int slcan_getfd(slcan_t *slcan);
 
 #endif //_SLCAN_H_

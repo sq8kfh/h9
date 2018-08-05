@@ -13,7 +13,7 @@ typedef void* (endpoint_create_func_t)(const char *connect_string);
 typedef void (endpoint_destroy_func_t)(void *endpoint_data);
 typedef int (endpoint_onselect_func_t)(void *endpoint_data, endpoint_onselect_callback_t *onrecv_callback,
                                         endpoint_onselect_callback_t *onsend_callback, void *callback_data);
-typedef int (endpoint_send_func_t)(void *endpoint_data, h9msg_t *msg);
+typedef int (endpoint_send_func_t)(void *endpoint_data, const h9msg_t *msg);
 typedef int (endpoint_getfd_func_t)(void *endpoint_data);
 
 typedef struct {

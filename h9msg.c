@@ -43,6 +43,7 @@ h9msg_t *h9msg_init(void) {
     msg->endpoint = NULL;
     msg->priority = H9MSG_PRIORITY_LOW;
     msg->type = H9MSG_TYPE_NOP;
+    msg->seqnum = 0;
     msg->dlc = 0;
     return msg;
 }

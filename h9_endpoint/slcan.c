@@ -170,7 +170,7 @@ int slcan_onselect_event(slcan_t *slcan,
     return ret;
 }
 
-int slcan_send(slcan_t *slcan, h9msg_t *msg) {
+int slcan_send(slcan_t *slcan, const h9msg_t *msg) {
     queue_t *q = malloc(sizeof(queue_t));
     q->h9msg = h9msg_copy(msg);
     q->length = build_msg(q->msg, msg);
@@ -263,8 +263,8 @@ static size_t build_msg(char *slcan_data, const h9msg_t *msg) {
     id |= msg->priority & ((1<<H9MSG_PRIORITY_BIT_LENGTH) - 1);
     id <<= H9MSG_TYPE_BIT_LENGTH;
     id |= msg->type & ((1<<H9MSG_TYPE_BIT_LENGTH) - 1);
-    id <<= H9MSG_RESERVED_BIT_LENGTH;
-    id |= H9MSG_RESERVED_VALUE & ((1<<H9MSG_RESERVED_BIT_LENGTH) - 1);
+    id <<= H9MSG_SEQNUM_BIT_LENGTH;
+    id |= msg->seqnum & ((1<<H9MSG_SEQNUM_BIT_LENGTH) - 1);
     id <<= H9MSG_DESTINATION_ID_BIT_LENGTH;
     id |= msg->destination_id & ((1<<H9MSG_DESTINATION_ID_BIT_LENGTH) - 1);
     id <<= H9MSG_SOURCE_ID_BIT_LENGTH;
@@ -285,10 +285,13 @@ static h9msg_t *parse_msg(const char *data, size_t length) {
     uint32_t id;
     sscanf(data + 1, "%8x", &id);
 
-    res->priority = (uint8_t)((id >> (H9MSG_TYPE_BIT_LENGTH + H9MSG_RESERVED_BIT_LENGTH +
+    res->priority = (uint8_t)((id >> (H9MSG_TYPE_BIT_LENGTH + H9MSG_SEQNUM_BIT_LENGTH +
                                      H9MSG_DESTINATION_ID_BIT_LENGTH + H9MSG_SOURCE_ID_BIT_LENGTH)) & ((1<<H9MSG_PRIORITY_BIT_LENGTH) - 1));
 
-    res->type = (uint8_t)((id >> (H9MSG_RESERVED_BIT_LENGTH + H9MSG_DESTINATION_ID_BIT_LENGTH + H9MSG_SOURCE_ID_BIT_LENGTH)) \
+    res->type = (uint8_t)((id >> (H9MSG_SEQNUM_BIT_LENGTH + H9MSG_DESTINATION_ID_BIT_LENGTH + H9MSG_SOURCE_ID_BIT_LENGTH)) \
+		                    & ((1<<H9MSG_TYPE_BIT_LENGTH) - 1));
+
+    res->seqnum = (uint8_t)((id >> (H9MSG_DESTINATION_ID_BIT_LENGTH + H9MSG_SOURCE_ID_BIT_LENGTH)) \
 		                    & ((1<<H9MSG_TYPE_BIT_LENGTH) - 1));
 
     res->destination_id = (uint16_t)((id >> (H9MSG_SOURCE_ID_BIT_LENGTH)) & ((1<<H9MSG_DESTINATION_ID_BIT_LENGTH) - 1));

@@ -5,11 +5,9 @@
 
 #define H9MSG_PRIORITY_BIT_LENGTH 1
 #define H9MSG_TYPE_BIT_LENGTH 5
-#define H9MSG_RESERVED_BIT_LENGTH 5
+#define H9MSG_SEQNUM_BIT_LENGTH 5
 #define H9MSG_DESTINATION_ID_BIT_LENGTH 9
 #define H9MSG_SOURCE_ID_BIT_LENGTH 9
-
-#define H9MSG_RESERVED_VALUE 1
 
 #define H9MSG_BROADCAST_ID 0x1ff
 
@@ -70,12 +68,13 @@
 #define H9MSG_TYPE_COUNT (1 << H9MSG_TYPE_BIT_LENGTH)
 
 // 31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10 09 08 07 06 05 04 03 02 01 00
-// -- -- -- pp ty ty ty ty ty  0  0  0  0  1 ds ds ds ds ds ds ds ds ds so so so so so so so so so
+// -- -- -- pp ty ty ty ty ty se se se se se ds ds ds ds ds ds ds ds ds so so so so so so so so so
 
 struct h9msg {
     char *endpoint;
     uint8_t priority :H9MSG_PRIORITY_BIT_LENGTH;
     uint8_t type :H9MSG_TYPE_BIT_LENGTH;
+    uint8_t seqnum: H9MSG_SEQNUM_BIT_LENGTH;
     uint16_t destination_id :H9MSG_DESTINATION_ID_BIT_LENGTH;
     uint16_t source_id :H9MSG_SOURCE_ID_BIT_LENGTH;
     uint8_t dlc;
