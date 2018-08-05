@@ -52,12 +52,13 @@ int main(int argc, char **argv) {
                 {"version",     no_argument,       0, 'V' },
                 {"priority",    required_argument, 0, 'P' },
                 {"type",        required_argument, 0, 't' },
+                {"seqnum",      required_argument, 0, 'q' },
                 {"destination", required_argument, 0, 'i' },
                 {"source",      required_argument, 0, 's' },
                 {0,             0,                 0,  0  }
         };
 
-        c = getopt_long(argc, argv, "c:dhp:vVP:t:i:s:", long_options, &option_index);
+        c = getopt_long(argc, argv, "c:dhp:vVP:t:q:i:s:", long_options, &option_index);
         if (c == -1)
             break;
 
@@ -101,6 +102,10 @@ int main(int argc, char **argv) {
             case 't':
                 sscanf(optarg, "%hu", &tmp_ui);
                 msg->type = (uint8_t)tmp_ui & (uint8_t)((1<<H9MSG_TYPE_BIT_LENGTH) - 1);
+                break;
+            case 'q':
+                sscanf(optarg, "%hu", &tmp_ui);
+                msg->seqnum = (uint8_t)tmp_ui & (uint8_t)((1<<H9MSG_SEQNUM_BIT_LENGTH) - 1);
                 break;
             case 'i':
                 sscanf(optarg, "%hu", &tmp_ui);

@@ -149,10 +149,10 @@ static unsigned int xmlsocket_read_callback(const char *xmlmsg, size_t length, v
 }
 
 static void print_msg(h9msg_t* msg, int extend_output) {
-    printf("%-3hu -> %-3hu priority: %c; type: %2hhu; dlc: %hhu; endpoint '%s'; data: ",
+    printf("%-3hu -> %-3hu priority: %c; type: %2hhu; seqnum: %2hhu; dlc: %hhu; endpoint '%s'; data: ",
            msg->source_id, msg->destination_id,
            msg->priority == H9MSG_PRIORITY_HIGH ? 'H' : 'L',
-           msg->type, msg->dlc,
+           msg->type, msg->seqnum, msg->dlc,
            msg->endpoint);
     for (int i = 0; i < msg->dlc; ++i) {
         printf("%02hhX", msg->data[i]);

@@ -8,7 +8,7 @@
 
 typedef struct {
     int fd[2];
-    h9msg_t *buf;
+    //h9msg_t *buf;
 } loop_t;
 
 

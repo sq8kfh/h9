@@ -17,13 +17,15 @@ static h9d_endpoint_t *h9d_endpoint_create(const h9d_endpoint_init_parameters_t 
     return h9d_endpoint_addnew(ip->connect_string,
                                ip->name,
                                ip->throttle_level,
-                               ip->auto_respawn);
+                               ip->auto_respawn,
+                               ip->id);
 }
 
 h9d_endpoint_t *h9d_endpoint_addnew(const char *connect_string,
                                     const char *name,
                                     unsigned int throttle_level,
-                                    int auto_respawn) {
+                                    int auto_respawn,
+                                    uint16_t id) {
 
     endpoint_t *imp_tmp = endpoint_create(name, connect_string);
 
@@ -38,11 +40,14 @@ h9d_endpoint_t *h9d_endpoint_addnew(const char *connect_string,
     ep->init_parameters = h9d_endpoint_init_parameters_init(connect_string,
                                                             name,
                                                             throttle_level,
-                                                            auto_respawn);
+                                                            auto_respawn,
+                                                            id);
 
     ep->auto_respawn = auto_respawn;
 
     ep->endpoint_name = strdup(name);
+    ep->id = id & (uint16_t)((1<<H9MSG_SOURCE_ID_BIT_LENGTH) - 1);
+    ep->seqnum = 0;
 
     ep->recv_invalid_msg_counter = 0;
     ep->last_readed_throttled_counter = 0;
@@ -109,11 +114,13 @@ void h9d_endpoint_del(h9d_endpoint_t *endpoint_struct) {
 h9d_endpoint_init_parameters_t *h9d_endpoint_init_parameters_init(const char *connect_string,
                                                                   const char *name,
                                                                   unsigned throttle_level,
-                                                                  int auto_respawn) {
+                                                                  int auto_respawn,
+                                                                  uint16_t id) {
     h9d_endpoint_init_parameters_t *ip = malloc(sizeof(h9d_endpoint_init_parameters_t));
 
     ip->connect_string = strdup(connect_string);
     ip->name = strdup(name);
+    ip->id = id;
     ip->throttle_level = throttle_level;
     ip->auto_respawn = auto_respawn;
 
@@ -130,7 +137,8 @@ h9d_endpoint_init_parameters_t *h9d_endpoint_init_parameters_cpy(const h9d_endpo
     return h9d_endpoint_init_parameters_init(ip->connect_string,
                                              ip->name,
                                              ip->throttle_level,
-                                             ip->auto_respawn);
+                                             ip->auto_respawn,
+                                             ip->id);
 }
 
 static void endpoint_respawn(h9d_endpoint_init_parameters_t *init_parameters, uint32_t mask, void *param) {
@@ -173,6 +181,7 @@ static void on_send(const h9msg_t *msg, h9d_endpoint_t *endpoint_struct) {
     endpoint_struct->msq_in_queue--;
 
     h9msg_t *local_msg = h9msg_copy(msg);
+    h9msg_replace_endpoint(local_msg, endpoint_struct->endpoint_name);
 
     h9d_trigger_call(H9D_TRIGGER_RECV_MSG, local_msg);
 
@@ -208,7 +217,19 @@ int h9d_endpoint_send_msg(const h9msg_t *msg) {
     h9msg_t *local_msg = h9msg_copy(msg);
     h9msg_replace_endpoint(local_msg, "h9d");
 
+    uint16_t org_id = local_msg->source_id;
+    uint8_t org_seqnum = local_msg->seqnum;
+
     for (h9d_endpoint_t *ep = endpoint_list_start; ep; ep = ep->next) {
+        if (org_id == 0) local_msg->source_id = ep->id;
+        else local_msg->source_id = org_id;
+        if (org_seqnum == 0) {
+            ++ep->seqnum;
+            ep->seqnum %= (1<<H9MSG_SEQNUM_BIT_LENGTH);
+            local_msg->seqnum = ep->seqnum;
+        }
+        else local_msg->seqnum = org_seqnum;
+
         if (ep->throttle_level) {
             if (ep->msq_in_queue < ep->throttle_level) {
                 ep->msq_in_queue++;
@@ -217,7 +238,7 @@ int h9d_endpoint_send_msg(const h9msg_t *msg) {
             else {
                 ep->throttled_counter++;
                 h9msg_free(local_msg);
-                return 0; //throttled
+                return 0; //throttled //TODO: add some break logic
             }
         }
         else {

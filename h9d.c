@@ -209,7 +209,8 @@ int main(int argc, char **argv) {
         h9d_endpoint_t *endpoint = h9d_endpoint_addnew(h9d_cfg_endpoint_getstr("connect"),
                                                        endpoint_name,
                                                        (unsigned int)h9d_cfg_endpoint_getint("throttle_level"),
-                                                       h9d_cfg_endpoint_getbool("auto_respawn"));
+                                                       h9d_cfg_endpoint_getbool("auto_respawn"),
+                                                       (uint16_t)h9d_cfg_endpoint_getint("id"));
         if (!endpoint) {
             h9d_select_event_free();
             h9_log_err("cannot open endpoint");
