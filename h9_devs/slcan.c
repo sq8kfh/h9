@@ -10,11 +10,11 @@
 #include <ctype.h>
 
 static int send_first(slcan_t *slcan);
-static int send_ack(slcan_t *slcan, endpoint_onselect_callback_t *send_callback, void *callback_data);
+static int send_ack(slcan_t *slcan, dev_onselect_callback_t *send_callback, void *callback_data);
 static char *strndup_unescaped(const char *ptr, size_t n);
 static size_t build_msg(char *slcan_data, const h9msg_t *msg);
 static int proces_readed_data(slcan_t *slcan, const char *data, size_t length,
-                              endpoint_onselect_callback_t *callback, void *callback_data);
+                              dev_onselect_callback_t *callback, void *callback_data);
 
 typedef struct queue_t {
     struct queue_t *next;
@@ -104,9 +104,9 @@ void slcan_free(slcan_t *slcan) {
 }
 
 int slcan_onselect_event(slcan_t *slcan,
-                            endpoint_onselect_callback_t *recv_callback,
-                            endpoint_onselect_callback_t *send_callback,
-                            void *callback_data) {
+                         dev_onselect_callback_t *recv_callback,
+                         dev_onselect_callback_t *send_callback,
+                         void *callback_data) {
     ssize_t nbytes;
 
     if (slcan->in_buf >= slcan->buf_size) {
@@ -116,13 +116,13 @@ int slcan_onselect_event(slcan_t *slcan,
 
         if (slcan->buf == NULL) {
             h9_log_err("slcan: realloc: %s", strerror(errno));
-            return ENDPOINT_ONSELECT_CRITICAL;
+            return DEV_ONSELECT_CRITICAL;
         }
     }
 
     nbytes = read(slcan->fd, &slcan->buf[slcan->in_buf], slcan->buf_size - slcan->in_buf);
 
-    int ret = ENDPOINT_ONSELECT_OK;
+    int ret = DEV_ONSELECT_OK;
 
     if (nbytes <= 0) {
         if (nbytes == 0) {
@@ -130,7 +130,7 @@ int slcan_onselect_event(slcan_t *slcan,
         } else {
             h9_log_err("slcan read %s", strerror(errno));
         }
-        return ENDPOINT_ONSELECT_CRITICAL;
+        return DEV_ONSELECT_CRITICAL;
     } else {
         slcan->read_byte_counter += nbytes;
         slcan->in_buf += nbytes;
@@ -176,7 +176,7 @@ int slcan_send(slcan_t *slcan, const h9msg_t *msg) {
     q->length = build_msg(q->msg, msg);
     q->next = NULL;
 
-    int ret = ENDPOINT_ONSELECT_OK;
+    int ret = DEV_ONSELECT_OK;
 
     if (msg_queue_start == NULL) {
         msg_queue_start = q;
@@ -205,7 +205,7 @@ static int send_first(slcan_t *slcan) {
             } else {
                 h9_log_err("slcan write %s", strerror(errno));
             }
-            return ENDPOINT_ONSELECT_CRITICAL;
+            return DEV_ONSELECT_CRITICAL;
         }
 
         char *tmp = strndup_unescaped(msg_queue_start->msg, nbyte);
@@ -214,10 +214,10 @@ static int send_first(slcan_t *slcan) {
 
         slcan->write_byte_counter += nbyte;
     }
-    return ENDPOINT_ONSELECT_OK;
+    return DEV_ONSELECT_OK;
 }
 
-static int send_ack(slcan_t *slcan, endpoint_onselect_callback_t *send_callback, void *callback_data) {
+static int send_ack(slcan_t *slcan, dev_onselect_callback_t *send_callback, void *callback_data) {
     if (msg_queue_start != NULL) {
         queue_t *q = msg_queue_start;
         msg_queue_start = msg_queue_start->next;
@@ -313,7 +313,7 @@ static h9msg_t *parse_msg(const char *data, size_t length) {
 }
 
 static int proces_readed_data(slcan_t *slcan, const char *data, size_t length,
-                              endpoint_onselect_callback_t *callback, void *callback_data) {
+                              dev_onselect_callback_t *callback, void *callback_data) {
     int res = 0;
     if (data[0] == 't' && length <= 22) {
         h9_log_warn("slcan t command not yet implemented");

@@ -27,15 +27,15 @@ h9d_endpoint_t *h9d_endpoint_addnew(const char *connect_string,
                                     int auto_respawn,
                                     uint16_t id) {
 
-    endpoint_t *imp_tmp = endpoint_create(name, connect_string);
+    h9_dev_proxy_t *dev_proxy = h9_dev_factory(name, connect_string);
 
-    if (!imp_tmp) {
+    if (!dev_proxy) {
         return NULL;
     }
 
     h9d_endpoint_t *ep = malloc(sizeof(h9d_endpoint_t));
 
-    ep->endpoint = imp_tmp;
+    ep->dev = dev_proxy;
 
     ep->memento = h9d_endpoint_memento_init(connect_string, name, throttle_level, auto_respawn, id);
 
@@ -79,7 +79,7 @@ h9d_endpoint_t *h9d_endpoint_addnew(const char *connect_string,
 
 void h9d_endpoint_del(h9d_endpoint_t *endpoint_struct) {
     h9_log_debug("endpoint %p stats: send %u msg; recv %u msg; recv invalid %u msg",
-                 endpoint_struct->endpoint,
+                 endpoint_struct->dev,
                  endpoint_struct->send_msg_counter,
                  endpoint_struct->recv_msg_counter,
                  endpoint_struct->recv_invalid_msg_counter);
@@ -101,7 +101,7 @@ void h9d_endpoint_del(h9d_endpoint_t *endpoint_struct) {
         }
     }
 
-    endpoint_destroy(endpoint_struct->endpoint);
+    h9_dev_proxy_destroy(endpoint_struct->dev);
     h9d_endpoint_memento_free(endpoint_struct->memento);
     free(endpoint_struct->endpoint_name);
     free(endpoint_struct);
@@ -143,7 +143,7 @@ static void endpoint_respawn(h9d_endpoint_memento_t *memento, uint32_t mask, voi
         h9_log_err("cannot open endpoint");
     }
     else {
-        h9d_select_event_add(endpoint_getfd(endpoint->endpoint), H9D_SELECT_EVENT_READ | H9D_SELECT_EVENT_DISCONNECT,
+        h9d_select_event_add(h9_dev_proxy_getfd(endpoint->dev), H9D_SELECT_EVENT_READ | H9D_SELECT_EVENT_DISCONNECT,
                              (h9d_select_event_func_t *) h9d_endpoint_process_events, endpoint);
         h9d_trigger_del_listener(mask, memento, (h9d_trigger_callback*)endpoint_respawn);
         h9d_endpoint_memento_free(memento);
@@ -186,11 +186,11 @@ static void on_send(const h9msg_t *msg, h9d_endpoint_t *endpoint_struct) {
 
 int h9d_endpoint_process_events(h9d_endpoint_t *endpoint_struct, int event_type) {
     if (event_type & H9D_SELECT_EVENT_READ) {
-        int res = endpoint_onselect(endpoint_struct->endpoint,
-                                          (endpoint_onselect_callback_t*)on_recv,
-                                          (endpoint_onselect_callback_t*)on_send,
-                                          endpoint_struct);
-        if (res == ENDPOINT_ONSELECT_CRITICAL) {
+        int res = h9_dev_proxy_onselect(endpoint_struct->dev,
+                                        (dev_onselect_callback_t*)on_recv,
+                                        (dev_onselect_callback_t*)on_send,
+                                        endpoint_struct);
+        if (res == DEV_ONSELECT_CRITICAL) {
             return H9D_SELECT_EVENT_RETURN_DISCONNECT;
         }
     }
@@ -229,7 +229,7 @@ int h9d_endpoint_send_msg(const h9msg_t *msg) {
         if (ep->throttle_level) {
             if (ep->msq_in_queue < ep->throttle_level) {
                 ep->msq_in_queue++;
-                endpoint_send(ep->endpoint, local_msg);
+                h9_dev_proxy_send(ep->dev, local_msg);
             }
             else {
                 ep->throttled_counter++;
@@ -239,7 +239,7 @@ int h9d_endpoint_send_msg(const h9msg_t *msg) {
         }
         else {
             ep->msq_in_queue++;
-            endpoint_send(ep->endpoint, local_msg);
+            h9_dev_proxy_send(ep->dev, local_msg);
         }
     }
     h9msg_free(local_msg);

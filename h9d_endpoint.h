@@ -5,7 +5,7 @@
 #include <time.h>
 
 #include "h9msg.h"
-#include "h9_endpoint/endpoint.h"
+#include "h9_devs/h9_dev.h"
 
 typedef struct {
     const char *connect_string;
@@ -23,7 +23,7 @@ typedef struct h9d_endpoint_t {
     char *endpoint_name;
     uint16_t id;
     uint8_t seqnum;
-    endpoint_t *endpoint;
+    h9_dev_proxy_t *dev;
 
     struct h9d_endpoint_t *next;
     struct h9d_endpoint_t *prev;
@@ -50,10 +50,10 @@ h9d_endpoint_t *h9d_endpoint_addnew(const char *connect_string, const char *name
 void h9d_endpoint_del(h9d_endpoint_t *endpoint_struct);
 
 h9d_endpoint_memento_t *h9d_endpoint_memento_init(const char *connect_string,
-                                                                  const char *name,
-                                                                  unsigned throttle_level,
-                                                                  int auto_respawn,
-                                                                  uint16_t id);
+                                                  const char *name,
+                                                  unsigned throttle_level,
+                                                  int auto_respawn,
+                                                  uint16_t id);
 void h9d_endpoint_memento_free(h9d_endpoint_memento_t *memento);
 h9d_endpoint_memento_t *h9d_endpoint_memento_cpy(const h9d_endpoint_memento_t *memento);
 

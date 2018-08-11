@@ -217,7 +217,7 @@ int main(int argc, char **argv) {
             h9_log_crit("h9d terminated abnormally");
             return EXIT_FAILURE;
         }
-        h9d_select_event_add(endpoint_getfd(endpoint->endpoint), H9D_SELECT_EVENT_READ | H9D_SELECT_EVENT_DISCONNECT,
+        h9d_select_event_add(h9_dev_proxy_getfd(endpoint->dev), H9D_SELECT_EVENT_READ | H9D_SELECT_EVENT_DISCONNECT,
                              (h9d_select_event_func_t *) h9d_endpoint_process_events, endpoint);
     }
 

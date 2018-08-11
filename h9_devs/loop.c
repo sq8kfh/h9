@@ -17,8 +17,8 @@ void loop_free(loop_t *loop) {
 }
 
 int loop_onselect_event(loop_t *loop,
-                        endpoint_onselect_callback_t *recv_callback,
-                        endpoint_onselect_callback_t *send_callback,
+                        dev_onselect_callback_t *recv_callback,
+                        dev_onselect_callback_t *send_callback,
                         void *callback_data) {
     //send_callback(loop->buf, callback_data);
     //h9msg_free(loop->buf);
@@ -33,13 +33,13 @@ int loop_onselect_event(loop_t *loop,
     recv_callback(&buf, callback_data);
     //h9msg_free(tmp);
 
-    return ENDPOINT_ONSELECT_OK;
+    return DEV_ONSELECT_OK;
 }
 
 int loop_send(loop_t *loop, const h9msg_t *msg) {
     //loop->buf = h9msg_copy(msg);
     send(loop->fd[1], msg, sizeof(h9msg_t), 0);
-    return ENDPOINT_ONSELECT_OK;
+    return DEV_ONSELECT_OK;
 }
 
 int loop_getfd(loop_t *loop) {
