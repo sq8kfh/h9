@@ -13,12 +13,12 @@
 
 static h9d_endpoint_t *endpoint_list_start = NULL;
 
-static h9d_endpoint_t *h9d_endpoint_create(const h9d_endpoint_init_parameters_t *ip) {
-    return h9d_endpoint_addnew(ip->connect_string,
-                               ip->name,
-                               ip->throttle_level,
-                               ip->auto_respawn,
-                               ip->id);
+static h9d_endpoint_t *h9d_endpoint_create(const h9d_endpoint_memento_t *memento) {
+    return h9d_endpoint_addnew(memento->connect_string,
+                               memento->name,
+                               memento->throttle_level,
+                               memento->auto_respawn,
+                               memento->id);
 }
 
 h9d_endpoint_t *h9d_endpoint_addnew(const char *connect_string,
@@ -37,11 +37,7 @@ h9d_endpoint_t *h9d_endpoint_addnew(const char *connect_string,
 
     ep->endpoint = imp_tmp;
 
-    ep->init_parameters = h9d_endpoint_init_parameters_init(connect_string,
-                                                            name,
-                                                            throttle_level,
-                                                            auto_respawn,
-                                                            id);
+    ep->memento = h9d_endpoint_memento_init(connect_string, name, throttle_level, auto_respawn, id);
 
     ep->auto_respawn = auto_respawn;
 
@@ -106,17 +102,17 @@ void h9d_endpoint_del(h9d_endpoint_t *endpoint_struct) {
     }
 
     endpoint_destroy(endpoint_struct->endpoint);
-    h9d_endpoint_init_parameters_free(endpoint_struct->init_parameters);
+    h9d_endpoint_memento_free(endpoint_struct->memento);
     free(endpoint_struct->endpoint_name);
     free(endpoint_struct);
 }
 
-h9d_endpoint_init_parameters_t *h9d_endpoint_init_parameters_init(const char *connect_string,
-                                                                  const char *name,
-                                                                  unsigned throttle_level,
-                                                                  int auto_respawn,
-                                                                  uint16_t id) {
-    h9d_endpoint_init_parameters_t *ip = malloc(sizeof(h9d_endpoint_init_parameters_t));
+h9d_endpoint_memento_t *h9d_endpoint_memento_init(const char *connect_string,
+                                                  const char *name,
+                                                  unsigned throttle_level,
+                                                  int auto_respawn,
+                                                  uint16_t id) {
+    h9d_endpoint_memento_t *ip = malloc(sizeof(h9d_endpoint_memento_t));
 
     ip->connect_string = strdup(connect_string);
     ip->name = strdup(name);
@@ -127,30 +123,30 @@ h9d_endpoint_init_parameters_t *h9d_endpoint_init_parameters_init(const char *co
     return ip;
 }
 
-void h9d_endpoint_init_parameters_free(h9d_endpoint_init_parameters_t *ip) {
-    free((void *)ip->connect_string);
-    free((void *)ip->name);
-    free(ip);
+void h9d_endpoint_memento_free(h9d_endpoint_memento_t *memento) {
+    free((void *)memento->connect_string);
+    free((void *)memento->name);
+    free(memento);
 }
 
-h9d_endpoint_init_parameters_t *h9d_endpoint_init_parameters_cpy(const h9d_endpoint_init_parameters_t *ip) {
-    return h9d_endpoint_init_parameters_init(ip->connect_string,
-                                             ip->name,
-                                             ip->throttle_level,
-                                             ip->auto_respawn,
-                                             ip->id);
+h9d_endpoint_memento_t *h9d_endpoint_memento_cpy(const h9d_endpoint_memento_t *memento) {
+    return h9d_endpoint_memento_init(memento->connect_string,
+                                     memento->name,
+                                     memento->throttle_level,
+                                     memento->auto_respawn,
+                                     memento->id);
 }
 
-static void endpoint_respawn(h9d_endpoint_init_parameters_t *init_parameters, uint32_t mask, void *param) {
-    h9d_endpoint_t *endpoint = h9d_endpoint_create(init_parameters);
+static void endpoint_respawn(h9d_endpoint_memento_t *memento, uint32_t mask, void *param) {
+    h9d_endpoint_t *endpoint = h9d_endpoint_create(memento);
     if (!endpoint) {
         h9_log_err("cannot open endpoint");
     }
     else {
         h9d_select_event_add(endpoint_getfd(endpoint->endpoint), H9D_SELECT_EVENT_READ | H9D_SELECT_EVENT_DISCONNECT,
                              (h9d_select_event_func_t *) h9d_endpoint_process_events, endpoint);
-        h9d_trigger_del_listener(mask, init_parameters, (h9d_trigger_callback*)endpoint_respawn);
-        h9d_endpoint_init_parameters_free(init_parameters);
+        h9d_trigger_del_listener(mask, memento, (h9d_trigger_callback*)endpoint_respawn);
+        h9d_endpoint_memento_free(memento);
     }
 }
 
@@ -200,7 +196,7 @@ int h9d_endpoint_process_events(h9d_endpoint_t *endpoint_struct, int event_type)
     }
     if (event_type & H9D_SELECT_EVENT_DISCONNECT) {
         if (endpoint_struct->auto_respawn) {
-            h9d_endpoint_init_parameters_t *tmp = h9d_endpoint_init_parameters_cpy(endpoint_struct->init_parameters);
+            h9d_endpoint_memento_t *tmp = h9d_endpoint_memento_cpy(endpoint_struct->memento);
             h9d_endpoint_del(endpoint_struct);
             h9d_trigger_add_listener(H9D_TRIGGER_TIMMER, tmp, (h9d_trigger_callback*)endpoint_respawn);
         }
