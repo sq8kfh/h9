@@ -14,7 +14,7 @@ uint8_t *fw = NULL;
 size_t fw_size;
 
 static void help(void) {
-    h9_log_stderr("usage: h9fupgrade [-bdhvV] [-c host] [-p port] [-i id] <ihex file>");
+    h9_log_stderr("usage: h9w [-bdhvV] [-c host] [-p port] [-i id] <ihex file>");
     h9_log_stderr("");
     h9_log_stderr("Options:");
     h9_log_stderr("   -b,        --noupgrademsg");
@@ -29,12 +29,12 @@ static void help(void) {
 }
 
 static void usage(void) {
-    h9_log_stderr("usage: h9fupgrade [-bdhvV] [-c host] [-p port] [-i id] <ihex file>");
+    h9_log_stderr("usage: h9fw [-bdhvV] [-c host] [-p port] [-i id] <ihex file>");
     exit(EXIT_FAILURE);
 }
 
 static void version(void) {
-    h9_log_stderr("h9fupgrade version %s by SQ8KFH", H9D_VERSION);
+    h9_log_stderr("h9fw version %s by SQ8KFH", H9_VERSION);
     exit(EXIT_FAILURE);
 }
 

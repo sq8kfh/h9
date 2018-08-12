@@ -11,7 +11,7 @@
 #define CMAKE_SYSTEM_NAME "@CMAKE_SYSTEM_NAME@"
 
 #cmakedefine H9D_CONFIG_FILE "@H9D_CONFIG_FILE@"
-#cmakedefine H9D_VERSION "@H9D_VERSION@"
+#cmakedefine H9_VERSION "@H9_VERSION@"
 
 typedef uint32_t h9_counter_t;
 

@@ -30,7 +30,7 @@ static void usage(void) {
 }
 
 static void version(void) {
-    h9_log_stderr("h9send version %s by SQ8KFH", H9D_VERSION);
+    h9_log_stderr("h9send version %s by SQ8KFH", H9_VERSION);
     exit(EXIT_FAILURE);
 }
 
