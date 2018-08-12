@@ -15,9 +15,7 @@ typedef struct {
     size_t buf_ptr;
 
     h9_counter_t read_byte_counter;
-    h9_counter_t last_readed_read_byte_counter;
     h9_counter_t write_byte_counter;
-    h9_counter_t last_readed_write_byte_counter;
 } slcan_t;
 
 

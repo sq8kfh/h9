@@ -14,7 +14,7 @@ uint8_t *fw = NULL;
 size_t fw_size;
 
 static void help(void) {
-    h9_log_stderr("usage: h9w [-bdhvV] [-c host] [-p port] [-i id] <ihex file>");
+    h9_log_stderr("usage: h9fw [-bdhvV] [-c host] [-p port] [-i id] <ihex file>");
     h9_log_stderr("");
     h9_log_stderr("Options:");
     h9_log_stderr("   -b,        --noupgrademsg");

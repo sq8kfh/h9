@@ -13,11 +13,8 @@ typedef struct h9d_client_t{
     struct h9d_client_t *prev;
 
     h9_counter_t recv_xmlmsg_counter;
-    h9_counter_t last_readed_recv_xmlmsg_counter;
     h9_counter_t recv_invalid_xmlmsg_counter;
-    h9_counter_t last_readed_recv_invalid_xmlmsg_counter;
     h9_counter_t send_xmlmsg_counter;
-    h9_counter_t last_readed_send_xmlmsg_counter;
 } h9d_client_t;
 
 void h9d_client_init(size_t recv_buf_size, int xsd_validate);

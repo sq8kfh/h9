@@ -32,13 +32,9 @@ typedef struct h9d_endpoint_t {
     unsigned int throttle_level;
 
     h9_counter_t throttled_counter;
-    h9_counter_t last_readed_throttled_counter;
     h9_counter_t recv_msg_counter;
-    h9_counter_t last_readed_recv_msg_counter;
     h9_counter_t recv_invalid_msg_counter;
-    h9_counter_t last_readed_recv_invalid_msg_counter;
     h9_counter_t send_msg_counter;
-    h9_counter_t last_readed_send_msg_counter;
     h9_counter_t recv_msg_by_type_counter[H9MSG_TYPE_COUNT];
 } h9d_endpoint_t;
 

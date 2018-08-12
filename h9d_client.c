@@ -37,11 +37,8 @@ h9d_client_t *h9d_client_addnew(int socket) {
     client_struct->prev = NULL;
 
     client_struct->recv_invalid_xmlmsg_counter = 0;
-    client_struct->last_readed_recv_invalid_xmlmsg_counter = 0;
     client_struct->recv_xmlmsg_counter = 0;
-    client_struct->last_readed_recv_xmlmsg_counter = 0;
     client_struct->send_xmlmsg_counter = 0;
-    client_struct->last_readed_send_xmlmsg_counter = 0;
 
     if (client_list_start) {
         client_struct->next = client_list_start;

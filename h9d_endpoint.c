@@ -46,13 +46,9 @@ h9d_endpoint_t *h9d_endpoint_addnew(const char *connect_string,
     ep->seqnum = 0;
 
     ep->recv_invalid_msg_counter = 0;
-    ep->last_readed_throttled_counter = 0;
     ep->recv_msg_counter = 0;
-    ep->last_readed_recv_msg_counter = 0;
     ep->send_msg_counter = 0;
-    ep->last_readed_send_msg_counter = 0;
     ep->throttled_counter = 0;
-    ep->last_readed_throttled_counter = 0;
 
     for (int i = 0; i < H9MSG_TYPE_COUNT; ++i) {
         ep->recv_msg_by_type_counter[i] = 0;
