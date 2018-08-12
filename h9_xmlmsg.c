@@ -19,9 +19,6 @@ h9_xmlmsg_t *h9_xmlmsg_init(int type) {
         case H9_XMLMSG_METHODRESPONSE:
             node = xmlNewNode(NULL, BAD_CAST "h9methodResponse");
             break;
-        case H9_XMLMSG_SENDMSG:
-            node = xmlNewNode(NULL, BAD_CAST "h9sendmsg");
-            break;
         case H9_XMLMSG_MSG:
             node = xmlNewNode(NULL, BAD_CAST "h9msg");
             break;
@@ -71,9 +68,6 @@ h9_xmlmsg_t *h9_xmlmsg_parse(const char *msg, size_t msg_size, int xsd_validate)
         else if (strcasecmp((const char *) root_element->name, "h9methodResponse") == 0) {
             ret_msg_type = H9_XMLMSG_METHODRESPONSE;
         }
-        else if (strcasecmp((const char *) root_element->name, "h9sendmsg") == 0) {
-            ret_msg_type = H9_XMLMSG_SENDMSG;
-        }
         else if (strcasecmp((const char *) root_element->name, "h9msg") == 0) {
             ret_msg_type = H9_XMLMSG_MSG;
         }
@@ -115,7 +109,7 @@ void h9_xmlmsg_free(h9_xmlmsg_t *xmlmsg) {
     }
 }
 
-char *h9_xmlmsg2xml(const h9_xmlmsg_t *xmlmsg, size_t *xml_length, int xsd_validate) {
+char *h9_xmlmsg_to_xml(const h9_xmlmsg_t *xmlmsg, size_t *xml_length, int xsd_validate) {
     xmlDocPtr doc = xmlNewDoc(BAD_CAST "1.0");
     xmlDocSetRootElement(doc, xmlmsg->node);
 
@@ -146,8 +140,8 @@ char *h9_xmlmsg2xml(const h9_xmlmsg_t *xmlmsg, size_t *xml_length, int xsd_valid
     return ret;
 }
 
-h9msg_t *h9_xmlmsg2h9msg(const h9_xmlmsg_t *xmlms) {
-    if (xmlms->type != H9_XMLMSG_MSG && xmlms->type != H9_XMLMSG_SENDMSG)
+h9msg_t *h9_xmlmsg_get_h9msg(const h9_xmlmsg_t *xmlms) {
+    if (xmlms->type != H9_XMLMSG_MSG)
         return NULL;
 
     xmlNode *node = xmlms->node;
@@ -219,7 +213,7 @@ h9msg_t *h9_xmlmsg2h9msg(const h9_xmlmsg_t *xmlms) {
     return msg;
 }
 
-char *h9_xmlmsg2event(const h9_xmlmsg_t *xmlms) {
+char *h9_xmlmsg_get_event(const h9_xmlmsg_t *xmlms) {
     if (xmlms->type != H9_XMLMSG_SUBSCRIBE && xmlms->type != H9_XMLMSG_UNSUBSCRIBE)
         return NULL;
 
@@ -242,7 +236,7 @@ char *h9_xmlmsg_build_h9subscribe(size_t *xml_length, const char *event, int xsd
     h9_xmlmsg_t *xmlmsg = h9_xmlmsg_init(H9_XMLMSG_SUBSCRIBE);
     xmlNewProp(xmlmsg->node, BAD_CAST "event", BAD_CAST event);
 
-    char *ret = h9_xmlmsg2xml(xmlmsg, xml_length, xsd_validate);
+    char *ret = h9_xmlmsg_to_xml(xmlmsg, xml_length, xsd_validate);
 
     h9_xmlmsg_free(xmlmsg);
     return ret;
@@ -252,17 +246,7 @@ char *h9_xmlmsg_build_h9unsubscribe(size_t *xml_length, const char *event, int x
     h9_xmlmsg_t *xmlmsg = h9_xmlmsg_init(H9_XMLMSG_UNSUBSCRIBE);
     xmlNewProp(xmlmsg->node, BAD_CAST "event", BAD_CAST event);
 
-    char *ret = h9_xmlmsg2xml(xmlmsg, xml_length, xsd_validate);
-
-    h9_xmlmsg_free(xmlmsg);
-    return ret;
-}
-
-char *h9_xmlmsg_build_h9sendmsg(size_t *xml_length, const h9msg_t *msg, int xsd_validate) {
-    h9_xmlmsg_t *xmlmsg = h9_xmlmsg_init(H9_XMLMSG_SENDMSG);
-    h9msg2node(msg, xmlmsg);
-
-    char *ret = h9_xmlmsg2xml(xmlmsg, xml_length, xsd_validate);
+    char *ret = h9_xmlmsg_to_xml(xmlmsg, xml_length, xsd_validate);
 
     h9_xmlmsg_free(xmlmsg);
     return ret;
@@ -272,7 +256,7 @@ char *h9_xmlmsg_build_h9msg(size_t *xml_length, const h9msg_t *msg, int xsd_vali
     h9_xmlmsg_t *xmlmsg = h9_xmlmsg_init(H9_XMLMSG_MSG);
     h9msg2node(msg, xmlmsg);
 
-    char *ret = h9_xmlmsg2xml(xmlmsg, xml_length, xsd_validate);
+    char *ret = h9_xmlmsg_to_xml(xmlmsg, xml_length, xsd_validate);
 
     h9_xmlmsg_free(xmlmsg);
     return ret;
@@ -343,4 +327,32 @@ static void h9msg2node(const h9msg_t *msg, h9_xmlmsg_t *xmlmsg) {
 void h9_xmlmsg_add_metrics(h9_xmlmsg_t *xmlmsg, const char *name, const char *val) {
     xmlNode *metrics = xmlNewChild(xmlmsg->node, NULL, BAD_CAST "metrics", BAD_CAST val);
     xmlNewProp(metrics, BAD_CAST "name", BAD_CAST name);
+}
+
+h9_xmlmsg_metrics_t *h9_xmlmsg_get_metrics_list(const h9_xmlmsg_t *xmlms) {
+    if (xmlms->type != H9_XMLMSG_METRICS)
+        return NULL;
+    h9_xmlmsg_metrics_t *ret = malloc((xmlChildElementCount(xmlms->node) + 1) * sizeof(h9_xmlmsg_metrics_t));
+    h9_xmlmsg_metrics_t *ptr = ret;
+    for (xmlNodePtr node = xmlms->node->children; node; node = node->next) {
+        xmlChar *tmp;
+        if ((tmp = xmlGetProp(node, (const xmlChar *) "name"))) {
+            ptr->name = (char *)tmp;
+            ptr->value = (char *)xmlNodeGetContent(node);
+            ++ptr;
+        }
+    }
+    ptr->name = NULL;
+    ptr->value = NULL;
+    return ret;
+}
+
+void h9_xmlmsg_get_metrics_list_free(h9_xmlmsg_metrics_t *metrics_list) {
+    if (metrics_list) {
+        for (h9_xmlmsg_metrics_t *p = metrics_list; p->name; ++p) {
+            xmlFree(p->value);
+            xmlFree(p->name);
+        }
+        free(metrics_list);
+    }
 }

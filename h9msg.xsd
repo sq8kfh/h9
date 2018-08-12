@@ -32,8 +32,6 @@
         </xs:complexType>
     </xs:element>
 
-    <xs:element name="h9sendmsg" type="h9msg_t"/>
-
     <xs:element name="h9msg" type="h9msg_t"/>
 
     <xs:element name="h9metrics">

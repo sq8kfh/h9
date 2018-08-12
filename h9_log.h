@@ -3,6 +3,10 @@
 
 #include <stdarg.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define H9_LOG_STDERR  0
 #define H9_LOG_CRIT    1
 #define H9_LOG_ERR     2
@@ -23,5 +27,9 @@ void h9_log_init(int verbose, int debug, int all_to_stderr);
 void h9_log_set_verbose(int level);
 void h9_log_write(unsigned int level, const char *file, int line_num, const char *fmt, ...);
 void h9_log_vwrite(unsigned int level, const char *file, int line_num, const char *fmt, va_list args);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //_H9_LOG_H_

@@ -3,6 +3,10 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define H9MSG_PRIORITY_BIT_LENGTH 1
 #define H9MSG_TYPE_BIT_LENGTH 5
 #define H9MSG_SEQNUM_BIT_LENGTH 5
@@ -88,5 +92,9 @@ void h9msg_free(h9msg_t * msg);
 h9msg_t *h9msg_copy(const h9msg_t * msg);
 char *h9msg_replace_endpoint(h9msg_t * msg, const char *name);
 const char *h9msg_type_name(uint8_t type);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _H9MSG_H_ */

@@ -139,7 +139,7 @@ int main(int argc, char **argv) {
     h9_log_init(verbose, debug, 1);
 
     size_t length;
-    char *xmlmsg = h9_xmlmsg_build_h9sendmsg(&length, msg, 1);
+    char *xmlmsg = h9_xmlmsg_build_h9msg(&length, msg, 1);
 
     h9msg_free(msg);
 

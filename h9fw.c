@@ -96,7 +96,7 @@ static size_t read_ihex(char *ihex_file, uint8_t **fw_data) {
 
 static void send_msg(h9_xmlsocket_t *xmlsocket, h9msg_t *msg) {
     size_t length;
-    char *xmlmsg = h9_xmlmsg_build_h9sendmsg(&length, msg, 1);
+    char *xmlmsg = h9_xmlmsg_build_h9msg(&length, msg, 1);
 
     h9msg_free(msg);
 
@@ -126,7 +126,7 @@ static unsigned int xmlsocket_read_callback(const char *xmlmsg, size_t length, v
     }
 
     h9msg_t *msg = NULL;
-    if (tmp_xmlmsg->type == H9_XMLMSG_MSG && (msg = h9_xmlmsg2h9msg(tmp_xmlmsg))) {
+    if (tmp_xmlmsg->type == H9_XMLMSG_MSG && (msg = h9_xmlmsg_get_h9msg(tmp_xmlmsg))) {
         h9_xmlmsg_free(tmp_xmlmsg);
         if (msg->type == H9MSG_TYPE_ENTER_INTO_BOOTLOADER || msg->type == H9MSG_TYPE_PAGE_WRITED) {
             if (msg->type == H9MSG_TYPE_PAGE_WRITED) {

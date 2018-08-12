@@ -93,7 +93,7 @@ void h9d_metrices_trigger_callback(void *ud, uint32_t mask, void *param) {
         }
 
         size_t xml_length;
-        char *msg = h9_xmlmsg2xml(xmlmsg, &xml_length, 1);
+        char *msg = h9_xmlmsg_to_xml(xmlmsg, &xml_length, 1);
 
         h9d_trigger_call(H9D_TRIGGER_METRICS, msg);
 

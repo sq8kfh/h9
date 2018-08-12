@@ -4,6 +4,10 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct {
     int socket_d;
     int state;
@@ -24,5 +28,9 @@ void h9_xmlsocket_free(h9_xmlsocket_t *xmlsocket);
 
 int h9_xmlsocket_recv(h9_xmlsocket_t *xmlsocket, h9_xmlsocket_read_callback_t *callback, void *callback_data);
 int h9_xmlsocket_send(h9_xmlsocket_t *xmlsocket, const char *msg, size_t length);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //_H9_XMLSOCKET_H_
