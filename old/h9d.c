@@ -7,7 +7,7 @@
 #include <sys/stat.h>
 #include <sys/file.h>
 
-#include "h9_log.h"
+#include "common/h9_log.h"
 #include "h9d_cfg.h"
 #include "h9d_select_event.h"
 #include "h9d_server.h"

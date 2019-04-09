@@ -7,7 +7,7 @@
 #include <unistd.h>
 #include <sys/errno.h>
 
-#include "h9_log.h"
+#include "common/h9_log.h"
 
 typedef struct h9d_select_event_t {
     int fd;

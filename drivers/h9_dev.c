@@ -1,11 +1,11 @@
-#include "h9_devs/h9_dev.h"
 #include "h9_dev.h"
-#include "h9_log.h"
+#include "h9_dev.h"
+#include "common/h9_log.h"
 #include <stdlib.h>
 #include <string.h>
 
-#include "h9_devs/slcan.h"
-#include "h9_devs/loop.h"
+#include "drivers/slcan.h"
+#include "drivers/loop.h"
 
 h9_dev_proxy_t *h9_dev_factory(const char *name, const char *connect_string) {
     if(strncmp(name, "slcan", 5) == 0) {

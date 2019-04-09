@@ -1,5 +1,5 @@
 #include "h9d_cfg.h"
-#include "h9_log.h"
+#include "common/h9_log.h"
 
 #include <stdlib.h>
 

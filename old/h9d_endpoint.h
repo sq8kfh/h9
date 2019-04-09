@@ -5,7 +5,7 @@
 #include <time.h>
 
 #include "h9msg.h"
-#include "h9_devs/h9_dev.h"
+#include "drivers/h9_dev.h"
 
 typedef struct {
     const char *connect_string;

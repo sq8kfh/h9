@@ -1,7 +1,7 @@
 #include "h9d_client.h"
 #include "h9d_select_event.h"
 #include "h9_xmlmsg.h"
-#include "h9_log.h"
+#include "common/h9_log.h"
 #include "h9d_trigger.h"
 #include "h9d_endpoint.h"
 

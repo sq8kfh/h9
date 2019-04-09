@@ -1,5 +1,5 @@
 #include "h9_xmlsocket.h"
-#include "h9_log.h"
+#include "common/h9_log.h"
 
 #include <string.h>
 #include <unistd.h>

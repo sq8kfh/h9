@@ -1,6 +1,6 @@
 #include "h9d_server.h"
 #include "h9d_select_event.h"
-#include "h9_log.h"
+#include "common/h9_log.h"
 #include "h9d_client.h"
 
 #include <stdio.h>

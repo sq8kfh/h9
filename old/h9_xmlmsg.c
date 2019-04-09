@@ -4,7 +4,7 @@
 
 #include "h9msg.xsd.h"
 
-#include "h9_log.h"
+#include "common/h9_log.h"
 
 static int invalid_xml(xmlDocPtr doc);
 static h9msg_t *node2h9msg(xmlNode *node);

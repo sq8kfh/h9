@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <getopt.h>
 
-#include "h9_log.h"
+#include "common/h9_log.h"
 #include "h9_xmlsocket.h"
 #include "h9_xmlmsg.h"
 

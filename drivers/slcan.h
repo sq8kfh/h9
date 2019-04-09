@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include "config.h"
 #include "h9msg.h"
-#include "h9_devs/h9_dev.h"
+#include "h9_dev.h"
 
 typedef struct {
     int fd;
