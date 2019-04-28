@@ -1,11 +1,16 @@
-#ifndef SOCKETCAN_H
-#define SOCKETCAN_H
+#ifndef _SOCKETCAN_H_
+#define _SOCKETCAN_H_
 
-#include "driverinterface.h"
+#include "driver.h"
 
-class SocketCAN: public DriverInterface {
-
+class SocketCAN: public Driver {
+public:
+    SocketCAN();
+    int open();
+    void close();
+    H9frame recv();
+    void send(const H9frame& frame);
 };
 
 
-#endif //SOCKETCAN_H
+#endif //_SOCKETCAN_H_

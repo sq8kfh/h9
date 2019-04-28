@@ -1,11 +1,11 @@
-#ifndef _H9_LOOP_H_
-#define _H9_LOOP_H_
+#ifndef _H9_DUMMY_H_
+#define _H9_DUMMY_H_
 
 #include "drivers/driver.h"
 
-class Loop: public Driver {
+class Dummy: public Driver {
 public:
-    Loop();
+    Dummy();
     int open();
     void close();
     H9frame recv();
@@ -13,4 +13,4 @@ public:
 };
 
 
-#endif //_H9_LOOP_H_
+#endif //_H9_DUMMY_H_

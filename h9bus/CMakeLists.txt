@@ -4,6 +4,7 @@ pkg_check_modules(confuse libconfuse)
 pkg_check_modules(libxml2 libxml-2.0)
 
 set(H9BUS_FILES h9bus.cc)
+set(DRIVERS ../drivers/driver.h ../drivers/dummy.cc ../drivers/dummy.h ../drivers/loop.cc ../drivers/loop.h ../drivers/slcan.cc ../drivers/slcan.h ../drivers/socketcan.cc ../drivers/socketcan.h)
 
-add_executable(h9bus ${H9BUS_FILES})
+add_executable(h9bus ${H9BUS_FILES} ${DRIVERS})
 TARGET_LINK_LIBRARIES(h9bus ${confuse_LIBRARIES} ${libxml2_LIBRARIES})
