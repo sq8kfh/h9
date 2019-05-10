@@ -10,7 +10,7 @@
 class BusMgr {
 private:
     std::map<int, Driver*> dev;
-    SocketMgr const *_socket_mgr;
+    SocketMgr * const _socket_mgr;
 public:
     BusMgr(SocketMgr *socket_mgr);
     void load_config(Ctx *ctx);
