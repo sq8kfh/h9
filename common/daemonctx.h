@@ -3,10 +3,12 @@
 
 #include "ctx.h"
 
+
 class DaemonCtx: public Ctx {
 public:
     DaemonCtx(const std::string& app_name, const std::string& app_desc);
-    void load_configuration(const cxxopts::ParseResult& opts);
+    void load_configuration(int argc, char* argv[]);
+    //& get_cfg();
 };
 
 

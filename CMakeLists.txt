@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD 14)
 
 set(H9D_CONFIG_FILE "./h9d.cfg")
 set(H9_USER_CONFIG_FILE "~/.h9.cfg")
+set(H9_BUS_CONFIG_FILE "./h9.cfg")
 set(H9_VERSION "0.0.0")
 
 find_package(LibXml2 REQUIRED)

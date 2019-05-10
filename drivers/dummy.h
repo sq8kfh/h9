@@ -1,7 +1,7 @@
 #ifndef _H9_DUMMY_H_
 #define _H9_DUMMY_H_
 
-#include "drivers/driver.h"
+#include "h9bus/driver.h"
 
 class Dummy: public Driver {
 public:

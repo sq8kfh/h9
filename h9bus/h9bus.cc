@@ -1,7 +1,23 @@
 #include <cstdlib>
 
-int main(int argc, char **argv)
-{
+#include "common/daemonctx.h"
+#include "busmgr.h"
+#include "cfg.h"
+#include "socketmgr.h"
 
-    return EXIT_SUCCESS;;
+int main(int argc, char **argv) {
+    DaemonCtx ctx("h9bus", "H9 Bus daemon.");
+    ctx.load_configuration(argc, argv);
+
+    SocketMgr socketmgr;
+
+    BusMgr busmgr = BusMgr(&socketmgr);
+    busmgr.load_config(&ctx);
+
+    //ServerMgr servermgr = ServerMgr(&socketmgr);
+    //servermgr.load_config(&ctx);
+
+    socketmgr.select_loop();
+
+    return EXIT_SUCCESS;
 }

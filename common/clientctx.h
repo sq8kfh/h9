@@ -2,13 +2,22 @@
 #define _H9_CLIENTCTX_H_
 
 #include <string>
+#include <cxxopts/cxxopts.hpp>
 
 #include "ctx.h"
 
 class ClientCtx: public Ctx {
+private:
+    cxxopts::Options _options;
 public:
     ClientCtx(const std::string& app_name, const std::string& app_desc);
     void load_configuration(const cxxopts::ParseResult& opts);
+
+    void add_options(const std::string& opts,
+                     const std::string& desc,
+                     std::shared_ptr<const cxxopts::Value> value = cxxopts::value<bool>(),
+                     std::string arg_help = "");
+    cxxopts::ParseResult parse_options(int argc, char* argv[]);
 };
 
 
