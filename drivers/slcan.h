@@ -4,12 +4,12 @@
 #include "h9bus/driver.h"
 
 class Slcan: public Driver {
-    public:
-        Slcan();
-        int open();
-        void close();
-        H9frame recv();
-        void send(const H9frame& frame);
+public:
+    Slcan(const std::string &bus_id);
+    void open();
+private:
+    void recv_data();
+    void send_data(const H9frame& frame);
 };
 
 

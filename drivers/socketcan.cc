@@ -1,21 +1,17 @@
 #include "socketcan.h"
 
-SocketCAN::SocketCAN() {
+SocketCAN::SocketCAN(const std::string &bus_id): Driver(bus_id) {
 
 }
 
-int SocketCAN::open() {
+void SocketCAN::open() {
 
 }
 
-void SocketCAN::close() {
+void SocketCAN::recv_data() {
 
 }
 
-H9frame SocketCAN::recv() {
-
-}
-
-void SocketCAN::send(const H9frame& frame) {
+void SocketCAN::send_data(const H9frame& frame) {
 
 }

@@ -27,7 +27,7 @@ public:
         friend void SocketMgr::register_socket(Socket *socket);
         friend void SocketMgr::unregister_socket(Socket *socket);
     protected:
-        void setSocket(int socket) {
+        void set_socket(int socket) {
             SocketMgr *tmp_socket_mgr = _socket_mgr;
             if (_socket != 0 && _socket_mgr != nullptr) {
                 _socket_mgr->unregister_socket(this);
@@ -41,13 +41,13 @@ public:
         Socket(): _socket(0), _socket_mgr(nullptr) {
         }
         ~Socket() {
-            setSocket(0);
+            set_socket(0);
         }
-        int getSocket() {
+        int get_socket() {
             return _socket;
         }
 
-        virtual void onSelect() = 0;
+        virtual void on_select() = 0;
     };
 };
 

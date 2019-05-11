@@ -5,11 +5,11 @@
 
 class Dummy: public Driver {
 public:
-    Dummy();
-    int open();
-    void close();
-    H9frame recv();
-    void send(const H9frame& frame);
+    Dummy(const std::string &bus_id);
+    void open();
+private:
+    void recv_data();
+    void send_data(const H9frame& frame);
 };
 
 

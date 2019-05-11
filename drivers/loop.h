@@ -9,11 +9,11 @@ class Loop: public Driver {
 private:
     sockaddr_in loopback_addr;
 public:
-    Loop();
-    int open();
-    void close();
-    H9frame recv();
-    void send(const H9frame& frame);
+    Loop(const std::string &bus_id);
+    void open();
+private:
+    void recv_data();
+    void send_data(const H9frame& frame);
 };
 
 

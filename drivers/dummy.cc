@@ -1,21 +1,30 @@
 #include "dummy.h"
 
-Dummy::Dummy() {
+#include <stdlib.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <system_error>
+
+Dummy::Dummy(const std::string &bus_id): Driver(bus_id) {
+}
+
+void Dummy::open() {
+    int fd = ::open("/dev/null", O_WRONLY);
+    if (fd == -1) {
+        throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
+    }
+    set_socket(fd);
+}
+
+void Dummy::recv_data() {
 
 }
 
-int Dummy::open() {
-
-}
-
-void Dummy::close() {
-
-}
-
-H9frame Dummy::recv() {
-
-}
-
-void Dummy::send(const H9frame& frame) {
-
+void Dummy::send_data(const H9frame& frame) {
+    if( write(get_socket(), &frame, sizeof(frame)) == -1) {
+        throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
+    }
+    else {
+        on_frame_send(frame);
+    }
 }

@@ -6,18 +6,18 @@ SocketMgr::SocketMgr() {
 
 void SocketMgr::register_socket(Socket *socket) {
     //TODO: assert(socket_map.count(socket->getSocket()) == 0);
-    if (socket->getSocket() != 0) {
-        FD_SET(socket->getSocket(), &event_socket_set);
-        socket_map[socket->getSocket()] = socket;
+    if (socket->get_socket() != 0) {
+        FD_SET(socket->get_socket(), &event_socket_set);
+        socket_map[socket->get_socket()] = socket;
     }
     socket->setSocketMgr(this);
 }
 
 void SocketMgr::unregister_socket(Socket *socket) {
     //TODO: assert(socket_map.count(socket->getSocket()) > 0);
-    if (socket->getSocket() != 0) {
-        FD_CLR(socket->getSocket(), &event_socket_set);
-        socket_map.erase(socket->getSocket());
+    if (socket->get_socket() != 0) {
+        FD_CLR(socket->get_socket(), &event_socket_set);
+        socket_map.erase(socket->get_socket());
     }
     socket->setSocketMgr(nullptr);
 }
@@ -34,7 +34,7 @@ void SocketMgr::select_loop() {
         }
         else if (retval) {
             for (auto &it : socket_map) {
-                it.second->onSelect();
+                it.second->on_select();
             }
         }
     }

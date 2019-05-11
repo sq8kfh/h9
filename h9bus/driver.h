@@ -2,6 +2,7 @@
 #define DRIVER_H
 
 #include <queue>
+#include <string>
 
 #include "socketmgr.h"
 #include "bus/h9frame.h"
@@ -9,14 +10,23 @@
 class Driver: public SocketMgr::Socket {
 private:
     std::queue<H9frame> send_queue;
+    const std::string _bus_id;
+protected:
+    //virtual void send_next_msg(const H9frame& frame) = 0;
+
+    void on_frame_recv(const H9frame& frame);
+    void on_frame_send(const H9frame& frame);
+
+    virtual void recv_data() = 0;
+    virtual void send_data(const H9frame& frame) = 0;
 public:
-    virtual int open() = 0;
-    virtual void close() = 0;
+    Driver(const std::string &bus_id);
+    virtual void open() = 0;
+    void close();
 
-    virtual H9frame recv() = 0;
-    virtual void send(const H9frame& frame) = 0;
-
-    void onSelect();
+    void send_frame(const H9frame& frame);
+    void on_select();
+    ~Driver();
 };
 
 

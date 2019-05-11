@@ -1,50 +1,44 @@
+#include <system_error>
 #include <cstdlib>
 #include <cstring>
 #include "loop.h"
 
-Loop::Loop() {
+Loop::Loop(const std::string &bus_id): Driver(bus_id) {
     bzero(&loopback_addr, sizeof(loopback_addr));
     loopback_addr.sin_family = AF_INET;
     loopback_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     loopback_addr.sin_port = htons(61432);
 }
 
-int Loop::open() {
+void Loop::open() {
     int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
 
     if (bind(sockfd, (const struct sockaddr *)&loopback_addr, sizeof(loopback_addr)) == -1) {
-        perror("bind failed");
-        exit(1);
+        throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
 
-    setSocket(sockfd);
-
-    return sockfd;
+    set_socket(sockfd);
 }
 
-void Loop::close() {
-    ::close(getSocket());
-    setSocket(0);
-}
-
-H9frame Loop::recv() {
+void Loop::recv_data() {
     sockaddr_in tmp_addr;
     socklen_t len = sizeof(tmp_addr);
     bcopy(&loopback_addr, &tmp_addr, len);
 
     H9frame buf;
-    if(recvfrom(getSocket(), &buf, sizeof(buf), 0, (struct sockaddr *)&tmp_addr, &len) == -1)
-    {
-        perror("recvfrom fails");
+    if(recvfrom(get_socket(), &buf, sizeof(buf), 0, (struct sockaddr *)&tmp_addr, &len) == -1) {
+        throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
-    printf("recv \n");
-    return buf;
+    else {
+        on_frame_recv(buf);
+    }
 }
 
-void Loop::send(const H9frame& frame) {
-    if( sendto(getSocket(), &frame, sizeof(frame), 0, (const struct sockaddr *)&loopback_addr, sizeof(loopback_addr)) == -1)
-    {
-        perror("sendto fails");
-        exit(2);
+void Loop::send_data(const H9frame& frame) {
+    if( sendto(get_socket(), &frame, sizeof(frame), 0, (const struct sockaddr *)&loopback_addr, sizeof(loopback_addr)) == -1) {
+        throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
+    }
+    else {
+        on_frame_send(frame);
     }
 }

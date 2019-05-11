@@ -1,21 +1,17 @@
 #include "slcan.h"
 
-Slcan::Slcan() {
+Slcan::Slcan(const std::string &bus_id): Driver(bus_id) {
 
 }
 
-int Slcan::open() {
+void Slcan::open() {
 
 }
 
-void Slcan::close() {
+void Slcan::recv_data() {
 
 }
 
-H9frame Slcan::recv() {
-
-}
-
-void Slcan::send(const H9frame& frame) {
+void Slcan::send_data(const H9frame& frame) {
 
 }
