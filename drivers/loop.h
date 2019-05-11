@@ -7,6 +7,8 @@
 
 class Loop: public Driver {
 private:
+    constexpr static std::uint16_t LOOPBACK_PORT = 61432;
+    
     sockaddr_in loopback_addr;
 public:
     Loop(const std::string &bus_id);

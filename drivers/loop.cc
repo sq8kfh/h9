@@ -7,7 +7,7 @@ Loop::Loop(const std::string &bus_id): Driver(bus_id) {
     bzero(&loopback_addr, sizeof(loopback_addr));
     loopback_addr.sin_family = AF_INET;
     loopback_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-    loopback_addr.sin_port = htons(61432);
+    loopback_addr.sin_port = htons(LOOPBACK_PORT);
 }
 
 void Loop::open() {
