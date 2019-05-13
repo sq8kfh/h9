@@ -50,12 +50,12 @@ public:
     constexpr static int H9FRAME_DESTINATION_ID_BIT_LENGTH = 9;
     constexpr static int H9FRAME_SOURCE_ID_BIT_LENGTH = 9;
 public:
-    Priority priority;
-    Type type;
+    Priority priority = Priority::LOW;
+    Type type = Type::NOP;
     std::uint8_t seqnum;
     std::uint16_t destination_id;
     std::uint16_t source_id;
-    std::uint8_t dlc;
+    std::uint8_t dlc = 0;
     std::uint8_t data[8];
 
     template <typename E>
