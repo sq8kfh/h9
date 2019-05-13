@@ -12,6 +12,8 @@
 class Driver: public SocketMgr::Socket {
 private:
     std::queue<H9frame> send_queue;
+    std::uint8_t next_seqnum;
+
     BusMgr::RecvFrameCallback _recv_frame_callback;
     BusMgr::SendFrameCallback _send_frame_callback;
 protected:

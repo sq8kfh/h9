@@ -18,7 +18,6 @@ void Dummy::open() {
 }
 
 void Dummy::recv_data() {
-
 }
 
 void Dummy::send_data(const H9frame& frame) {

@@ -15,6 +15,17 @@ void BusMgr::SendFrameCallback::operator()(const H9frame& frame) {
     _bus_mgr->send_frame_callback(frame, _bus_id);
 }
 
+void BusMgr::send_turned_on_broadcast() {
+    H9frame cm;
+    cm.priority = H9frame::Priority::LOW;
+    cm.type = H9frame::Type::NODE_TURNED_ON;
+    cm.source_id = 2;
+    cm.destination_id = H9frame::BROADCAST_ID;
+    cm.dlc = 0;
+
+    send_frame(cm);
+}
+
 BusMgr::BusMgr(SocketMgr *socket_mgr): _socket_mgr(socket_mgr) {
 }
 
@@ -42,13 +53,16 @@ void BusMgr::load_config(Ctx *ctx) {
     tmp.dlc = 2;
     tmp.data[0] = 0x0a;
     tmp.data[1] = 1;
-    //loop->send_frame(tmp);
+    loop->send_frame(tmp);
     dummy->send_frame(tmp);
     slcan->send_frame(tmp);
     tmp.source_id = 32;
     slcan->send_frame(tmp);
     slcan->send_frame(tmp);
     slcan->send_frame(tmp);
+    loop->send_frame(tmp);
+
+    send_turned_on_broadcast();
 }
 
 BusMgr::RecvFrameCallback BusMgr::create_recv_frame_callback(const std::string &bus_id) {
