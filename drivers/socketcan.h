@@ -5,7 +5,7 @@
 
 class SocketCAN: public Driver {
 public:
-    SocketCAN(const std::string &bus_id);
+    SocketCAN(BusMgr::RecvFrameCallback recv_frame_callback);
     void open();
 private:
     void recv_data();

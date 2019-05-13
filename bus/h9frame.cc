@@ -1,5 +1,20 @@
-//
-// Created by Kamil Palkowski on 2019-04-24.
-//
-
 #include "h9frame.h"
+
+#include <iomanip>
+
+std::ostream& operator<<(std::ostream& os, const H9frame& frame) {
+    os << frame.source_id << " -> " << frame.destination_id
+    << " priority: " << (frame.priority == H9frame::Priority::HIGH ? 'H' : 'L')
+    << " type: " << static_cast<unsigned int>(frame.to_underlying(frame.type))
+    << " seqnum: " << static_cast<unsigned int>(frame.seqnum)
+    << " dlc: " << static_cast<unsigned int>(frame.dlc)
+    << " data:";
+    std::ios oldState(nullptr);
+    oldState.copyfmt(os);
+
+    for (int i = 0; i < frame.dlc; ++i) {
+        os << ' ' << std::setfill('0') << std::hex << std::setw(2) << static_cast<unsigned int>(frame.data[i]);
+    }
+    os.copyfmt(oldState);
+    return os;
+}

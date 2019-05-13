@@ -16,7 +16,7 @@ int main(int argc, char **argv) {
 
     //ServerMgr servermgr = ServerMgr(&socketmgr);
     //servermgr.load_config(&ctx);
-
+    //busmgr.send_frame(H9frame());
     socketmgr.select_loop();
 
     return EXIT_SUCCESS;

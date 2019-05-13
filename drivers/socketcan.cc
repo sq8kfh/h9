@@ -1,6 +1,6 @@
 #include "socketcan.h"
 
-SocketCAN::SocketCAN(const std::string &bus_id): Driver(bus_id) {
+SocketCAN::SocketCAN(BusMgr::RecvFrameCallback recv_frame_callback): Driver(recv_frame_callback) {
 
 }
 

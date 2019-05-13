@@ -3,7 +3,7 @@
 #include <cstring>
 #include "loop.h"
 
-Loop::Loop(const std::string &bus_id): Driver(bus_id) {
+Loop::Loop(BusMgr::RecvFrameCallback recv_frame_callback): Driver(recv_frame_callback) {
     bzero(&loopback_addr, sizeof(loopback_addr));
     loopback_addr.sin_family = AF_INET;
     loopback_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);

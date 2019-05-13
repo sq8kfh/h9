@@ -1,5 +1,9 @@
 #include "socketmgr.h"
 
+#include <system_error>
+#include <string>
+#include <iostream>
+
 SocketMgr::SocketMgr() {
     FD_ZERO(&event_socket_set);
 }
@@ -28,13 +32,14 @@ void SocketMgr::select_loop() {
         FD_COPY(&event_socket_set, &rfds);
 
         int retval = select(socket_map.rbegin()->first+1, &rfds, nullptr, nullptr, nullptr);
+        std::cout << "select\n";
         if (retval == -1) {
-            //TODO: error message
-            break;
+            throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
         }
         else if (retval) {
             for (auto &it : socket_map) {
-                it.second->on_select();
+                if (FD_ISSET(it.first, &rfds))
+                    it.second->on_select();
             }
         }
     }

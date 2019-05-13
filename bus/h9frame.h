@@ -2,6 +2,7 @@
 #define _H9_H9FRAME_H_
 
 #include <cstdint>
+#include <ostream>
 
 class H9frame {
 public:
@@ -42,6 +43,12 @@ public:
     };
 
     constexpr static std::uint16_t BROADCAST_ID = 0x01ff;
+
+    constexpr static int H9FRAME_PRIORITY_BIT_LENGTH = 1;
+    constexpr static int H9FRAME_TYPE_BIT_LENGTH = 5;
+    constexpr static int H9FRAME_SEQNUM_BIT_LENGTH = 5;
+    constexpr static int H9FRAME_DESTINATION_ID_BIT_LENGTH = 9;
+    constexpr static int H9FRAME_SOURCE_ID_BIT_LENGTH = 9;
 public:
     Priority priority;
     Type type;
@@ -50,7 +57,18 @@ public:
     std::uint16_t source_id;
     std::uint8_t dlc;
     std::uint8_t data[8];
+
+    template <typename E>
+    static std::uint8_t to_underlying(E e) noexcept {
+        return static_cast<std::underlying_type_t<E>>(e);
+    }
+
+    template <typename E>
+    static E from_underlying(std::underlying_type_t<E> e) noexcept {
+        return static_cast<E>(e);
+    }
 };
 
+std::ostream& operator<<(std::ostream& os, const H9frame& frame);
 
 #endif //_H9_H9FRAME_H_

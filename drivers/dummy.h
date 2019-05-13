@@ -4,8 +4,10 @@
 #include "h9bus/driver.h"
 
 class Dummy: public Driver {
+private:
+    int write_only_socket;
 public:
-    Dummy(const std::string &bus_id);
+    Dummy(BusMgr::RecvFrameCallback recv_frame_callback);
     void open();
 private:
     void recv_data();

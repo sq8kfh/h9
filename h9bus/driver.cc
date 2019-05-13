@@ -1,18 +1,19 @@
 #include "driver.h"
 
 void Driver::on_frame_recv(const H9frame& frame) {
-    printf("recv %s\n", _bus_id.c_str());
+    _recv_frame_callback(frame);
 }
 
 void Driver::on_frame_send(const H9frame& frame) {
-    printf("send %s\n", _bus_id.c_str());
+    printf("send\n");
     send_queue.pop();
     if (send_queue.size() > 0) {
         send_data(send_queue.front());
     }
 }
 
-Driver::Driver(const std::string &bus_id): _bus_id(bus_id) {
+Driver::Driver(BusMgr::RecvFrameCallback recv_frame_callback):
+        _recv_frame_callback(recv_frame_callback) {
 }
 
 void Driver::close() {
