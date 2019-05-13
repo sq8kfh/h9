@@ -32,7 +32,7 @@ void SocketMgr::select_loop() {
         FD_COPY(&event_socket_set, &rfds);
 
         int retval = select(socket_map.rbegin()->first+1, &rfds, nullptr, nullptr, nullptr);
-        std::cout << "select\n";
+
         if (retval == -1) {
             throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
         }

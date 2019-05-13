@@ -11,7 +11,7 @@ private:
 
     const H9frame* last_send;
 public:
-    Slcan(BusMgr::RecvFrameCallback recv_frame_callback, const std::string& tty);
+    Slcan(BusMgr::RecvFrameCallback recv_frame_callback, BusMgr::SendFrameCallback send_frame_callback, const std::string& tty);
     void open();
     static std::string build_slcan_msg(const H9frame& frame);
     static H9frame parse_slcan_msg(const std::string& slcan_data);

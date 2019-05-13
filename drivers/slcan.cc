@@ -8,7 +8,9 @@
 #include <fcntl.h>
 #include <termios.h>
 
-Slcan::Slcan(BusMgr::RecvFrameCallback recv_frame_callback, const std::string& tty): Driver(recv_frame_callback), _tty(tty) {
+Slcan::Slcan(BusMgr::RecvFrameCallback recv_frame_callback, BusMgr::SendFrameCallback send_frame_callback, const std::string& tty):
+        Driver(recv_frame_callback, send_frame_callback),
+        _tty(tty) {
     noblock = false;
     last_send = nullptr;
 }
@@ -124,7 +126,7 @@ void Slcan::recv_data() {
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
     buf[nbyte] = '\0';
-
+    //std::cout << "recv raw(" << nbyte << "): " << buf << std::endl;
     for (int i = 0; i < nbyte; ++i) {
         recv_buf.push_back(buf[i]);
         if (buf[i] == '\r' || buf[i] == '\a') {
@@ -137,7 +139,7 @@ void Slcan::recv_data() {
 void Slcan::send_data(const H9frame& frame) {
     std::string buf = build_slcan_msg(frame);
     ssize_t nbyte = write(get_socket(), buf.c_str(), buf.size());
-    std::cout << "send raw: " << buf.c_str() << std::endl;
+    //std::cout << "send raw: " << buf.c_str() << std::endl;
     if (nbyte <= 0) {
         //TODO: add handling of a closed socket
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
@@ -148,8 +150,14 @@ void Slcan::send_data(const H9frame& frame) {
 void Slcan::parse_response(const std::string& response) {
     switch (response[0]) {
         case '\r':
-            on_frame_send(*last_send);
-            last_send = nullptr;
+            //std::cout << "pare \\r" << std::endl;
+            if (last_send) {
+                const H9frame* tmp = last_send;
+                last_send = nullptr;
+                //printf("debug: %p\n", tmp);
+                on_frame_send(*tmp);
+            }
+
             break;
         case 'T':
             on_frame_recv(parse_slcan_msg(response));

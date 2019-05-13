@@ -1,6 +1,7 @@
 #include "socketcan.h"
 
-SocketCAN::SocketCAN(BusMgr::RecvFrameCallback recv_frame_callback): Driver(recv_frame_callback) {
+SocketCAN::SocketCAN(BusMgr::RecvFrameCallback recv_frame_callback, BusMgr::SendFrameCallback send_frame_callback):
+        Driver(recv_frame_callback, send_frame_callback) {
 
 }
 

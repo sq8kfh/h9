@@ -2,6 +2,7 @@
 
 #include <iomanip>
 
+
 std::ostream& operator<<(std::ostream& os, const H9frame& frame) {
     os << frame.source_id << " -> " << frame.destination_id
     << " priority: " << (frame.priority == H9frame::Priority::HIGH ? 'H' : 'L')
