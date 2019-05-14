@@ -1,3 +1,5 @@
+#include <utility>
+
 #ifndef _H9_BUS_H_
 #define _H9_BUS_H_
 
@@ -18,7 +20,7 @@ public:
         BusMgr *const _bus_mgr;
         const std::string _bus_id;
     public:
-        EventCallback(BusMgr *const bus_mgr, const std::string& bus_id): _bus_mgr(bus_mgr), _bus_id(bus_id) {};
+        EventCallback(BusMgr *const bus_mgr, std::string bus_id): _bus_mgr(bus_mgr), _bus_id(std::move(bus_id)) {};
         void on_fame_recv(const H9frame& frame);
         void on_fame_send(const H9frame& frame);
         void on_close();

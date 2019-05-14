@@ -2,10 +2,13 @@
 #define _H9_TCPSERVER_H_
 
 #include "socketmgr.h"
+#include "servermgr.h"
 
 class TcpServer: public SocketMgr::Socket {
+private:
+    ServerMgr::EventCallback _event_callback;
 public:
-    TcpServer(std::uint16_t port);
+    TcpServer(ServerMgr::EventCallback event_callback, std::uint16_t port);
     void on_select();
 };
 

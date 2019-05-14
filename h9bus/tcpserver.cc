@@ -12,7 +12,7 @@
 
 #include "common/logger.h"
 
-TcpServer::TcpServer(std::uint16_t port) {
+TcpServer::TcpServer(ServerMgr::EventCallback event_callback, std::uint16_t port): _event_callback(std::move(event_callback)) {
     int sockfd = 0;
     int yes=1;        // for setsockopt() SO_REUSEADDR, below
     int rv;
@@ -68,6 +68,13 @@ static void *get_in_addr(struct sockaddr *sa) {
     return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
+static in_port_t get_in_port(struct sockaddr *sa) {
+    if (sa->sa_family == AF_INET) {
+        return ((struct sockaddr_in*)sa)->sin_port;
+    }
+    return ((struct sockaddr_in6*)sa)->sin6_port;
+}
+
 void TcpServer::on_select() {
     int newfd;
     struct sockaddr_storage remoteaddr;
@@ -80,8 +87,9 @@ void TcpServer::on_select() {
     if (newfd == -1) {
         throw std::system_error(errno, std::generic_category(), std::string(__FILE__) + std::string(":") + std::to_string(__LINE__));
     } else {
-        h9_log_notice("TcpServer: new connection from %s on socket %d",
-                      inet_ntop(remoteaddr.ss_family, \
-                         get_in_addr((struct sockaddr *) &remoteaddr), remoteIP, INET6_ADDRSTRLEN), newfd);
+        _event_callback.on_new_connection(
+                newfd,
+                std::string(inet_ntop(remoteaddr.ss_family, get_in_addr((struct sockaddr *) &remoteaddr), remoteIP, INET6_ADDRSTRLEN)),
+                ntohs(get_in_port((struct sockaddr *) &remoteaddr)));
     }
 }
