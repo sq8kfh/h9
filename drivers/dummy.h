@@ -7,7 +7,7 @@ class Dummy: public Driver {
 private:
     int write_only_socket;
 public:
-    Dummy(BusMgr::RecvFrameCallback recv_frame_callback, BusMgr::SendFrameCallback send_frame_callback);
+    explicit Dummy(BusMgr::EventCallback event_callback);
     void open();
 private:
     void recv_data();

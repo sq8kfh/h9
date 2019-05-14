@@ -5,8 +5,8 @@
 #include <unistd.h>
 #include <system_error>
 
-Dummy::Dummy(BusMgr::RecvFrameCallback recv_frame_callback, BusMgr::SendFrameCallback send_frame_callback):
-        Driver(recv_frame_callback, send_frame_callback) {
+Dummy::Dummy(BusMgr::EventCallback event_callback):
+        Driver(std::move(event_callback)) {
 }
 
 void Dummy::open() {

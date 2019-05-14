@@ -11,7 +11,7 @@ private:
 
     sockaddr_in loopback_addr;
 public:
-    Loop(BusMgr::RecvFrameCallback recv_frame_callback, BusMgr::SendFrameCallback send_frame_callback);
+    explicit Loop(BusMgr::EventCallback event_callback);
     void open();
 private:
     void recv_data();

@@ -5,7 +5,7 @@
 
 class SocketCAN: public Driver {
 public:
-    SocketCAN(BusMgr::RecvFrameCallback recv_frame_callback, BusMgr::SendFrameCallback send_frame_callback);
+    explicit SocketCAN(BusMgr::EventCallback event_callback);
     void open();
 private:
     void recv_data();

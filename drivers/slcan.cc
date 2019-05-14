@@ -8,8 +8,8 @@
 #include <fcntl.h>
 #include <termios.h>
 
-Slcan::Slcan(BusMgr::RecvFrameCallback recv_frame_callback, BusMgr::SendFrameCallback send_frame_callback, const std::string& tty):
-        Driver(recv_frame_callback, send_frame_callback),
+Slcan::Slcan(BusMgr::EventCallback event_callback, const std::string& tty):
+        Driver(std::move(event_callback)),
         _tty(tty) {
     noblock = false;
     last_send = nullptr;
@@ -122,7 +122,10 @@ void Slcan::recv_data() {
     std::uint8_t buf[100];
     ssize_t nbyte = read(get_socket(), buf, sizeof(buf)-1);
     if (nbyte <= 0) {
-        //TODO: add handling of a closed socket
+        if (nbyte == 0) {
+            //TODO: add handling of a closed socket
+            on_close();
+        }
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
     buf[nbyte] = '\0';
@@ -141,7 +144,10 @@ void Slcan::send_data(const H9frame& frame) {
     ssize_t nbyte = write(get_socket(), buf.c_str(), buf.size());
     //std::cout << "send raw: " << buf.c_str() << std::endl;
     if (nbyte <= 0) {
-        //TODO: add handling of a closed socket
+        if (nbyte == 0) {
+            //TODO: add handling of a closed socket
+            on_close();
+        }
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
     last_send = &frame;
@@ -169,7 +175,10 @@ void Slcan::parse_response(const std::string& response) {
 void Slcan::send_ack() {
     ssize_t nbyte = write(get_socket(), "\r", 1);
     if (nbyte <= 0) {
-        //TODO: add handling of a closed socket
+        if (nbyte == 0) {
+            //TODO: add handling of a closed socket
+            on_close();
+        }
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
 }

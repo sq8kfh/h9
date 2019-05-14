@@ -1,26 +1,32 @@
+#include <utility>
+
 #include "driver.h"
 
 
 void Driver::on_frame_recv(const H9frame& frame) {
-    _recv_frame_callback(frame);
+    _event_callback.on_fame_recv(frame);
 }
 
 void Driver::on_frame_send(const H9frame& frame) {
     send_queue.pop();
-    _send_frame_callback(frame);
+    _event_callback.on_fame_send(frame);
     if (send_queue.size() > 0) {
         send_data(send_queue.front());
     }
 }
 
-Driver::Driver(BusMgr::RecvFrameCallback recv_frame_callback, BusMgr::SendFrameCallback send_frame_callback):
-        _recv_frame_callback(recv_frame_callback),
-        _send_frame_callback(send_frame_callback),
+void Driver::on_close() {
+    _event_callback.on_close();
+}
+
+Driver::Driver(BusMgr::EventCallback event_callback):
+        _event_callback(std::move(event_callback)),
         next_seqnum(0) {
 }
 
 void Driver::close() {
     int socket = get_socket();
+    _event_callback.on_close();
     set_socket(0);
     ::close(socket);
 }

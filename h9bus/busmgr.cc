@@ -9,12 +9,16 @@
 #include <sstream>
 #include <iomanip>
 
-void BusMgr::RecvFrameCallback::operator()(const H9frame& frame) {
+void BusMgr::EventCallback::on_fame_recv(const H9frame& frame) {
     _bus_mgr->recv_frame_callback(frame, _bus_id);
 }
 
-void BusMgr::SendFrameCallback::operator()(const H9frame& frame) {
+void BusMgr::EventCallback::on_fame_send(const H9frame& frame) {
     _bus_mgr->send_frame_callback(frame, _bus_id);
+}
+
+void BusMgr::EventCallback::on_close() {
+    //TODO: driver close event
 }
 
 void BusMgr::send_turned_on_broadcast() {
@@ -52,11 +56,11 @@ BusMgr::BusMgr(SocketMgr *socket_mgr): _socket_mgr(socket_mgr) {
 
 void BusMgr::load_config(Ctx *ctx) {
     frame_log = ctx->log("h9frame");
-    Loop *loop = new Loop(create_recv_frame_callback("can0"), create_send_frame_callback("can0"));
+    Loop *loop = new Loop(std::move(create_event_callback("can0")));
     dev["can0"] = loop;
-    Dummy *dummy = new Dummy(create_recv_frame_callback("can1"), create_send_frame_callback("can1"));
+    Dummy *dummy = new Dummy(create_event_callback("can1"));
     dev["can1"] = dummy;
-    Slcan *slcan = new Slcan(create_recv_frame_callback("can2"), create_send_frame_callback("can2"), "/dev/tty.usbserial-DA002NQW");
+    Slcan *slcan = new Slcan(create_event_callback("can2"), "/dev/tty.usbserial-DA002NQW");
     dev["can2"] = slcan;
 
     loop->open();
@@ -87,8 +91,8 @@ void BusMgr::load_config(Ctx *ctx) {
     send_turned_on_broadcast();
 }
 
-BusMgr::RecvFrameCallback BusMgr::create_recv_frame_callback(const std::string &bus_id) {
-    return BusMgr::RecvFrameCallback(this, bus_id);
+BusMgr::EventCallback BusMgr::create_event_callback(const std::string &bus_id) {
+    return BusMgr::EventCallback(this, bus_id);
 }
 
 void BusMgr::recv_frame_callback(const H9frame& frame, const std::string& bus_id) {
@@ -97,10 +101,6 @@ void BusMgr::recv_frame_callback(const H9frame& frame, const std::string& bus_id
 
 void BusMgr::send_frame_callback(const H9frame& frame, const std::string& bus_id) {
     frame_log.log(std::string("send ") + frame_to_log_string(bus_id, frame));
-}
-
-BusMgr::SendFrameCallback BusMgr::create_send_frame_callback(const std::string& bus_id) {
-    return BusMgr::SendFrameCallback(this, bus_id);
 }
 
 void BusMgr::send_frame(const H9frame& frame, const std::string& bus_id) {
