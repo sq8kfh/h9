@@ -14,7 +14,7 @@
 #cmakedefine H9_USER_CONFIG_FILE "@H9_USER_CONFIG_FILE@"
 #cmakedefine H9_BUS_CONFIG_FILE "@H9_BUS_CONFIG_FILE@"
 #cmakedefine H9_VERSION "@H9_VERSION@"
-#cmakedefine DEBUG
+#cmakedefine H9_DEBUG
 
 typedef uint32_t h9_counter_t;
 

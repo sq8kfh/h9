@@ -4,7 +4,7 @@ ClientCtx::ClientCtx(const std::string& app_name, const std::string& app_desc):
         Ctx(app_name, app_desc),
         _options(app_name, app_desc) {
     _options.add_options("other")
-#ifdef DEBUG
+#ifdef H9_DEBUG
             ("d,debug", "Enable debugging")
 #endif
             ("h,help", "Show help")
@@ -33,7 +33,7 @@ void ClientCtx::add_options(const std::string& opts,
 cxxopts::ParseResult ClientCtx::parse_options(int argc, char* argv[]) {
     try {
         cxxopts::ParseResult result = _options.parse(argc, argv);
-#ifdef DEBUG
+#ifdef H9_DEBUG
         if (result.count("debug")) {
             _debug = true;
         }

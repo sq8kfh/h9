@@ -6,6 +6,8 @@
 #include "drivers/socketcan.h"
 
 #include <iostream>
+#include <sstream>
+#include <iomanip>
 
 void BusMgr::RecvFrameCallback::operator()(const H9frame& frame) {
     _bus_mgr->recv_frame_callback(frame, _bus_id);
@@ -19,6 +21,7 @@ void BusMgr::send_turned_on_broadcast() {
     H9frame cm;
     cm.priority = H9frame::Priority::LOW;
     cm.type = H9frame::Type::NODE_TURNED_ON;
+    //TODO: read source_id from config file
     cm.source_id = 2;
     cm.destination_id = H9frame::BROADCAST_ID;
     cm.dlc = 0;
@@ -26,10 +29,29 @@ void BusMgr::send_turned_on_broadcast() {
     send_frame(cm);
 }
 
+std::string BusMgr::frame_to_log_string(const std::string& bus_id, const H9frame& frame) {
+    std::ostringstream frame_string;
+    frame_string << bus_id
+       << ": " << frame.source_id
+       << "->" << frame.destination_id
+       << "; priority: " << (frame.priority == H9frame::Priority::HIGH ? 'H' : 'L')
+       << "; type: " << static_cast<unsigned int>(frame.to_underlying(frame.type))
+       << "; seqnum: " << static_cast<unsigned int>(frame.seqnum)
+       << "; dlc: " << static_cast<unsigned int>(frame.dlc)
+       << "; data:";
+
+    for (int i = 0; i < frame.dlc; ++i) {
+        frame_string << ' ' << std::setfill('0') << std::hex << std::setw(2) << static_cast<unsigned int>(frame.data[i]);
+    }
+    frame_string << ';';
+    return frame_string.str();
+}
+
 BusMgr::BusMgr(SocketMgr *socket_mgr): _socket_mgr(socket_mgr) {
 }
 
 void BusMgr::load_config(Ctx *ctx) {
+    frame_log = ctx->log("h9frame");
     Loop *loop = new Loop(create_recv_frame_callback("can0"), create_send_frame_callback("can0"));
     dev["can0"] = loop;
     Dummy *dummy = new Dummy(create_recv_frame_callback("can1"), create_send_frame_callback("can1"));
@@ -70,11 +92,11 @@ BusMgr::RecvFrameCallback BusMgr::create_recv_frame_callback(const std::string &
 }
 
 void BusMgr::recv_frame_callback(const H9frame& frame, const std::string& bus_id) {
-    std::cout << "recv (" << bus_id << "): " << frame << std::endl;
+    frame_log.log(std::string("recv ") + frame_to_log_string(bus_id, frame));
 }
 
 void BusMgr::send_frame_callback(const H9frame& frame, const std::string& bus_id) {
-    std::cout << "send (" << bus_id << "): " << frame << std::endl;
+    frame_log.log(std::string("send ") + frame_to_log_string(bus_id, frame));
 }
 
 BusMgr::SendFrameCallback BusMgr::create_send_frame_callback(const std::string& bus_id) {

@@ -32,12 +32,15 @@ public:
 private:
     std::map<std::string, Driver*> dev;
     SocketMgr * const _socket_mgr;
+    Log frame_log;
 
     void recv_frame_callback(const H9frame& frame, const std::string& bus_id);
     void send_frame_callback(const H9frame& frame, const std::string& bus_id);
     SendFrameCallback create_send_frame_callback(const std::string& bus_id);
 
     void send_turned_on_broadcast();
+
+    std::string frame_to_log_string(const std::string& bus_id, const H9frame& frame);
 public:
     BusMgr(SocketMgr *socket_mgr);
     void load_config(Ctx *ctx);

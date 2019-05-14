@@ -4,11 +4,12 @@
 #include <string>
 
 #include "config.h"
+#include "common/log.h"
 
 class Ctx {
 protected:
     unsigned int _verbose;
-#ifdef DEBUG
+#ifdef H9_DEBUG
     bool _debug;
 #endif
     const std::string _app_name;
@@ -18,6 +19,9 @@ public:
     Ctx(const std::string& app_name, const std::string& app_desc);
     inline unsigned int verbose_level();
     inline bool debug_enabled();
+
+    Log& log();
+    Log& log(const std::string& log_name);
 };
 
 

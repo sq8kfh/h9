@@ -1,6 +1,7 @@
 #include <cstdlib>
 
 #include "common/daemonctx.h"
+#include "common/logger.h"
 #include "busmgr.h"
 #include "cfg.h"
 #include "socketmgr.h"
@@ -17,6 +18,7 @@ int main(int argc, char **argv) {
     //ServerMgr servermgr = ServerMgr(&socketmgr);
     //servermgr.load_config(&ctx);
     //busmgr.send_frame(H9frame());
+    h9_log_notice("start");
     socketmgr.select_loop();
 
     return EXIT_SUCCESS;

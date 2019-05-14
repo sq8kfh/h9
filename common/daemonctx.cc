@@ -9,7 +9,7 @@ DaemonCtx::DaemonCtx(const std::string& app_name, const std::string& app_desc): 
 void DaemonCtx::load_configuration(int argc, char* argv[]) {
     cxxopts::Options options = {_app_name, _app_desc};
     options.add_options("other")
-#ifdef DEBUG
+#ifdef H9_DEBUG
             ("d,debug", "Enable debugging")
 #endif
             ("h,help", "Show help")
@@ -31,7 +31,7 @@ void DaemonCtx::load_configuration(int argc, char* argv[]) {
         exit(EXIT_SUCCESS);
     }
 
-#ifdef DEBUG
+#ifdef H9_DEBUG
     if (result.count("debug")) {
         _debug = true;
     }
