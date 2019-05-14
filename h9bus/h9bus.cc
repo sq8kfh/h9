@@ -2,9 +2,9 @@
 
 #include "common/daemonctx.h"
 #include "common/logger.h"
-#include "busmgr.h"
-#include "cfg.h"
 #include "socketmgr.h"
+#include "busmgr.h"
+#include "servermgr.h"
 
 int main(int argc, char **argv) {
     DaemonCtx ctx("h9bus", "H9 Bus daemon.");
@@ -15,9 +15,9 @@ int main(int argc, char **argv) {
     BusMgr busmgr = BusMgr(&socketmgr);
     busmgr.load_config(&ctx);
 
-    //ServerMgr servermgr = ServerMgr(&socketmgr);
-    //servermgr.load_config(&ctx);
-    //busmgr.send_frame(H9frame());
+    ServerMgr servermgr = ServerMgr(&socketmgr);
+    servermgr.load_config(&ctx);
+
     h9_log_notice("start");
     socketmgr.select_loop();
 
