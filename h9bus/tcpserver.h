@@ -10,6 +10,7 @@ private:
 public:
     TcpServer(ServerMgr::EventCallback event_callback, std::uint16_t port);
     void on_select();
+    void close();
 };
 
 

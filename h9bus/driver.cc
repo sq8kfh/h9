@@ -15,10 +15,6 @@ void Driver::on_frame_send(const H9frame& frame) {
     }
 }
 
-void Driver::on_close() {
-    _event_callback.on_close();
-}
-
 Driver::Driver(BusMgr::EventCallback event_callback):
         _event_callback(std::move(event_callback)),
         next_seqnum(0) {
@@ -49,6 +45,8 @@ void Driver::on_select() {
 }
 
 Driver::~Driver() {
-    if (get_socket() > 0)
-        close();
+    if (get_socket() > 0) {
+        ::close(get_socket());
+        set_socket(0);
+    }
 }

@@ -122,11 +122,10 @@ void Slcan::recv_data() {
     std::uint8_t buf[100];
     ssize_t nbyte = read(get_socket(), buf, sizeof(buf)-1);
     if (nbyte <= 0) {
-        if (nbyte == 0) {
-            //TODO: add handling of a closed socket
+        if (nbyte == 0 || errno == ENXIO) {
             on_close();
         }
-        throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
+        throw std::system_error(errno, std::system_category(), std::to_string(errno) + __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
     buf[nbyte] = '\0';
     //std::cout << "recv raw(" << nbyte << "): " << buf << std::endl;
@@ -144,8 +143,7 @@ void Slcan::send_data(const H9frame& frame) {
     ssize_t nbyte = write(get_socket(), buf.c_str(), buf.size());
     //std::cout << "send raw: " << buf.c_str() << std::endl;
     if (nbyte <= 0) {
-        if (nbyte == 0) {
-            //TODO: add handling of a closed socket
+        if (nbyte == 0 || errno == ENXIO) {
             on_close();
         }
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
@@ -175,8 +173,7 @@ void Slcan::parse_response(const std::string& response) {
 void Slcan::send_ack() {
     ssize_t nbyte = write(get_socket(), "\r", 1);
     if (nbyte <= 0) {
-        if (nbyte == 0) {
-            //TODO: add handling of a closed socket
+        if (nbyte == 0 || errno == ENXIO) {
             on_close();
         }
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));

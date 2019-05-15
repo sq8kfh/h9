@@ -38,7 +38,7 @@ TcpServer::TcpServer(ServerMgr::EventCallback event_callback, std::uint16_t port
         setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
 
         if (bind(sockfd, p->ai_addr, p->ai_addrlen) < 0) {
-            close(sockfd);
+            ::close(sockfd);
             continue;
         }
 
@@ -92,4 +92,11 @@ void TcpServer::on_select() {
                 std::string(inet_ntop(remoteaddr.ss_family, get_in_addr((struct sockaddr *) &remoteaddr), remoteIP, INET6_ADDRSTRLEN)),
                 ntohs(get_in_port((struct sockaddr *) &remoteaddr)));
     }
+}
+
+void TcpServer::close() {
+    int socket = get_socket();
+    _event_callback.on_server_close();
+    set_socket(0);
+    ::close(socket);
 }

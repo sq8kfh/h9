@@ -2,6 +2,7 @@
 #define _H9_SOCKETMGR_H_
 
 #include <map>
+#include <exception>
 #include <unistd.h>
 
 class SocketMgr {
@@ -16,38 +17,46 @@ public:
     void unregister_socket(Socket *socket);
     void select_loop();
 
-
     class Socket {
     private:
         int _socket;
-        SocketMgr *_socket_mgr;
+        /*SocketMgr *_socket_mgr;
         void setSocketMgr(SocketMgr *socket_mgr) {
             _socket_mgr = socket_mgr;
         }
         friend void SocketMgr::register_socket(Socket *socket);
-        friend void SocketMgr::unregister_socket(Socket *socket);
+        friend void SocketMgr::unregister_socket(Socket *socket);*/
     protected:
         void set_socket(int socket) {
-            SocketMgr *tmp_socket_mgr = _socket_mgr;
+            /*SocketMgr *tmp_socket_mgr = _socket_mgr;
             if (_socket != 0 && _socket_mgr != nullptr) {
                 _socket_mgr->unregister_socket(this);
-            }
+            }*/
             _socket = socket;
-            if (_socket != 0 && tmp_socket_mgr != nullptr) {
+            /*if (_socket != 0 && tmp_socket_mgr != nullptr) {
                 tmp_socket_mgr->register_socket(this);
-            }
+            }*/
         }
     public:
-        Socket(): _socket(0), _socket_mgr(nullptr) {
+        class CloseSocketException: public std::exception {
+        public:
+            Socket* _socket;
+            explicit CloseSocketException(Socket *socket): _socket(socket) {}
+        };
+
+        Socket(): _socket(0) {//}, _socket_mgr(nullptr) {
         }
-        ~Socket() {
+        virtual ~Socket() {
             set_socket(0);
         }
         int get_socket() {
             return _socket;
         }
-
+        void on_close() {
+            throw CloseSocketException(this);
+        }
         virtual void on_select() = 0;
+        virtual void close() = 0;
     };
 };
 

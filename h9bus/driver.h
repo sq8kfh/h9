@@ -18,7 +18,6 @@ private:
 protected:
     void on_frame_recv(const H9frame& frame);
     void on_frame_send(const H9frame& frame);
-    void on_close();
 
     virtual void recv_data() = 0;
     virtual void send_data(const H9frame& frame) = 0;

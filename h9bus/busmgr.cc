@@ -1,13 +1,14 @@
 #include "busmgr.h"
 
+//#include <iostream>
+#include <sstream>
+#include <iomanip>
+
 #include "drivers/loop.h"
 #include "drivers/dummy.h"
 #include "drivers/slcan.h"
 #include "drivers/socketcan.h"
-
-#include <iostream>
-#include <sstream>
-#include <iomanip>
+#include "common/logger.h"
 
 void BusMgr::EventCallback::on_fame_recv(const H9frame& frame) {
     _bus_mgr->recv_frame_callback(frame, _bus_id);
@@ -18,7 +19,7 @@ void BusMgr::EventCallback::on_fame_send(const H9frame& frame) {
 }
 
 void BusMgr::EventCallback::on_close() {
-    //TODO: driver close event
+    _bus_mgr->driver_close_callback(_bus_id);
 }
 
 void BusMgr::send_turned_on_broadcast() {
@@ -33,13 +34,20 @@ void BusMgr::send_turned_on_broadcast() {
     send_frame(cm);
 }
 
+void BusMgr::driver_close_callback(const std::string& bus_id) {
+    h9_log_warn("driver: %s closed", bus_id.c_str());
+    _socket_mgr->unregister_socket(dev[bus_id]);
+    //TODO: auto reconnect
+    dev.erase(bus_id);
+}
+
 std::string BusMgr::frame_to_log_string(const std::string& bus_id, const H9frame& frame) {
     std::ostringstream frame_string;
     frame_string << bus_id
        << ": " << frame.source_id
        << "->" << frame.destination_id
        << "; priority: " << (frame.priority == H9frame::Priority::HIGH ? 'H' : 'L')
-       << "; type: " << static_cast<unsigned int>(frame.to_underlying(frame.type))
+       << "; type: " << static_cast<unsigned int>(H9frame::to_underlying(frame.type))
        << "; seqnum: " << static_cast<unsigned int>(frame.seqnum)
        << "; dlc: " << static_cast<unsigned int>(frame.dlc)
        << "; data:";
@@ -104,7 +112,7 @@ void BusMgr::send_frame_callback(const H9frame& frame, const std::string& bus_id
 }
 
 void BusMgr::send_frame(const H9frame& frame, const std::string& bus_id) {
-    if (bus_id.compare("*") == 0) {
+    if (bus_id == "*") {
         for (auto& it: dev) {
             it.second->send_frame(frame);
         }

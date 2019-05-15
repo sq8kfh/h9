@@ -3,27 +3,30 @@
 #include <system_error>
 #include <string>
 #include <iostream>
+#include <cassert>
+
+#include "common/logger.h"
 
 SocketMgr::SocketMgr() {
     FD_ZERO(&event_socket_set);
 }
 
 void SocketMgr::register_socket(Socket *socket) {
-    //TODO: assert(socket_map.count(socket->getSocket()) == 0);
+    assert(socket->get_socket());
+
     if (socket->get_socket() != 0) {
         FD_SET(socket->get_socket(), &event_socket_set);
         socket_map[socket->get_socket()] = socket;
     }
-    socket->setSocketMgr(this);
 }
 
 void SocketMgr::unregister_socket(Socket *socket) {
-    //TODO: assert(socket_map.count(socket->getSocket()) > 0);
+    assert(socket->get_socket());
+
     if (socket->get_socket() != 0) {
         FD_CLR(socket->get_socket(), &event_socket_set);
         socket_map.erase(socket->get_socket());
     }
-    socket->setSocketMgr(nullptr);
 }
 
 void SocketMgr::select_loop() {
@@ -37,9 +40,15 @@ void SocketMgr::select_loop() {
             throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
         }
         else if (retval) {
-            for (auto &it : socket_map) {
-                if (FD_ISSET(it.first, &rfds))
-                    it.second->on_select();
+            try {
+                for (auto &it : socket_map) {
+                    if (FD_ISSET(it.first, &rfds)) {
+                        it.second->on_select();
+                    }
+                }
+            }
+            catch (Socket::CloseSocketException e) {
+                e._socket->close();
             }
         }
     }
