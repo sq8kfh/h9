@@ -50,6 +50,35 @@ GenericMsg::Type GenericMsg::get_type() {
     return Type::SEND_FRAME;
 }
 
+std::string GenericMsg::serialize() const {
+    xmlChar *xmlbuff = nullptr;
+    int buffersize = 0;
+    xmlDocDumpFormatMemory(doc, &xmlbuff, &buffersize, 1);
+
+    std::string ret = std::string(reinterpret_cast<const char *>(xmlbuff));
+    xmlFree(xmlbuff);
+
+    /*
+    xmlBufferPtr buffer = xmlBufferCreate();
+
+    //xml_length = xmlNodeDump(buffer, NULL, node, 0, 1);
+    int res = xmlNodeDump(buffer, doc, xmlmsg->node, 0, 1);
+    char *ret = NULL;
+
+    if (res > 0) {
+        ret = strdup((char*) buffer->content);
+        *xml_length = (size_t)res;
+        //h9_log_debug("xmlmsg build(%d): %s", *xml_length, ret);
+    }
+
+    xmlUnlinkNode(xmlmsg->node);
+
+    xmlBufferFree(buffer);
+    xmlFreeDoc(doc);*/
+
+    return std::move(ret);
+}
+
 bool GenericMsg::validate_msg() {
     /*//xmlSchemaParserCtxtPtr parser_ctxt = xmlSchemaNewParserCtxt("./h9msg.xsd");
     xmlSchemaParserCtxtPtr parser_ctxt = xmlSchemaNewMemParserCtxt((char*)h9msg_xsd, h9msg_xsd_len);

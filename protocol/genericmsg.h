@@ -23,7 +23,7 @@ public:
     GenericMsg(GenericMsg&& k) noexcept;
 
     virtual GenericMsg::Type get_type();
-
+    std::string serialize() const;
     bool validate_msg();
     virtual ~GenericMsg();
 };
