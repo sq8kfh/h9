@@ -50,13 +50,15 @@ public:
     constexpr static int H9FRAME_DESTINATION_ID_BIT_LENGTH = 9;
     constexpr static int H9FRAME_SOURCE_ID_BIT_LENGTH = 9;
 public:
-    Priority priority = Priority::LOW;
-    Type type = Type::NOP;
-    std::uint8_t seqnum;
-    std::uint16_t destination_id;
-    std::uint16_t source_id;
-    std::uint8_t dlc = 0;
+    Priority priority;
+    Type type;
+    std::uint8_t seqnum: H9FRAME_SEQNUM_BIT_LENGTH;
+    std::uint16_t destination_id: H9FRAME_DESTINATION_ID_BIT_LENGTH;
+    std::uint16_t source_id: H9FRAME_SOURCE_ID_BIT_LENGTH;
+    std::uint8_t dlc;
     std::uint8_t data[8];
+
+    H9frame();
 
     template <typename E>
     static std::uint8_t to_underlying(E e) noexcept {

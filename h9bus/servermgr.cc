@@ -2,9 +2,11 @@
 #include "tcpserver.h"
 #include "common/logger.h"
 #include "tcpclient.h"
+#include <iostream>
+#include "protocol/sendframemsg.h"
 
-void ServerMgr::EventCallback::on_msg_recv() {
-
+void ServerMgr::EventCallback::on_msg_recv(int client_socket, GenericMsg& msg) {
+    _server_mgr->msg_recv_callback(client_socket, msg);
 }
 
 void ServerMgr::EventCallback::on_msg_send() {
@@ -21,6 +23,19 @@ void ServerMgr::EventCallback::on_server_close() {
 
 void ServerMgr::EventCallback::on_client_close(int client_socket) {
     _server_mgr->client_close_callback(client_socket);
+}
+
+void ServerMgr::msg_recv_callback(int client_socket, GenericMsg& msg) {
+    switch (msg.get_type()) {
+        case GenericMsg::Type::SEND_FRAME: {
+            SendFrameMsg sf_msg = std::move(msg);
+            std::cout << sf_msg.get_frame() << std::endl;
+            break;
+        }
+        default:
+            //TODO: send error msg - invalid msg
+            break;
+    }
 }
 
 void ServerMgr::new_connection_callback(int client_socket, const std::string& remote_address, std::uint16_t remote_port) {

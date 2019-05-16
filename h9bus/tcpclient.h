@@ -14,6 +14,7 @@ private:
     void recv();
     void recv_header();
     void recv_data();
+    void recv_msg(const std::string& msg_str);
 public:
     const std::string remote_address;
     const std::uint16_t remote_port;

@@ -6,6 +6,8 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
+#include "protocol/genericmsg.h"
+
 void TcpClient::recv() {
     if (data_to_read > 0) {
         recv_data();
@@ -52,11 +54,18 @@ void TcpClient::recv_data() {
 
     if (recv_data_buf.size() == data_to_read) {
 
-        std::cout << recv_data_buf << std::endl;
+        //std::cout << recv_data_buf << std::endl;
+        recv_msg(recv_data_buf);
 
         data_to_read = 0;
         recv_data_buf.clear();
     }
+}
+
+void TcpClient::recv_msg(const std::string& msg_str) {
+    //TODO: proces parser error
+    GenericMsg msg = GenericMsg(msg_str);
+    _event_callback.on_msg_recv(get_socket(), msg);
 }
 
 TcpClient::TcpClient(ServerMgr::EventCallback event_callback, int sockfd, std::string remote_address, std::uint16_t remote_port):
@@ -76,9 +85,8 @@ TcpClient::~TcpClient() {
 
 void TcpClient::close() {
     int socket = get_socket();
-    _event_callback.on_client_close(get_socket());
-    set_socket(0);
     ::close(socket);
+    _event_callback.on_client_close(socket);
 }
 
 void TcpClient::on_select() {

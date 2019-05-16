@@ -2,6 +2,8 @@
 
 #include <iomanip>
 
+H9frame::H9frame(): priority(Priority::LOW), type(Type::NOP), dlc(0) {
+}
 
 std::ostream& operator<<(std::ostream& os, const H9frame& frame) {
     os << frame.source_id << " -> " << frame.destination_id

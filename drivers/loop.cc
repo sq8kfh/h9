@@ -27,7 +27,7 @@ void Loop::recv_data() {
     bcopy(&loopback_addr, &tmp_addr, len);
 
     H9frame buf;
-    if(recvfrom(get_socket(), &buf, sizeof(buf), 0, (struct sockaddr *)&tmp_addr, &len) == -1) {
+    if (recvfrom(get_socket(), &buf, sizeof(buf), 0, (struct sockaddr *)&tmp_addr, &len) == -1) {
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
     else {
@@ -36,7 +36,7 @@ void Loop::recv_data() {
 }
 
 void Loop::send_data(const H9frame& frame) {
-    if( sendto(get_socket(), &frame, sizeof(frame), 0, (const struct sockaddr *)&loopback_addr, sizeof(loopback_addr)) == -1) {
+    if (sendto(get_socket(), &frame, sizeof(frame), 0, (const struct sockaddr *)&loopback_addr, sizeof(loopback_addr)) == -1) {
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
     else {

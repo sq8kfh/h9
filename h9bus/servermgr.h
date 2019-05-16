@@ -4,6 +4,7 @@
 #include <map>
 #include "socketmgr.h"
 #include "common/ctx.h"
+#include "protocol/genericmsg.h"
 
 class TcpServer;
 class TcpClient;
@@ -15,7 +16,7 @@ public:
         ServerMgr *const _server_mgr;
     public:
         explicit EventCallback(ServerMgr *const server_mgr): _server_mgr(server_mgr) {};
-        void on_msg_recv();
+        void on_msg_recv(int client_socket, GenericMsg& msg);
         void on_msg_send();
         void on_new_connection(int client_socket, const std::string& remote_address, std::uint16_t remote_port);
         void on_server_close();
@@ -26,6 +27,7 @@ private:
     TcpServer *tcp_server;
     std::map<int, TcpClient*> tcp_clients;
 
+    void msg_recv_callback(int client_socket, GenericMsg& msg);
     void new_connection_callback(int client_socket, const std::string& remote_address, std::uint16_t remote_port);
     void client_close_callback(int client_socket);
     void server_close_callback();
