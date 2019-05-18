@@ -1,24 +1,35 @@
 #include "genericmsg.h"
 
+#include <cassert>
 #include <libxml/parser.h>
 #include "common/logger.h"
 
 GenericMsg::GenericMsg(GenericMsg::Type msg_type) {
     doc = xmlNewDoc(reinterpret_cast<xmlChar const *>("1.0"));
+    xmlNodePtr root = xmlNewNode(nullptr, reinterpret_cast<xmlChar const *>("h9"));
+    xmlNewProp(root, reinterpret_cast<xmlChar const *>("version"), reinterpret_cast<xmlChar const *>("0.0"));
     xmlNodePtr node = nullptr;
     switch (msg_type) {
         case Type::FRAME_RECEIVED:
-            node = xmlNewNode(nullptr, reinterpret_cast<xmlChar const *>("h9msg"));
+            //node = xmlNewChild(root, nullptr, reinterpret_cast<xmlChar const *>("h9msg"), nullptr);
+            node = xmlNewNode(nullptr, reinterpret_cast<xmlChar const *>("frame_received"));
             break;
         case Type::SEND_FRAME:
-            node = xmlNewNode(nullptr, reinterpret_cast<xmlChar const *>("h9msg"));
+            //node = xmlNewChild(root, nullptr, reinterpret_cast<xmlChar const *>("h9msg"), nullptr);
+            node = xmlNewNode(nullptr, reinterpret_cast<xmlChar const *>("send_frame"));
             break;
     }
-    xmlDocSetRootElement(doc, node);
+    xmlAddChild(root, node);
+    xmlDocSetRootElement(doc, root);
 }
 
 xmlNodePtr GenericMsg::get_msg_root() {
-    return xmlDocGetRootElement(doc);
+    for (xmlNode *cur_node = xmlDocGetRootElement(doc)->children; cur_node; cur_node = cur_node->next) {
+        if (cur_node->type == XML_ELEMENT_NODE) {
+            return cur_node;
+        }
+    }
+    return nullptr;
 }
 
 GenericMsg::GenericMsg(const GenericMsg& k) {
@@ -47,7 +58,16 @@ GenericMsg::GenericMsg(const std::string& xml) {
 }
 
 GenericMsg::Type GenericMsg::get_type() {
-    return Type::SEND_FRAME;
+    xmlNodePtr node = get_msg_root();
+    assert(node);
+
+    if (node) {
+        if (xmlStrcmp(node->name,reinterpret_cast<xmlChar const *>("frame_received")) == 0)
+            return Type::FRAME_RECEIVED;
+        else if (xmlStrcmp(node->name,reinterpret_cast<xmlChar const *>("send_frame")) == 0)
+            return Type::SEND_FRAME;
+    }
+    return Type::GENERIC;
 }
 
 std::string GenericMsg::serialize() const {

@@ -2,14 +2,13 @@
 #define _H9_SENDFRAMEMSG_H_
 
 
-#include "concretizemsg.h"
+#include "framemsg.h"
 #include "bus/h9frame.h"
 
-class SendFrameMsg: public ConcretizeMsg<GenericMsg::Type::SEND_FRAME> {
+class SendFrameMsg: public FrameMsg<GenericMsg::Type::SEND_FRAME> {
 public:
     SendFrameMsg(GenericMsg&& k);
     SendFrameMsg(const H9frame& frame);
-    H9frame get_frame();
 };
 
 

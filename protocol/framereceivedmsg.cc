@@ -1,5 +1,7 @@
-//
-// Created by Kamil Palkowski on 2019-05-16.
-//
-
 #include "framereceivedmsg.h"
+
+FrameReceivedMsg::FrameReceivedMsg(GenericMsg&& k): FrameMsg(std::move(k)) {
+}
+
+FrameReceivedMsg::FrameReceivedMsg(const H9frame& frame): FrameMsg(frame) {
+}

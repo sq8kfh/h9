@@ -1,8 +1,14 @@
 #include "h9frame.h"
 
 #include <iomanip>
+#include <cassert>
 
 H9frame::H9frame(): priority(Priority::LOW), type(Type::NOP), dlc(0) {
+}
+
+void H9frame::set_type_from_underlying(std::underlying_type_t<H9frame::Type> int_type) {
+    assert(int_type < (2<<H9FRAME_TYPE_BIT_LENGTH));
+    type = H9frame::from_underlying<H9frame::Type>(int_type);
 }
 
 std::ostream& operator<<(std::ostream& os, const H9frame& frame) {

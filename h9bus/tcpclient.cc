@@ -72,8 +72,38 @@ TcpClient::TcpClient(ServerMgr::EventCallback event_callback, int sockfd, std::s
         _event_callback(event_callback),
         remote_address(std::move(remote_address)),
         remote_port(remote_port) {
+
     data_to_read = 0;
+    active_subscription = 0;
+
     set_socket(sockfd);
+}
+
+bool TcpClient::is_subscriber() {
+    return active_subscription;
+}
+
+void TcpClient::send(GenericMsg& msg) {
+    std::string raw_msg = msg.serialize();
+    std::uint32_t header = htonl(raw_msg.size());
+
+    ssize_t nbyte = ::send(get_socket(), &header, sizeof(header), 0);
+    if (nbyte <= 0) {
+        if (nbyte == 0) {
+            on_close();
+            return;
+        }
+        throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
+    }
+
+    nbyte = ::send(get_socket(), raw_msg.c_str(), raw_msg.size(), 0);
+    if (nbyte <= 0) {
+        if (nbyte == 0) {
+            on_close();
+            return;
+        }
+        throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
+    }
 }
 
 TcpClient::~TcpClient() {

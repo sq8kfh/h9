@@ -6,27 +6,52 @@
 #include "bus/h9frame.h"
 
 int main(int argc, char* argv[]) {
-    ClientCtx ctx = ClientCtx("h9send", "Sends data to the H9 Bus.");
+    ClientCtx ctx = ClientCtx("h9send", "Sends frames to the H9 Bus.");
 
-    ctx.add_options("l,local", "some local option", cxxopts::value<int>());
+    ctx.add_options("s,src_id", "Source id", cxxopts::value<std::uint16_t>());
+    ctx.add_options("i,dst_id", "Destination id", cxxopts::value<std::uint16_t>());
+    ctx.add_options("H,high_priority", "High priority");
+    ctx.add_options("t,type", "Frame type", cxxopts::value<std::underlying_type_t<H9frame::Type >>());
+    ctx.add_positional_options("data", "[hex data]", "");
 
     auto res = ctx.parse_options(argc, argv);
 
     ctx.load_configuration(res);
 
-    if (res.count("local")) {
-        std::cout << res["local"].as<int>();
+    H9frame frame;
+
+    if (res.count("src_id")) {
+        frame.source_id = res["src_id"].as<std::uint16_t>();
+    }
+
+    if (res.count("dst_id")) {
+        frame.destination_id = res["dst_id"].as<std::uint16_t>();
+    }
+
+    if (res.count("high_priority")) {
+        frame.priority = H9frame::Priority::HIGH;
+    }
+    else {
+        frame.priority = H9frame::Priority::LOW;
+    }
+
+    if (res.count("type")) {
+        frame.type = static_cast<H9frame::Type>(res["type"].as<std::underlying_type_t<H9frame::Type >>());
+    }
+
+    frame.dlc = 0;
+    if (res.count("data")) {
+        auto& v = res["data"].as<std::vector<std::string>>();
+        for (const auto& s : v) {
+            frame.data[frame.dlc] = std::stoul(s, nullptr, 16);
+            ++frame.dlc;
+            if (frame.dlc == 8)
+                break;
+        }
     }
 
     H9Connector h9_connector = {"127.0.0.1", "7878"};
     h9_connector.connect();
-    H9frame frame;
-    frame.source_id = 12;
-    frame.destination_id = H9frame::BROADCAST_ID;
-
-    frame.dlc = 2;
-    frame.data[0] = 21;
-    frame.data[1] = 212;
 
     std::cout << SendFrameMsg(frame).serialize() << std::endl;
 

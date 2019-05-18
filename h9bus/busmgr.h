@@ -25,10 +25,14 @@ public:
         void on_fame_send(const H9frame& frame);
         void on_close();
     };
+
+    using msg_frame_callback_f = std::function<void(const std::string&, const H9frame&)>;
 private:
     std::map<std::string, Driver*> dev;
     SocketMgr * const _socket_mgr;
     Log frame_log;
+
+    msg_frame_callback_f _event_msg_frame_callback;
 
     void recv_frame_callback(const H9frame& frame, const std::string& bus_id);
     void send_frame_callback(const H9frame& frame, const std::string& bus_id);
@@ -40,6 +44,7 @@ private:
     std::string frame_to_log_string(const std::string& bus_id, const H9frame& frame);
 public:
     explicit BusMgr(SocketMgr *socket_mgr);
+    void set_frame_recv_callback(msg_frame_callback_f event_msg_frame_callback);
     void load_config(Ctx *ctx);
 
     void send_frame(const H9frame& frame, const std::string& bus_id = std::string("*"));

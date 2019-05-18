@@ -1,11 +1,14 @@
 #ifndef _H9_FRAMERECEIVEDMSG_H_
 #define _H9_FRAMERECEIVEDMSG_H_
 
-#include "concretizemsg.h"
 
-class FrameReceivedMsg: public ConcretizeMsg<GenericMsg::Type::FRAME_RECEIVED> {
+#include "framemsg.h"
+#include "bus/h9frame.h"
+
+class FrameReceivedMsg: public FrameMsg<GenericMsg::Type::FRAME_RECEIVED> {
 public:
-    FrameReceivedMsg();
+    FrameReceivedMsg(GenericMsg&& k);
+    FrameReceivedMsg(const H9frame& frame);
 };
 
 

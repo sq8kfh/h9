@@ -56,13 +56,19 @@ public:
     std::uint16_t destination_id: H9FRAME_DESTINATION_ID_BIT_LENGTH;
     std::uint16_t source_id: H9FRAME_SOURCE_ID_BIT_LENGTH;
     std::uint8_t dlc;
-    std::uint8_t data[8];
+    std::uint8_t data[8]{};
 
     H9frame();
+    void set_type_from_underlying(std::underlying_type_t<Type> int_type);
 
-    template <typename E>
-    static std::uint8_t to_underlying(E e) noexcept {
+    /*template <typename E>
+    static std::underlying_type_t<E> to_underlying(E e) noexcept {
         return static_cast<std::underlying_type_t<E>>(e);
+    }*/
+
+    template <typename E, typename R = std::underlying_type_t<E>>
+    static R to_underlying(E e) noexcept {
+        return static_cast<R>(e);
     }
 
     template <typename E>

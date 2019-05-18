@@ -17,6 +17,8 @@ public:
                      const std::string& desc,
                      std::shared_ptr<const cxxopts::Value> value = cxxopts::value<bool>(),
                      std::string arg_help = "");
+    void add_positional_options(const std::string& opts, const std::string& desc, const std::string& help);
+
     cxxopts::ParseResult parse_options(int argc, char* argv[]);
 };
 

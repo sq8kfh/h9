@@ -3,7 +3,6 @@
 #include "common/logger.h"
 #include "tcpclient.h"
 #include <iostream>
-#include "protocol/sendframemsg.h"
 
 void ServerMgr::EventCallback::on_msg_recv(int client_socket, GenericMsg& msg) {
     _server_mgr->msg_recv_callback(client_socket, msg);
@@ -25,17 +24,10 @@ void ServerMgr::EventCallback::on_client_close(int client_socket) {
     _server_mgr->client_close_callback(client_socket);
 }
 
+
 void ServerMgr::msg_recv_callback(int client_socket, GenericMsg& msg) {
-    switch (msg.get_type()) {
-        case GenericMsg::Type::SEND_FRAME: {
-            SendFrameMsg sf_msg = std::move(msg);
-            std::cout << sf_msg.get_frame() << std::endl;
-            break;
-        }
-        default:
-            //TODO: send error msg - invalid msg
-            break;
-    }
+    msg_log.log(msg.serialize());
+    _event_msg_recv_callback(client_socket, msg);
 }
 
 void ServerMgr::new_connection_callback(int client_socket, const std::string& remote_address, std::uint16_t remote_port) {
@@ -69,18 +61,43 @@ ServerMgr::EventCallback ServerMgr::create_event_callback() {
     return ServerMgr::EventCallback(this);
 }
 
-ServerMgr::ServerMgr(SocketMgr *socket_mgr): _socket_mgr(socket_mgr), tcp_server(nullptr) {
+ServerMgr::ServerMgr(SocketMgr* socket_mgr):
+        _socket_mgr(socket_mgr),
+        _event_msg_recv_callback(nullptr),
+        tcp_server(nullptr) {
+}
 
+void ServerMgr::set_msg_recv_callback(msg_recv_callback_f event_msg_recv_callback) {
+    _event_msg_recv_callback = event_msg_recv_callback;
 }
 
 void ServerMgr::load_config(Ctx *ctx) {
     tcp_server = new TcpServer(create_event_callback(), 7878);
     _socket_mgr->register_socket(tcp_server);
 
+    msg_log = ctx->log("h9msg");
+}
+
+void ServerMgr::send_msg(int client_socket, GenericMsg& msg) {
+    if (tcp_clients.count(client_socket)) {
+        tcp_clients[client_socket]->send(msg);
+    }
+}
+
+void ServerMgr::send_msg_to_subscriber(GenericMsg& msg) {
+    for (auto& it: tcp_clients) {
+        if (it.second->is_subscriber()) {
+            it.second->send(msg);
+        }
+    }
 }
 
 ServerMgr::~ServerMgr() {
     delete tcp_server;
+    for (auto& it: tcp_clients) {
+        delete it.second;
+    }
+    tcp_clients.clear();
 }
 
 

@@ -13,7 +13,7 @@ ClientCtx::ClientCtx(const std::string& app_name, const std::string& app_desc):
             ;
     _options.add_options("connection")
             ("c,connect", "Connection address", cxxopts::value<std::string>())
-            ("p,port", "connection port", cxxopts::value<int>())
+            ("p,port", "Connection port", cxxopts::value<int>())
             ("F,config", "User config file", cxxopts::value<std::string>()->default_value(H9_USER_CONFIG_FILE))
             ;
 }
@@ -28,6 +28,13 @@ void ClientCtx::add_options(const std::string& opts,
                       std::shared_ptr<const cxxopts::Value> value,
                       std::string arg_help) {
     _options.add_options()(opts, desc, std::move(value), std::move(arg_help));
+}
+
+void ClientCtx::add_positional_options(const std::string& opts, const std::string& desc, const std::string& help) {
+    _options.parse_positional(opts);
+    _options.positional_help(desc);
+
+    _options.add_options()(opts, help, cxxopts::value<std::vector<std::string>>());
 }
 
 cxxopts::ParseResult ClientCtx::parse_options(int argc, char* argv[]) {
