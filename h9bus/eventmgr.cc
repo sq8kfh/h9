@@ -1,6 +1,9 @@
 #include "eventmgr.h"
 
+#include "tcpclient.h"
+#include "busmgr.h"
 #include "protocol/sendframemsg.h"
+#include "protocol/subscribemsg.h"
 #include "protocol/framereceivedmsg.h"
 #include "common/logger.h"
 
@@ -32,19 +35,23 @@ void EventMgr::flush_all() {
 }
 
 void EventMgr::flush_frame(const std::string& bus_id, const H9frame& frame) {
-    h9_log_info("EventMgr::on_fame_recv");
+    h9_log_debug("EventMgr::flush_frame(%s, ?)", bus_id.c_str());
     FrameReceivedMsg msg(frame);
-    h9_log_debug("EventMgr::on_fame_recv1");
     _server_mgr->send_msg_to_subscriber(msg);
-    h9_log_debug("EventMgr::on_fame_recv2");
 }
 
 void EventMgr::flush_msg(int client_socket, GenericMsg& msg) {
+    h9_log_debug("EventMgr::flush_msg(%d, ?)", client_socket);
     switch (msg.get_type()) {
         case GenericMsg::Type::SEND_FRAME: {
             SendFrameMsg sf_msg = std::move(msg);
             H9frame tmp = sf_msg.get_frame();
             _bus_mgr->send_frame(tmp);
+            break;
+        }
+        case GenericMsg::Type::SUBSCRIBE: {
+            SubscribeMsg sc_msg = std::move(msg);
+            _server_mgr->get_cient(client_socket)->subscriber(1);
             break;
         }
         default:

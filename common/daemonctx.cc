@@ -33,12 +33,10 @@ void DaemonCtx::load_configuration(int argc, char* argv[]) {
 
 #ifdef H9_DEBUG
     if (result.count("debug")) {
-        _debug = true;
+        enable_debug(true);
     }
 #endif
-    if (result.count("verbose")) {
-        _verbose = static_cast<unsigned int>(result.count("verbose"));
-    }
+    raise_verbose_level(result.count("verbose"));
 
     if (result.count("config")) {
         std::cout << "config: " << result["config"].as<std::string>() << std::endl;

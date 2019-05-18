@@ -11,7 +11,8 @@ public:
     enum class Type {
         GENERIC = 0,
         FRAME_RECEIVED,
-        SEND_FRAME
+        SEND_FRAME,
+        SUBSCRIBE,
     };
 private:
     xmlDocPtr doc = nullptr;

@@ -80,6 +80,10 @@ std::queue<std::pair<int, GenericMsg>>& ServerMgr::get_recv_queue() {
     return recv_queue;
 }
 
+TcpClient* ServerMgr::get_cient(int client_socket) {
+    return tcp_clients[client_socket];
+}
+
 void ServerMgr::send_msg(int client_socket, GenericMsg& msg) {
     if (tcp_clients.count(client_socket)) {
         try {
@@ -100,6 +104,7 @@ void ServerMgr::send_msg_to_subscriber(GenericMsg& msg) {
                 it_local->second->send(msg);
             }
             catch (SocketMgr::Socket::CloseSocketException& e) {
+                h9_log_info("Close connection during send_msg_to_subscriber (socket: %d)", it_local->first);
                 it_local->second->close();
             }
         }

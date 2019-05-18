@@ -8,18 +8,18 @@
 
 
 class Ctx {
-protected:
-    unsigned int _verbose;
+private:
 #ifdef H9_DEBUG
     bool _debug;
 #endif
+protected:
     const std::string _app_name;
     const std::string _app_desc;
     void raise_verbose_level(unsigned int how_much);
 public:
-    Ctx(const std::string& app_name, const std::string& app_desc);
-    inline unsigned int verbose_level();
-    inline bool debug_enabled();
+    Ctx(std::string app_name, std::string app_desc);
+    void enable_debug(bool debug);
+    inline bool is_debug();
 
     Log& log();
     Log& log(const std::string& log_name);

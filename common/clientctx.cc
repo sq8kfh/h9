@@ -20,7 +20,7 @@ ClientCtx::ClientCtx(const std::string& app_name, const std::string& app_desc):
 
 void ClientCtx::load_configuration(const cxxopts::ParseResult& opts) {
     std::cout << "config: " << opts["config"].as<std::string>() << std::endl;
-
+    log().set_to_stderr(true);
 }
 
 void ClientCtx::add_options(const std::string& opts,
@@ -42,7 +42,7 @@ cxxopts::ParseResult ClientCtx::parse_options(int argc, char* argv[]) {
         cxxopts::ParseResult result = _options.parse(argc, argv);
 #ifdef H9_DEBUG
         if (result.count("debug")) {
-            _debug = true;
+            enable_debug(true);
         }
 #endif
         if (result.count("help"))
@@ -51,9 +51,7 @@ cxxopts::ParseResult ClientCtx::parse_options(int argc, char* argv[]) {
             exit(EXIT_SUCCESS);
         }
 
-        if (result.count("verbose")) {
-            _verbose = static_cast<unsigned int>(result.count("verbose"));
-        }
+        raise_verbose_level(result.count("verbose"));
 
         if (result.count("version"))
         {

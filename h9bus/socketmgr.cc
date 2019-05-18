@@ -31,6 +31,7 @@ void SocketMgr::unregister_socket(Socket *socket) {
 
 void SocketMgr::select_loop(std::function<void(void)> after_select_callback) {
     while (!socket_map.empty()) {
+        //h9_log_debug("select loop (socket list size: %d)", socket_map.size());
         fd_set rfds;
         FD_COPY(&event_socket_set, &rfds);
 
@@ -48,6 +49,7 @@ void SocketMgr::select_loop(std::function<void(void)> after_select_callback) {
                         it_local->second->on_select();
                     }
                     catch (SocketMgr::Socket::CloseSocketException& e) {
+                        h9_log_info("Close socket during recv (socket: %d)", it_local->first);
                         it_local->second->close();
                     }
                 }

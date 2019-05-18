@@ -24,6 +24,17 @@ public:
     constexpr static Level NOTICE = Level::NOTICE;
     constexpr static Level INFO = Level::INFO;
     constexpr static Level DEBUG = Level::DEBUG;
+private:
+    Level _verbose;
+    bool _debug;
+    bool _to_stderr;
+public:
+    Log();
+    unsigned int get_level();
+    void set_level(Level level);
+    void set_level(unsigned int  level);
+    void set_debug(bool debug);
+    void set_to_stderr(bool to_stderr);
 
     void stderr(const char *file_name, int line_number, const char* fmt, ...) const;
     void crit(const char *file_name, int line_number, const char* fmt, ...) const;

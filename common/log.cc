@@ -1,6 +1,35 @@
 #include "log.h"
 #include <iostream>
 
+Log::Log(): _verbose(Log::NOTICE), _debug(false), _to_stderr(false) {
+}
+
+unsigned int Log::get_level() {
+    return static_cast<unsigned int>(_verbose);
+}
+
+void Log::set_level(Log::Level level) {
+    _verbose = level;
+}
+
+void Log::set_level(unsigned int level) {
+    Log::Level tmp = static_cast<Log::Level>(level);
+    if (tmp <= Log::Level::DEBUG) {
+        _verbose = tmp;
+    }
+    else {
+        _verbose = Log::Level::DEBUG;
+    }
+}
+
+void Log::set_debug(bool debug) {
+    _debug = debug;
+}
+
+void Log::set_to_stderr(bool to_stderr) {
+    _to_stderr = to_stderr;
+}
+
 void Log::stderr(const char *file_name, int line_number, const char* fmt, ...) const {
     va_list args;
     va_start(args, fmt);
@@ -78,10 +107,13 @@ void Log::vlog(const Level& level, const char *file_name, int line_number, const
 }
 
 void Log::log(const Level& level, const char *file_name, int line_number, const std::string& msg) const {
-    std::string tmp = {file_name};
-    tmp += ':';
-    tmp += std::to_string(line_number);
-    tmp += ' ';
+    std::string tmp;
+    if (_debug) {
+        tmp += file_name;
+        tmp += ':';
+        tmp += std::to_string(line_number);
+        tmp += ' ';
+    }
     tmp += msg;
     log(level, tmp);
 }
@@ -91,12 +123,17 @@ void Log::log(const std::string& msg) const {
 }
 
 void Log::log(const Log::Level& level, const std::string& msg) const {
-    std::cout << msg << std::endl;
-
-    /*if (_verbose < level) {
+    if (_verbose < level) {
         return;
     }
+    if (_to_stderr || level == Level::STDERR) {
+        std::cerr << msg << std::endl;
+    }
+    else {
+        std::cout << msg << std::endl;
+    }
 
+    /*
     FILE *out = stdout;
     if (_all_to_stderr || level == H9_LOG_STDERR) {
         out = stderr;

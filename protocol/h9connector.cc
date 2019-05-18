@@ -9,6 +9,9 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 
+#include "common/logger.h"
+
+
 std::uint32_t H9Connector::recv_header() {
     static size_t recv_bytes = 0;
     std::uint32_t recv_header = 0;
@@ -17,15 +20,17 @@ std::uint32_t H9Connector::recv_header() {
         ssize_t nbyte = ::recv(sockfd, reinterpret_cast<char *>(&recv_header) + recv_bytes,
                                sizeof(recv_header) - recv_bytes, 0);
         if (nbyte <= 0) {
-            /*if (nbyte == 0) {
-                return;
-            }*/
+            if (nbyte == 0) {
+                h9_log_debug("close connection during recv header");
+                //return;
+            }
             throw std::system_error(errno, std::generic_category(),
                                     __FILE__ + std::string(":") + std::to_string(__LINE__));
         }
         recv_bytes += nbyte;
     } while (recv_bytes != sizeof(recv_header));
 
+    recv_bytes = 0;
     return ntohl(recv_header);
 }
 
@@ -38,9 +43,9 @@ std::string H9Connector::recv_data(std::uint32_t data_to_read) {
 
         ssize_t nbyte = ::recv(sockfd, buf, buf_len < bytes_to_recv ? buf_len : bytes_to_recv, 0);
         if (nbyte <= 0) {
-            /*if (nbyte == 0) {
-                return;
-            }*/
+            if (nbyte == 0) {
+                h9_log_debug("close connection during recv data");
+            }
             throw std::system_error(errno, std::generic_category(),
                                     __FILE__ + std::string(":") + std::to_string(__LINE__));
         }

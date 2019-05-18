@@ -23,6 +23,7 @@ public:
     const std::uint16_t remote_port;
     TcpClient(ServerMgr::EventCallback event_callback, int sockfd, std::string remote_address, std::uint16_t remote_port);
     bool is_subscriber();
+    void subscriber(int active);
     void send(GenericMsg& msg);
     ~TcpClient();
     void on_select();

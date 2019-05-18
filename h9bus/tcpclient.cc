@@ -6,6 +6,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
+#include "common/logger.h"
 #include "protocol/genericmsg.h"
 
 void TcpClient::recv() {
@@ -74,13 +75,17 @@ TcpClient::TcpClient(ServerMgr::EventCallback event_callback, int sockfd, std::s
         remote_port(remote_port) {
 
     data_to_read = 0;
-    active_subscription = 1;
+    active_subscription = 0;
 
     set_socket(sockfd);
 }
 
 bool TcpClient::is_subscriber() {
     return active_subscription;
+}
+
+void TcpClient::subscriber(int active) {
+    active_subscription = active;
 }
 
 void TcpClient::send(GenericMsg& msg) {
@@ -107,6 +112,7 @@ void TcpClient::send(GenericMsg& msg) {
 }
 
 TcpClient::~TcpClient() {
+    h9_log_debug("TcpClient::~TcpClient (socket: %d)", get_socket());
     if (get_socket() > 0) {
         ::close(get_socket());
         set_socket(0);
