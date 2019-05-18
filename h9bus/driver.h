@@ -1,6 +1,7 @@
 #ifndef DRIVER_H
 #define DRIVER_H
 
+#include "config.h"
 #include <queue>
 #include <string>
 

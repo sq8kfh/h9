@@ -1,9 +1,11 @@
 #ifndef _H9_SOCKETMGR_H_
 #define _H9_SOCKETMGR_H_
 
+#include "config.h"
 #include <map>
 #include <exception>
 #include <unistd.h>
+
 
 class SocketMgr {
 public:

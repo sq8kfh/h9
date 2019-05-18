@@ -1,6 +1,7 @@
 #ifndef _H9_DAEMONCTX_H_
 #define _H9_DAEMONCTX_H_
 
+#include "config.h"
 #include "ctx.h"
 
 

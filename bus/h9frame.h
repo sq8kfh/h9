@@ -1,8 +1,10 @@
 #ifndef _H9_H9FRAME_H_
 #define _H9_H9FRAME_H_
 
+#include "config.h"
 #include <cstdint>
 #include <ostream>
+
 
 class H9frame {
 public:

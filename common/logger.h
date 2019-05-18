@@ -1,7 +1,9 @@
 #ifndef _H9_LOGGER_H_
 #define _H9_LOGGER_H_
 
+#include "config.h"
 #include "common/log.h"
+
 
 class Logger {
 public:

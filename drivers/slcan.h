@@ -3,6 +3,7 @@
 
 #include "h9bus/driver.h"
 
+
 class Slcan: public Driver {
 private:
     const std::string _tty;

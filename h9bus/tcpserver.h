@@ -1,8 +1,10 @@
 #ifndef _H9_TCPSERVER_H_
 #define _H9_TCPSERVER_H_
 
+#include "config.h"
 #include "socketmgr.h"
 #include "servermgr.h"
+
 
 class TcpServer: public SocketMgr::Socket {
 private:

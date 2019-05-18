@@ -1,8 +1,10 @@
 #ifndef _H9_LOG_H_
 #define _H9_LOG_H_
 
+#include "config.h"
 #include <string>
 #include <cstdarg>
+
 
 class Log {
 public:

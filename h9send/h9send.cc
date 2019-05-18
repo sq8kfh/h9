@@ -1,3 +1,4 @@
+#include "config.h"
 #include <cstdlib>
 
 #include "protocol/h9connector.h"
@@ -50,7 +51,7 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    H9Connector h9_connector = {"127.0.0.1", "7878"};
+    H9Connector h9_connector = {ctx.get_h9bus_host(), ctx.get_h9bus_port()};
     h9_connector.connect();
 
     std::cout << SendFrameMsg(frame).serialize() << std::endl;

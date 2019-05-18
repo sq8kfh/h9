@@ -1,10 +1,12 @@
 #ifndef _H9_CLIENTCTX_H_
 #define _H9_CLIENTCTX_H_
 
+#include "config.h"
 #include <string>
 #include <cxxopts/cxxopts.hpp>
 
 #include "ctx.h"
+
 
 class ClientCtx: public Ctx {
 private:
@@ -20,6 +22,9 @@ public:
     void add_positional_options(const std::string& opts, const std::string& desc, const std::string& help);
 
     cxxopts::ParseResult parse_options(int argc, char* argv[]);
+
+    std::string get_h9bus_host();
+    std::string get_h9bus_port();
 };
 
 

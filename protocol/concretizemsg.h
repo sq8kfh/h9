@@ -3,6 +3,7 @@
 
 #include "genericmsg.h"
 
+
 template<GenericMsg::Type msg_type>
 class ConcretizeMsg: public GenericMsg {
 protected:

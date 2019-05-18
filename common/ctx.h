@@ -1,10 +1,11 @@
 #ifndef _H9_CTX_H_
 #define _H9_CTX_H_
 
+#include "config.h"
 #include <string>
 
-#include "config.h"
 #include "common/log.h"
+
 
 class Ctx {
 protected:

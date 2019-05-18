@@ -1,10 +1,11 @@
 #ifndef _H9_EVENTMGR_H_
 #define _H9_EVENTMGR_H_
 
-
+#include "config.h"
 #include "common/daemonctx.h"
 #include "servermgr.h"
 #include "busmgr.h"
+
 
 class EventMgr {
 private:

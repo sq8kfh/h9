@@ -5,6 +5,7 @@
 
 #include "h9bus/driver.h"
 
+
 class Loop: public Driver {
 private:
     constexpr static std::uint16_t LOOPBACK_PORT = 61432;

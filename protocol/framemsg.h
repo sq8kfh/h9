@@ -7,6 +7,7 @@
 #include "concretizemsg.h"
 #include "bus/h9frame.h"
 
+
 template<GenericMsg::Type msg_type>
 class FrameMsg: public ConcretizeMsg<msg_type> {
 protected:

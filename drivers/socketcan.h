@@ -3,6 +3,7 @@
 
 #include "h9bus/driver.h"
 
+
 class SocketCAN: public Driver {
 public:
     explicit SocketCAN(BusMgr::EventCallback event_callback);

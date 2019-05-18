@@ -3,9 +3,9 @@
 #ifndef _H9_BUS_H_
 #define _H9_BUS_H_
 
+#include "config.h"
 #include <map>
 #include <queue>
-//#include "driver.h"
 #include "socketmgr.h"
 #include "common/ctx.h"
 #include "bus/h9frame.h"

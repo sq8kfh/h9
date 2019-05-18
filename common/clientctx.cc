@@ -68,3 +68,11 @@ cxxopts::ParseResult ClientCtx::parse_options(int argc, char* argv[]) {
         exit(EXIT_FAILURE);
     }
 }
+
+std::string ClientCtx::get_h9bus_host() {
+    return "127.0.0.1";
+}
+
+std::string ClientCtx::get_h9bus_port() {
+    return "7878";
+}

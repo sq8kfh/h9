@@ -1,6 +1,7 @@
 #ifndef _H9_SERVERMGR_H_
 #define _H9_SERVERMGR_H_
 
+#include "config.h"
 #include <map>
 #include <queue>
 #include <functional>
@@ -8,6 +9,7 @@
 #include "common/ctx.h"
 #include "protocol/genericmsg.h"
 #include "busmgr.h"
+
 
 class TcpServer;
 class TcpClient;

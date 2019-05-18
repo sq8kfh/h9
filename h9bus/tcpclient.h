@@ -1,9 +1,10 @@
 #ifndef _H9_TCPCLIENT_H_
 #define _H9_TCPCLIENT_H_
 
-
+#include "config.h"
 #include "socketmgr.h"
 #include "servermgr.h"
+
 
 class TcpClient: public SocketMgr::Socket {
 private:

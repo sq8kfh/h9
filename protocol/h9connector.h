@@ -1,7 +1,6 @@
 #ifndef _H9_H9CONNECTOR_H_
 #define _H9_H9CONNECTOR_H_
 
-
 #include "genericmsg.h"
 
 class H9Connector {
