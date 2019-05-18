@@ -60,11 +60,7 @@ std::string BusMgr::frame_to_log_string(const std::string& bus_id, const H9frame
     return frame_string.str();
 }
 
-BusMgr::BusMgr(SocketMgr *socket_mgr): _socket_mgr(socket_mgr), _event_msg_frame_callback(nullptr) {
-}
-
-void BusMgr::set_frame_recv_callback(msg_frame_callback_f event_msg_frame_callback) {
-    _event_msg_frame_callback = event_msg_frame_callback;
+BusMgr::BusMgr(SocketMgr *socket_mgr): _socket_mgr(socket_mgr) {
 }
 
 void BusMgr::load_config(Ctx *ctx) {
@@ -110,11 +106,15 @@ BusMgr::EventCallback BusMgr::create_event_callback(const std::string &bus_id) {
 
 void BusMgr::recv_frame_callback(const H9frame& frame, const std::string& bus_id) {
     frame_log.log(std::string("recv ") + frame_to_log_string(bus_id, frame));
-    _event_msg_frame_callback(bus_id, frame);
+    recv_queue.push(std::make_pair(bus_id, frame));
 }
 
 void BusMgr::send_frame_callback(const H9frame& frame, const std::string& bus_id) {
     frame_log.log(std::string("send ") + frame_to_log_string(bus_id, frame));
+}
+
+std::queue<std::pair<std::string, H9frame>>& BusMgr::get_recv_queue() {
+    return recv_queue;
 }
 
 void BusMgr::send_frame(const H9frame& frame, const std::string& bus_id) {

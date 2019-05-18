@@ -29,7 +29,7 @@ void SocketMgr::unregister_socket(Socket *socket) {
     }
 }
 
-void SocketMgr::select_loop() {
+void SocketMgr::select_loop(std::function<void(void)> after_select_callback) {
     while (!socket_map.empty()) {
         fd_set rfds;
         FD_COPY(&event_socket_set, &rfds);
@@ -40,16 +40,22 @@ void SocketMgr::select_loop() {
             throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
         }
         else if (retval) {
-            try {
-                for (auto &it : socket_map) {
-                    if (FD_ISSET(it.first, &rfds)) {
-                        it.second->on_select();
+            for (auto it = socket_map.begin(); it != socket_map.end();) {
+                auto it_local = it;
+                ++it;
+                if (FD_ISSET(it_local->first, &rfds)) {
+                    try {
+                        it_local->second->on_select();
+                    }
+                    catch (SocketMgr::Socket::CloseSocketException& e) {
+                        it_local->second->close();
                     }
                 }
             }
-            catch (Socket::CloseSocketException e) {
-                e._socket->close();
-            }
+        }
+
+        if (after_select_callback) {
+            after_select_callback();
         }
     }
 }

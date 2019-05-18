@@ -2,6 +2,7 @@
 #define _H9_SERVERMGR_H_
 
 #include <map>
+#include <queue>
 #include <functional>
 #include "socketmgr.h"
 #include "common/ctx.h"
@@ -24,26 +25,23 @@ public:
         void on_server_close();
         void on_client_close(int client_socket);
     };
-
-    using msg_recv_callback_f = std::function<void(int, GenericMsg&)>;
 private:
     SocketMgr* const _socket_mgr;
+    std::queue<std::pair<int, GenericMsg>> recv_queue;
 
     TcpServer *tcp_server;
     std::map<int, TcpClient*> tcp_clients;
     Log msg_log;
 
-    msg_recv_callback_f _event_msg_recv_callback;
-
-    void msg_recv_callback(int client_socket, GenericMsg& msg);
+    void recv_msg_callback(int client_socket, GenericMsg& msg);
     void new_connection_callback(int client_socket, const std::string& remote_address, std::uint16_t remote_port);
     void client_close_callback(int client_socket);
     void server_close_callback();
     EventCallback create_event_callback();
 public:
     explicit ServerMgr(SocketMgr* socket_mgr);
-    void set_msg_recv_callback(msg_recv_callback_f event_msg_recv_callback);
     void load_config(Ctx *ctx);
+    std::queue<std::pair<int, GenericMsg>>& get_recv_queue();
     void send_msg(int client_socket, GenericMsg& msg);
     void send_msg_to_subscriber(GenericMsg& msg);
     ~ServerMgr();

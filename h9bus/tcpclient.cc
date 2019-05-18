@@ -74,7 +74,7 @@ TcpClient::TcpClient(ServerMgr::EventCallback event_callback, int sockfd, std::s
         remote_port(remote_port) {
 
     data_to_read = 0;
-    active_subscription = 0;
+    active_subscription = 1;
 
     set_socket(sockfd);
 }

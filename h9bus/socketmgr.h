@@ -15,7 +15,7 @@ public:
     SocketMgr();
     void register_socket(Socket *socket);
     void unregister_socket(Socket *socket);
-    void select_loop();
+    void select_loop(std::function<void(void)> after_select_callback = nullptr);
 
     class Socket {
     private:

@@ -21,9 +21,9 @@ int main(int argc, char **argv) {
     servermgr.load_config(&ctx);
 
     EventMgr event_mgr = {&ctx, &busmgr, &servermgr};
-    busmgr.set_frame_recv_callback(std::bind(&EventMgr::on_fame_recv, &event_mgr, std::placeholders::_1, std::placeholders::_2));
-    servermgr.set_msg_recv_callback(std::bind(&EventMgr::on_msg_recv, &event_mgr, std::placeholders::_1, std::placeholders::_2));
+    //busmgr.set_frame_recv_callback(std::bind(&EventMgr::on_fame_recv, &event_mgr, std::placeholders::_1, std::placeholders::_2));
+    //servermgr.set_msg_recv_callback(std::bind(&EventMgr::on_msg_recv, &event_mgr, std::placeholders::_1, std::placeholders::_2));
 
-    socketmgr.select_loop();
+    socketmgr.select_loop(std::bind(&EventMgr::flush_all, &event_mgr));
     return EXIT_FAILURE;
 }

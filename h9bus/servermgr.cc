@@ -1,11 +1,14 @@
 #include "servermgr.h"
+
+#include <iostream>
 #include "tcpserver.h"
 #include "common/logger.h"
 #include "tcpclient.h"
-#include <iostream>
+#include "socketmgr.h"
+
 
 void ServerMgr::EventCallback::on_msg_recv(int client_socket, GenericMsg& msg) {
-    _server_mgr->msg_recv_callback(client_socket, msg);
+    _server_mgr->recv_msg_callback(client_socket, msg);
 }
 
 void ServerMgr::EventCallback::on_msg_send() {
@@ -25,9 +28,9 @@ void ServerMgr::EventCallback::on_client_close(int client_socket) {
 }
 
 
-void ServerMgr::msg_recv_callback(int client_socket, GenericMsg& msg) {
+void ServerMgr::recv_msg_callback(int client_socket, GenericMsg& msg) {
     msg_log.log(msg.serialize());
-    _event_msg_recv_callback(client_socket, msg);
+    recv_queue.push(std::make_pair(client_socket, std::move(msg)));
 }
 
 void ServerMgr::new_connection_callback(int client_socket, const std::string& remote_address, std::uint16_t remote_port) {
@@ -63,12 +66,7 @@ ServerMgr::EventCallback ServerMgr::create_event_callback() {
 
 ServerMgr::ServerMgr(SocketMgr* socket_mgr):
         _socket_mgr(socket_mgr),
-        _event_msg_recv_callback(nullptr),
         tcp_server(nullptr) {
-}
-
-void ServerMgr::set_msg_recv_callback(msg_recv_callback_f event_msg_recv_callback) {
-    _event_msg_recv_callback = event_msg_recv_callback;
 }
 
 void ServerMgr::load_config(Ctx *ctx) {
@@ -78,16 +76,32 @@ void ServerMgr::load_config(Ctx *ctx) {
     msg_log = ctx->log("h9msg");
 }
 
+std::queue<std::pair<int, GenericMsg>>& ServerMgr::get_recv_queue() {
+    return recv_queue;
+}
+
 void ServerMgr::send_msg(int client_socket, GenericMsg& msg) {
     if (tcp_clients.count(client_socket)) {
-        tcp_clients[client_socket]->send(msg);
+        try {
+            tcp_clients[client_socket]->send(msg);
+        }
+        catch (SocketMgr::Socket::CloseSocketException& e) {
+            tcp_clients[client_socket]->close();
+        }
     }
 }
 
 void ServerMgr::send_msg_to_subscriber(GenericMsg& msg) {
-    for (auto& it: tcp_clients) {
-        if (it.second->is_subscriber()) {
-            it.second->send(msg);
+    for (auto it = tcp_clients.begin(); it != tcp_clients.end();) {
+        auto it_local = it;
+        ++it;
+        if (it_local->second->is_subscriber()) {
+            try {
+                it_local->second->send(msg);
+            }
+            catch (SocketMgr::Socket::CloseSocketException& e) {
+                it_local->second->close();
+            }
         }
     }
 }
