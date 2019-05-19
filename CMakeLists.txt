@@ -6,7 +6,7 @@ INCLUDE(FindPkgConfig)
 set(CMAKE_C_STANDARD 11)
 
 set(H9D_CONFIG_FILE "./h9d.cfg")
-set(H9_VERSION "0.0.0")
+set(H9_VERSION "0.1.0")
 
 find_package(LibXml2 REQUIRED)
 
