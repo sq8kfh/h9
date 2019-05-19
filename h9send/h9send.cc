@@ -13,7 +13,7 @@ int main(int argc, char* argv[]) {
     ctx.add_options("i,dst_id", "Destination id", cxxopts::value<std::uint16_t>());
     ctx.add_options("H,high_priority", "High priority");
     ctx.add_options("t,type", "Frame type", cxxopts::value<std::underlying_type_t<H9frame::Type >>());
-    ctx.add_positional_options("data", "[hex data]", "");
+    ctx.add_positional_options_list("data", "[hex data]", "");
 
     auto res = ctx.parse_options(argc, argv);
 

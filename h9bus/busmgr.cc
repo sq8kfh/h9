@@ -65,21 +65,21 @@ BusMgr::BusMgr(SocketMgr *socket_mgr): _socket_mgr(socket_mgr) {
 
 void BusMgr::load_config(Ctx *ctx) {
     frame_log = ctx->log("h9frame");
-    Loop *loop = new Loop(std::move(create_event_callback("can0")));
-    dev["can0"] = loop;
-    Dummy *dummy = new Dummy(create_event_callback("can1"));
-    dev["can1"] = dummy;
+    //Loop *loop = new Loop(std::move(create_event_callback("can0")));
+    //dev["can0"] = loop;
+    //Dummy *dummy = new Dummy(create_event_callback("can1"));
+    //dev["can1"] = dummy;
     Slcan *slcan = new Slcan(create_event_callback("can2"), "/dev/tty.usbserial-DA002NQW");
     dev["can2"] = slcan;
 
-    loop->open();
-    _socket_mgr->register_socket(loop);
-    dummy->open();
-    _socket_mgr->register_socket(dummy);
+    //loop->open();
+    //_socket_mgr->register_socket(loop);
+    //dummy->open();
+    //_socket_mgr->register_socket(dummy);
     slcan->open();
     _socket_mgr->register_socket(slcan);
 
-    H9frame tmp;
+    /*H9frame tmp;
     tmp.priority = H9frame::Priority::LOW;
     tmp.source_id = 16;
     tmp.destination_id = 0;
@@ -95,7 +95,7 @@ void BusMgr::load_config(Ctx *ctx) {
     slcan->send_frame(tmp);
     slcan->send_frame(tmp);
     slcan->send_frame(tmp);
-    loop->send_frame(tmp);
+    loop->send_frame(tmp);*/
 
     send_turned_on_broadcast();
 }
