@@ -8,10 +8,9 @@
 #include "protocol/subscribemsg.h"
 #include "common/clientctx.h"
 
-std::uint32_t hex2bin(const char *hex, const size_t size) {
-    std::uint32_t val = 0;
-    const size_t _size = size * 2;
-    for (size_t n = 0; n < _size; n++) {
+std::uint8_t hex2bin(const char *hex) {
+    std::uint8_t val = 0;
+    for (size_t n = 0; n < 2; n++) {
         char c = hex[n];
         if (c == '\0')
             break;
@@ -42,27 +41,26 @@ static size_t read_ihex(const std::string& ihex_file, std::uint8_t **fw_data) {
 
     char *line = nullptr;
     size_t linecap = 0;
-    ssize_t linelen;
-    while ((linelen = getline(&line, &linecap, fp)) > 0) {
+    while (getline(&line, &linecap, fp) > 0) {
         if (line[0] != ':')
             continue;
         std::uint8_t tmp_crc = 0;
 
-        std::uint8_t size = hex2bin(line + 1, 1); //byte count
+        std::uint8_t size = hex2bin(line + 1); //byte count
         tmp_crc += size;
         //TODO: fw_data size
-        tmp_crc += hex2bin(line + 3, 1); //address MSB
-        tmp_crc += hex2bin(line + 5, 1); //address LSB
-        std::uint8_t rtype = hex2bin(line + 7, 1); //record type
+        tmp_crc += hex2bin(line + 3); //address MSB
+        tmp_crc += hex2bin(line + 5); //address LSB
+        std::uint8_t rtype = hex2bin(line + 7); //record type
         tmp_crc += rtype;
         if (rtype == 0) {
             size_t n = 0;
             for (; n < size; n++) {
-                std::uint8_t tmp = hex2bin(line + 9 + n*2, 1);
+                std::uint8_t tmp = hex2bin(line + 9 + n*2);
                 (*fw_data)[ret++] = tmp;
                 tmp_crc += tmp;
             }
-            std::uint8_t crc = hex2bin(line + 9 + n*2, 1);
+            std::uint8_t crc = hex2bin(line + 9 + n*2);
 
             if (static_cast<std::uint8_t>(0x100 - tmp_crc) != crc) {
                 h9_log_stderr("Intel HEX file corrupted");
@@ -99,7 +97,7 @@ int main(int argc, char **argv)
         frame.source_id = res["src_id"].as<std::uint16_t>();
     }
     else {
-        return EXIT_FAILURE;
+        frame.source_id = H9frame::BROADCAST_ID - 1;
     }
 
     if (res.count("dst_id")) {
@@ -123,8 +121,8 @@ int main(int argc, char **argv)
     H9Connector h9_connector = {ctx.get_h9bus_host(), ctx.get_h9bus_port()};
     h9_connector.connect();
 
-
     h9_connector.send(SubscribeMsg(SubscribeMsg::Content::FRAME));
+
 
     if (res.count("noupgrademsg") > 0) { //skip NODE_UPGRADE frame
         frame.type = H9frame::Type::PAGE_START;
@@ -150,6 +148,10 @@ int main(int argc, char **argv)
             FrameReceivedMsg msg = std::move(raw_msg);
             H9frame recv_frame = msg.get_frame();
             //std::cout << recv_frame <<std::endl;
+
+            if (recv_frame.source_id != frame.destination_id) {
+                continue;
+            }
 
             if (recv_frame.type == H9frame::Type::ENTER_INTO_BOOTLOADER || recv_frame.type == H9frame::Type::PAGE_WRITED) {
                 if (recv_frame.type == H9frame::Type::PAGE_WRITED) {
