@@ -1,3 +1,11 @@
+/*
+ * H9 project
+ *
+ * Created by SQ8KFH on 2019-05-18.
+ *
+ * Copyright (C) 2019 Kamil Palkowski. All rights reserved.
+ */
+
 #ifndef _H9_EVENTMGR_H_
 #define _H9_EVENTMGR_H_
 

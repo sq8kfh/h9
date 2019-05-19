@@ -1,3 +1,11 @@
+/*
+ * H9 project
+ *
+ * Created by SQ8KFH on 2019-04-17.
+ *
+ * Copyright (C) 2019 Kamil Palkowski. All rights reserved.
+ */
+
 #include <utility>
 
 #include <utility>

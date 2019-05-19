@@ -1,3 +1,11 @@
+/*
+ * H9 project
+ *
+ * Created by SQ8KFH on 2018-07-23.
+ *
+ * Copyright (C) 2018-2019 Kamil Palkowski. All rights reserved.
+ */
+
 #ifndef _H9_SLCAN_H_
 #define _H9_SLCAN_H_
 

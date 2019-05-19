@@ -1,3 +1,11 @@
+/*
+ * H9 project
+ *
+ * Created by SQ8KFH on 2019-05-16.
+ *
+ * Copyright (C) 2019 Kamil Palkowski. All rights reserved.
+ */
+
 #ifndef H9_CONCRETIZEMSG_H
 #define H9_CONCRETIZEMSG_H
 
