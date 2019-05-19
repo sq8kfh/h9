@@ -38,8 +38,9 @@ Makefile
 # Project
 config.h
 h9msg.xsd.h
-h9d
-h9fw
-h9send
-h9spy
-h9stats
+h9bus/h9bus
+h9cli/h9cli
+h9d/h9d
+h9fwu/h9fwu
+h9send/h9send
+h9spy/h9spy
