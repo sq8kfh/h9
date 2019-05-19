@@ -60,6 +60,7 @@ public:
 
         if ((tmp = xmlGetProp(root, (const xmlChar *) "priority")) == nullptr) {
             h9_log_err("SendFrameMsg: missing 'priority' property");
+            throw GenericMsg::InvalidMsg("missing 'priority' property");
         }
         if (tmp[0] == 'H' || tmp[0] == 'h') {
             frame.priority = H9frame::Priority::HIGH;
@@ -70,6 +71,7 @@ public:
 
         if ((tmp = xmlGetProp(root, (const xmlChar *) "type")) == nullptr) {
             h9_log_err("SendFrameMsg: missing 'type' property");
+            throw GenericMsg::InvalidMsg("missing 'type' property");
         }
         frame.set_type_from_underlying(strtol((char *)tmp, (char **)nullptr, 10));
         //frame.type = static_cast<H9frame::Type >(strtol((char *)tmp, (char **)nullptr, 10));
@@ -77,24 +79,28 @@ public:
 
         if ((tmp = xmlGetProp(root, (const xmlChar *) "seqnum")) == nullptr) {
             h9_log_err("SendFrameMsg: missing 'seqnum' property");
+            throw GenericMsg::InvalidMsg("missing 'seqnum' property");
         }
         frame.seqnum = (uint8_t)strtol((char *)tmp, (char **)nullptr, 10);
         xmlFree(tmp);
 
         if ((tmp = xmlGetProp(root, (const xmlChar *) "source")) == nullptr) {
             h9_log_err("SendFrameMsg: missing 'source' property");
+            throw GenericMsg::InvalidMsg("missing 'source' property");
         }
         frame.source_id = (uint16_t)strtol((char *)tmp, (char **)nullptr, 10);
         xmlFree(tmp);
 
         if ((tmp = xmlGetProp(root, (const xmlChar *) "destination")) == nullptr) {
             h9_log_err("SendFrameMsg: missing 'destination' property");
+            throw GenericMsg::InvalidMsg("missing 'destination' property");
         }
         frame.destination_id = (uint16_t)strtol((char *)tmp, (char **)nullptr, 10);
         xmlFree(tmp);
 
         if ((tmp = xmlGetProp(root, (const xmlChar *) "dlc")) == nullptr) {
             h9_log_err("SendFrameMsg: missing 'dlc' property");
+            throw GenericMsg::InvalidMsg("missing 'dlc' property");
         }
         frame.dlc = (uint8_t)strtol((char *)tmp, (char **)nullptr, 10);
         xmlFree(tmp);
@@ -108,6 +114,7 @@ public:
         }
         else if (frame.dlc != 0) {
             h9_log_err("SendFrameMsg: 'dlc' and 'data' mismatch");
+            throw GenericMsg::InvalidMsg("'dlc' and 'data' mismatch");
         }
 
         return frame;

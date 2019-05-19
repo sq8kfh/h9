@@ -88,8 +88,8 @@ std::queue<std::pair<int, GenericMsg>>& ServerMgr::get_recv_queue() {
     return recv_queue;
 }
 
-TcpClient* ServerMgr::get_cient(int client_socket) {
-    return tcp_clients[client_socket];
+void ServerMgr::client_subscription(int client_socket, int active) {
+    tcp_clients[client_socket]->subscriber(active);
 }
 
 void ServerMgr::send_msg(int client_socket, GenericMsg& msg) {

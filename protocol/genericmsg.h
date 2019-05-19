@@ -10,9 +10,10 @@
 #define _H9_GENERICMSG_H_
 
 #include "config.h"
+#include <stdexcept>
 #include <string>
 #include <libxml/tree.h>
-
+#include <libxml/xmlschemastypes.h>
 
 class GenericMsg {
 public:
@@ -23,8 +24,14 @@ public:
         SUBSCRIBE,
         ERROR,
     };
+    class InvalidMsg: public std::runtime_error {
+    public:
+        explicit InvalidMsg(const char* what_arg): runtime_error(what_arg) {
+        };
+    };
 private:
     xmlDocPtr doc = nullptr;
+    static xmlSchemaValidCtxtPtr valid_ctxt;
 protected:
     explicit GenericMsg(GenericMsg::Type msg_type);
     xmlNodePtr get_msg_root();
@@ -35,7 +42,7 @@ public:
 
     virtual GenericMsg::Type get_type();
     std::string serialize() const;
-    bool validate_msg();
+    bool validate_msg(std::string *error_msg = nullptr);
     virtual ~GenericMsg();
 };
 

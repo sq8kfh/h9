@@ -35,6 +35,9 @@ int main(int argc, char **argv)
 
             std::cout << msg.get_frame() <<std::endl;
         }
+        else {
+            h9_log_info(" recv msg: [%s]", raw_msg.serialize().c_str());
+        }
     }
     return EXIT_SUCCESS;
 }

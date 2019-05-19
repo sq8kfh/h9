@@ -1,5 +1,25 @@
 <?xml version="1.0"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:element name="h9">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="subscribe">
+                    <xs:complexType>
+                        <xs:attribute name="content" type="xs:string" use="required" />
+                    </xs:complexType>
+                </xs:element>
+            </xs:sequence>
+
+            <xs:attribute name="version" use="required">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="0.0"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+
     <xs:element name="h9methodCall">
         <xs:complexType>
             <xs:sequence>

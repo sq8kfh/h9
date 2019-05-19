@@ -52,7 +52,7 @@ public:
     explicit ServerMgr(SocketMgr* socket_mgr);
     void load_config(Ctx *ctx);
     std::queue<std::pair<int, GenericMsg>>& get_recv_queue();
-    TcpClient* get_cient(int client_socket);
+    void client_subscription(int client_socket, int active);
     void send_msg(int client_socket, GenericMsg& msg);
     void send_msg_to_subscriber(GenericMsg& msg);
     ~ServerMgr();

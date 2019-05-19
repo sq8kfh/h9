@@ -10,6 +10,7 @@
 
 #include "tcpclient.h"
 #include "busmgr.h"
+#include "protocol/errormsg.h"
 #include "protocol/sendframemsg.h"
 #include "protocol/subscribemsg.h"
 #include "protocol/framereceivedmsg.h"
@@ -59,12 +60,13 @@ void EventMgr::flush_msg(int client_socket, GenericMsg& msg) {
         }
         case GenericMsg::Type::SUBSCRIBE: {
             SubscribeMsg sc_msg = std::move(msg);
-            _server_mgr->get_cient(client_socket)->subscriber(1);
+            _server_mgr->client_subscription(client_socket, 1);
             break;
         }
         default:
-            //TODO: send error msg - invalid msg
             h9_log_err("recv unknown msg: %d", msg.get_type());
+            ErrorMsg err_msg = {ErrorMsg::ErrorNumber::UNSUPPORTED_MESSAGE_TYPE, "EventMgr::flush_msg"};
+            _server_mgr->send_msg(client_socket, err_msg);
             break;
     }
 }

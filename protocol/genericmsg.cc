@@ -11,7 +11,12 @@
 #include <cassert>
 
 #include <libxml/parser.h>
+#include <libxml/xmlerror.h>
 #include "common/logger.h"
+#include "h9msg.xsd.h"
+
+
+xmlSchemaValidCtxtPtr GenericMsg::valid_ctxt = nullptr;
 
 GenericMsg::GenericMsg(GenericMsg::Type msg_type) {
     doc = xmlNewDoc(reinterpret_cast<xmlChar const *>("1.0"));
@@ -20,22 +25,18 @@ GenericMsg::GenericMsg(GenericMsg::Type msg_type) {
     xmlNodePtr node = nullptr;
     switch (msg_type) {
         case Type::GENERIC:
-            throw std::invalid_argument("Trying created a GENERIC message");
+            throw std::invalid_argument("Trying create a GENERIC message");
             break;
         case Type::FRAME_RECEIVED:
-            //node = xmlNewChild(root, nullptr, reinterpret_cast<xmlChar const *>("h9msg"), nullptr);
             node = xmlNewNode(nullptr, reinterpret_cast<xmlChar const *>("frame_received"));
             break;
         case Type::SEND_FRAME:
-            //node = xmlNewChild(root, nullptr, reinterpret_cast<xmlChar const *>("h9msg"), nullptr);
             node = xmlNewNode(nullptr, reinterpret_cast<xmlChar const *>("send_frame"));
             break;
         case Type::SUBSCRIBE:
-            //node = xmlNewChild(root, nullptr, reinterpret_cast<xmlChar const *>("h9msg"), nullptr);
             node = xmlNewNode(nullptr, reinterpret_cast<xmlChar const *>("subscribe"));
             break;
         case Type::ERROR:
-            //node = xmlNewChild(root, nullptr, reinterpret_cast<xmlChar const *>("h9msg"), nullptr);
             node = xmlNewNode(nullptr, reinterpret_cast<xmlChar const *>("error"));
             break;
     }
@@ -123,36 +124,61 @@ std::string GenericMsg::serialize() const {
     return std::move(ret);
 }
 
-bool GenericMsg::validate_msg() {
-    /*//xmlSchemaParserCtxtPtr parser_ctxt = xmlSchemaNewParserCtxt("./h9msg.xsd");
-    xmlSchemaParserCtxtPtr parser_ctxt = xmlSchemaNewMemParserCtxt((char*)h9msg_xsd, h9msg_xsd_len);
-    if (parser_ctxt == NULL) {
-        h9_log_crit("unable to create a parser context for the schema");
-        exit(EXIT_FAILURE);
-    }
-    xmlSchemaPtr schema = xmlSchemaParse(parser_ctxt);
-    if (schema == NULL) {
+void xml_error_func(void * ctx, const char* msg, ...) {
+    /* /dev/null :P */
+}
+
+bool GenericMsg::validate_msg(std::string *error_msg) {
+    if (valid_ctxt == nullptr) {
+        //xmlSchemaParserCtxtPtr parser_ctxt = xmlSchemaNewParserCtxt("./h9msg.xsd");
+        xmlSchemaParserCtxtPtr parser_ctxt = xmlSchemaNewMemParserCtxt((char*)h9msg_xsd, h9msg_xsd_len);
+        if (parser_ctxt == nullptr) {
+            h9_log_crit("unable to create a parser context for the schema");
+            exit(EXIT_FAILURE);
+        }
+        xmlSchemaPtr schema = xmlSchemaParse(parser_ctxt);
+        if (schema == nullptr) {
+            xmlSchemaFreeParserCtxt(parser_ctxt);
+            h9_log_crit("the schema itself is not valid");
+            exit(EXIT_FAILURE);
+        }
+        valid_ctxt = xmlSchemaNewValidCtxt(schema);
+        if (valid_ctxt == nullptr) {
+            xmlSchemaFree(schema);
+            xmlSchemaFreeParserCtxt(parser_ctxt);
+            h9_log_crit("unable to create a validation context for the schema");
+            exit(EXIT_FAILURE);
+        }
+        //xmlSchemaFree(schema);
         xmlSchemaFreeParserCtxt(parser_ctxt);
-        h9_log_crit("the schema itself is not valid");
-        exit(EXIT_FAILURE);
-    }
-    xmlSchemaValidCtxtPtr valid_ctxt = xmlSchemaNewValidCtxt(schema);
-    if (valid_ctxt == NULL) {
-        xmlSchemaFree(schema);
-        xmlSchemaFreeParserCtxt(parser_ctxt);
-        h9_log_crit("unable to create a validation context for the schema");
-        exit(EXIT_FAILURE);
     }
 
+    xmlGenericErrorFunc tmp = xml_error_func;
+    initGenericErrorDefaultFunc(&tmp);
+
+    //TODO: verify a memory state
     int res = xmlSchemaValidateDoc(valid_ctxt, doc);
 
-    xmlSchemaFreeValidCtxt(valid_ctxt);
-    xmlSchemaFree(schema);
-    xmlSchemaFreeParserCtxt(parser_ctxt);
-    xmlCleanupParser();
+    initGenericErrorDefaultFunc(nullptr);
 
-    return res;*/
-    return true;
+    if (error_msg) {
+        if (res) {
+            xmlErrorPtr err_object = xmlGetLastError();
+            *error_msg = err_object->message;
+            error_msg->erase(std::find_if(error_msg->rbegin(), error_msg->rend(), [](int ch) {
+                return !std::isspace(ch);
+            }).base(), error_msg->end());
+        }
+        else {
+            error_msg->clear();
+        }
+    }
+    //xmlSchemaFreeValidCtxt(valid_ctxt);
+    //xmlSchemaFree(schema);
+    //xmlSchemaFreeParserCtxt(parser_ctxt);
+    //xmlCleanupParser();
+
+    return res;
 }
 
 GenericMsg::~GenericMsg() {

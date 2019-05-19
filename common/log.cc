@@ -102,14 +102,17 @@ void Log::debug(const char *file_name, int line_number, const char* fmt, ...) co
 }
 
 void Log::vlog(const Level& level, const char *file_name, int line_number, const char* fmt, va_list args) const {
-    static size_t buf_len = 100;
+    static size_t buf_len = 1024;
     static char* buf = new char[buf_len];
 
-    while (std::vsnprintf(buf, buf_len, fmt, args) >= buf_len) {
+    va_list args_copy;
+    va_copy(args_copy, args);
+    while (std::vsnprintf(buf, buf_len, fmt, args_copy) >= buf_len) {
         log(Level::WARN, __FILE__, __LINE__, "a logger's buffer is too small - resizing");
         delete[] buf;
         buf_len *= 2;
         buf = new char[buf_len];
+        va_copy(args_copy, args);
     }
     log(level, file_name, line_number, std::string(buf));
 }

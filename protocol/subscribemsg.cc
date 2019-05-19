@@ -13,7 +13,10 @@ SubscribeMsg::SubscribeMsg(GenericMsg&& k): ConcretizeMsg(std::move(k)) {
 }
 
 SubscribeMsg::SubscribeMsg(SubscribeMsg::Content content): ConcretizeMsg() {
+    xmlNodePtr root = get_msg_root();
 
+    //std::string errnum_str = std::to_string(static_cast<int>(errnum));
+    xmlNewProp(root, reinterpret_cast<xmlChar const *>("content"), reinterpret_cast<xmlChar const *>("FRAME"));
 }
 
 SubscribeMsg::Content SubscribeMsg::get_content() {

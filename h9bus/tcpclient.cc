@@ -15,6 +15,7 @@
 #include <arpa/inet.h>
 
 #include "common/logger.h"
+#include "protocol/errormsg.h"
 #include "protocol/genericmsg.h"
 
 void TcpClient::recv() {
@@ -31,7 +32,7 @@ void TcpClient::recv_header() {
     std::uint32_t recv_header = 0;
     ssize_t nbyte = ::recv(get_socket(), reinterpret_cast<char*>(&recv_header) + recv_bytes, sizeof(recv_header) - recv_bytes, 0);
     if (nbyte <= 0) {
-        if (nbyte == 0) {
+        if (nbyte == 0 || errno == ECONNRESET) {  /*Connection reset by peer*/
             on_close();
             return;
         }
@@ -52,7 +53,7 @@ void TcpClient::recv_data() {
 
     ssize_t nbyte = ::recv(get_socket(), buf, buf_len < bytes_to_recv ? buf_len : bytes_to_recv, 0);
     if (nbyte <= 0) {
-        if (nbyte == 0) {
+        if (nbyte == 0 || errno == ECONNRESET) {
             on_close();
             return;
         }
@@ -62,18 +63,31 @@ void TcpClient::recv_data() {
     recv_data_buf.append(buf, nbyte);
 
     if (recv_data_buf.size() == data_to_read) {
-
-        //std::cout << recv_data_buf << std::endl;
-        recv_msg(recv_data_buf);
+        std::string tmp = std::move(recv_data_buf);
 
         data_to_read = 0;
         recv_data_buf.clear();
+
+        recv_msg(tmp);
     }
 }
 
 void TcpClient::recv_msg(const std::string& msg_str) {
     //TODO: proces parser error
     GenericMsg msg = GenericMsg(msg_str);
+    std::string error_msg;
+    if (msg.validate_msg(&error_msg)) {
+        h9_log_warn("tcp client (socket: %d) recv invalid msg: [%s]", get_socket(), error_msg.c_str());
+        ErrorMsg err_msg = {ErrorMsg::ErrorNumber::INVALID_MESSAGE_SCHEMA, error_msg};
+        try {
+            send(err_msg);
+        }
+        catch (SocketMgr::Socket::CloseSocketException& e) {
+            h9_log_info("request to terminate the connection during sending a error message (socket: %d)", get_socket());
+            throw;
+        }
+        return;
+    }
     _event_callback.on_msg_recv(get_socket(), msg);
 }
 
@@ -86,6 +100,11 @@ TcpClient::TcpClient(ServerMgr::EventCallback event_callback, int sockfd, std::s
     active_subscription = 0;
 
     set_socket(sockfd);
+
+    int set = 1;
+    if (setsockopt(sockfd, SOL_SOCKET, SO_NOSIGPIPE, (void *)&set, sizeof(int)) < 0) {
+        throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
+    }
 }
 
 bool TcpClient::is_subscriber() {
@@ -102,7 +121,7 @@ void TcpClient::send(GenericMsg& msg) {
 
     ssize_t nbyte = ::send(get_socket(), &header, sizeof(header), 0);
     if (nbyte <= 0) {
-        if (nbyte == 0) {
+        if (nbyte == 0 || errno == ECONNRESET || errno == EPIPE) {
             on_close();
             return;
         }
@@ -111,7 +130,7 @@ void TcpClient::send(GenericMsg& msg) {
 
     nbyte = ::send(get_socket(), raw_msg.c_str(), raw_msg.size(), 0);
     if (nbyte <= 0) {
-        if (nbyte == 0) {
+        if (nbyte == 0 || errno == ECONNRESET || errno == EPIPE) {
             on_close();
             return;
         }
