@@ -1,5 +1,8 @@
-//
-// Created by Kamil Palkowski on 2019-05-19.
-//
-
 #include "errormsg.h"
+
+ErrorMsg::ErrorMsg(GenericMsg&& k): ConcretizeMsg(std::move(k)) {
+}
+
+ErrorMsg::ErrorMsg(int errnum, std::string msg): ConcretizeMsg() {
+
+}

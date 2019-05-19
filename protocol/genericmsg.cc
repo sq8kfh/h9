@@ -22,6 +22,10 @@ GenericMsg::GenericMsg(GenericMsg::Type msg_type) {
             //node = xmlNewChild(root, nullptr, reinterpret_cast<xmlChar const *>("h9msg"), nullptr);
             node = xmlNewNode(nullptr, reinterpret_cast<xmlChar const *>("subscribe"));
             break;
+        case Type::ERROR:
+            //node = xmlNewChild(root, nullptr, reinterpret_cast<xmlChar const *>("h9msg"), nullptr);
+            node = xmlNewNode(nullptr, reinterpret_cast<xmlChar const *>("error"));
+            break;
     }
     xmlAddChild(root, node);
     xmlDocSetRootElement(doc, root);
@@ -72,6 +76,8 @@ GenericMsg::Type GenericMsg::get_type() {
             return Type::SEND_FRAME;
         else if (xmlStrcmp(node->name,reinterpret_cast<xmlChar const *>("subscribe")) == 0)
             return Type::SUBSCRIBE;
+        else if (xmlStrcmp(node->name,reinterpret_cast<xmlChar const *>("error")) == 0)
+            return Type::ERROR;
     }
     return Type::GENERIC;
 }

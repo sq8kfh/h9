@@ -13,6 +13,7 @@ public:
         FRAME_RECEIVED,
         SEND_FRAME,
         SUBSCRIBE,
+        ERROR,
     };
 private:
     xmlDocPtr doc = nullptr;
