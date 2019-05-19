@@ -12,9 +12,7 @@ void Ctx::raise_verbose_level(unsigned int how_much) {
 }
 
 Ctx::Ctx(std::string app_name, std::string app_desc):
-#ifdef H9_DEBUG
         _debug(false),
-#endif
         _app_name(std::move(app_name)),
         _app_desc(std::move(app_desc)) {
 
@@ -22,16 +20,16 @@ Ctx::Ctx(std::string app_name, std::string app_desc):
 }
 
 void Ctx::enable_debug(bool debug) {
+#ifdef H9_DEBUG
     _debug = debug;
+#else
+    _debug = false;
+#endif
     log().set_debug(debug);
 }
 
 inline bool Ctx::is_debug() {
-#ifdef H9_DEBUG
     return _debug;
-#else
-    return false;
-#endif
 }
 
 Log& Ctx::log() {

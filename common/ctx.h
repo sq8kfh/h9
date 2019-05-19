@@ -9,9 +9,7 @@
 
 class Ctx {
 private:
-#ifdef H9_DEBUG
     bool _debug;
-#endif
 protected:
     const std::string _app_name;
     const std::string _app_desc;
