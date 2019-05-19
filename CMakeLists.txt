@@ -20,6 +20,7 @@ configure_file(config.h.in config.h)
 include_directories(/usr/local/include/ ${CMAKE_SOURCE_DIR}/thirdparty/ ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR} ${LIBXML2_INCLUDE_DIR})
 link_directories(/usr/local/lib/)
 
+add_subdirectory(bus)
 add_subdirectory(protocol)
 add_subdirectory(drivers)
 add_subdirectory(common)

@@ -9,6 +9,7 @@
 #include "genericmsg.h"
 
 #include <cassert>
+
 #include <libxml/parser.h>
 #include "common/logger.h"
 
@@ -18,6 +19,9 @@ GenericMsg::GenericMsg(GenericMsg::Type msg_type) {
     xmlNewProp(root, reinterpret_cast<xmlChar const *>("version"), reinterpret_cast<xmlChar const *>("0.0"));
     xmlNodePtr node = nullptr;
     switch (msg_type) {
+        case Type::GENERIC:
+            throw std::invalid_argument("Trying created a GENERIC message");
+            break;
         case Type::FRAME_RECEIVED:
             //node = xmlNewChild(root, nullptr, reinterpret_cast<xmlChar const *>("h9msg"), nullptr);
             node = xmlNewNode(nullptr, reinterpret_cast<xmlChar const *>("frame_received"));

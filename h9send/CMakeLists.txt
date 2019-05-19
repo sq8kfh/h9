@@ -1,4 +1,2 @@
-set(H9SEND_FILES h9send.cc)
-
-add_executable(h9send ${H9SEND_FILES} ${PROTOCOL})
-TARGET_LINK_LIBRARIES(h9send ${libxml2_LIBRARIES} ctxclient)
+add_executable(h9send h9send.cc $<TARGET_OBJECTS:BUS> $<TARGET_OBJECTS:PROTOCOL> $<TARGET_OBJECTS:CTXCLIENT>)
+TARGET_LINK_LIBRARIES(h9send ${libxml2_LIBRARIES})

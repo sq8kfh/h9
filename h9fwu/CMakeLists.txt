@@ -1,4 +1,2 @@
-set(H9FWU_FILES h9fwu.cc)
-
-add_executable(h9fwu ${H9FWU_FILES} ${PROTOCOL})
-TARGET_LINK_LIBRARIES(h9fwu ${libxml2_LIBRARIES} ctxclient)
+add_executable(h9fwu h9fwu.cc $<TARGET_OBJECTS:BUS> $<TARGET_OBJECTS:PROTOCOL> $<TARGET_OBJECTS:CTXCLIENT>)
+TARGET_LINK_LIBRARIES(h9fwu ${libxml2_LIBRARIES})
