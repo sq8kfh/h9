@@ -32,6 +32,9 @@ int main(int argc, char* argv[]) {
     if (res.count("src_id")) {
         frame.source_id = res["src_id"].as<std::uint16_t>();
     }
+    else {
+        frame.source_id = ctx.get_default_source_id();
+    }
 
     if (res.count("dst_id")) {
         frame.destination_id = res["dst_id"].as<std::uint16_t>();

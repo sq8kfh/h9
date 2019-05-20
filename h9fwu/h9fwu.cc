@@ -105,7 +105,11 @@ int main(int argc, char **argv)
         frame.source_id = res["src_id"].as<std::uint16_t>();
     }
     else {
-        frame.source_id = H9frame::BROADCAST_ID - 1;
+        frame.source_id = ctx.get_default_source_id();
+        if (frame.source_id == 0 || frame.source_id == H9frame::BROADCAST_ID) {
+            h9_log_stderr("source id must be set");
+            return EXIT_FAILURE;
+        }
     }
 
     if (res.count("dst_id")) {
@@ -113,6 +117,7 @@ int main(int argc, char **argv)
         std::cout << "Target node id: " << frame.destination_id << std::endl;
     }
     else {
+        h9_log_stderr("destination id must be set");
         return EXIT_FAILURE;
     }
 
@@ -121,6 +126,7 @@ int main(int argc, char **argv)
         std::cout << "Loaded: " << res["ihex"].as<std::string>() << " (data size: " << fw_size << ")\n";
     }
     else {
+        h9_log_stderr("missing a Intel HEX file");
         return EXIT_FAILURE;
     }
 

@@ -16,6 +16,7 @@ ClientCtx::ClientCtx(const std::string& app_name, const std::string& app_desc):
     cfg_h9bus_opts {
         CFG_STR("HostName", nullptr, CFGF_NONE),
         CFG_INT("Port", 0, CFGF_NONE),
+        CFG_INT("DefaultSourceID", 0, CFGF_NONE),
         CFG_END()
     },
     cfg_opts {
@@ -84,6 +85,7 @@ void ClientCtx::load_configuration(const cxxopts::ParseResult& opts) {
             for (int i = 0; i < cfg_size(cfg, "H9bus"); i++) {
                 cfg_t *h9bus_sec = cfg_getnsec(cfg, "H9bus", i);
                 if (tmp_host == cfg_title(h9bus_sec)) {
+                    default_source_id = cfg_getint(h9bus_sec, "DefaultSourceID");
                     h9bus_host = cfg_getstr(h9bus_sec, "HostName");
                     if (opts.count("port") == 0) {
                         h9bus_port = std::to_string(cfg_getint(h9bus_sec, "Port"));
@@ -153,4 +155,8 @@ std::string ClientCtx::get_h9bus_host() {
 
 std::string ClientCtx::get_h9bus_port() {
     return h9bus_port;
+}
+
+std::uint16_t ClientCtx::get_default_source_id() {
+    return default_source_id;
 }
