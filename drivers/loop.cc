@@ -20,6 +20,7 @@ Loop::Loop(BusMgr::EventCallback event_callback):
 }
 
 void Loop::open() {
+    //TODO: rewite to socketpair
     int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
 
     if (bind(sockfd, (const struct sockaddr *)&loopback_addr, sizeof(loopback_addr)) == -1) {

@@ -43,7 +43,9 @@ TcpServer::TcpServer(ServerMgr::EventCallback event_callback, std::uint16_t port
         }
 
         // lose the pesky "address already in use" error message
-        setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
+        if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) < 0) {
+            throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
+        }
 
         if (bind(sockfd, p->ai_addr, p->ai_addrlen) < 0) {
             ::close(sockfd);

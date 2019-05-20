@@ -9,7 +9,6 @@
 #include "tcpclient.h"
 
 #include <system_error>
-#include <iostream>
 #include <utility>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -139,7 +138,7 @@ void TcpClient::send(GenericMsg& msg) {
 }
 
 TcpClient::~TcpClient() {
-    h9_log_debug("TcpClient::~TcpClient (socket: %d)", get_socket());
+    //h9_log_debug("TcpClient::~TcpClient (socket: %d)", get_socket());
     if (get_socket() > 0) {
         ::close(get_socket());
         set_socket(0);
