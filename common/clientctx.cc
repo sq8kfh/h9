@@ -134,8 +134,8 @@ cxxopts::ParseResult ClientCtx::parse_options(int argc, char* argv[]) {
 
         if (result.count("version"))
         {
-            std::cerr << _app_name << " version " << H9_VERSION << " by SQ8KFH" << std::endl;
-            std::cerr << "Copyright (C) 2017-2019 Kamil Palkowski" << std::endl;
+            std::cerr << _app_name << " version " << H9_VERSION << " by SQ8KFH." << std::endl;
+            std::cerr << "Copyright (C) 2017-2019 Kamil Palkowski. All rights reserved." << std::endl;
             exit(EXIT_SUCCESS);
         }
 

@@ -85,6 +85,8 @@ public:
     static E from_underlying(std::underlying_type_t<E> e) noexcept {
         return static_cast<E>(e);
     }
+
+    static const char* type_to_string(Type type);
 };
 
 std::ostream& operator<<(std::ostream& os, const H9frame& frame);
