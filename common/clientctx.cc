@@ -7,10 +7,22 @@
  */
 
 #include "clientctx.h"
+#include "logger.h"
+
 
 ClientCtx::ClientCtx(const std::string& app_name, const std::string& app_desc):
-        Ctx(app_name, app_desc),
-        _options(app_name, app_desc) {
+    Ctx(app_name, app_desc),
+    _options(app_name, app_desc),
+    cfg_h9bus_opts {
+        CFG_STR("HostName", nullptr, CFGF_NONE),
+        CFG_INT("Port", 0, CFGF_NONE),
+        CFG_END()
+    },
+    cfg_opts {
+        CFG_SEC("H9bus", cfg_h9bus_opts, CFGF_MULTI | CFGF_TITLE),
+        CFG_END()
+    } {
+    cfg = nullptr;
     _options.add_options("other")
 #ifdef H9_DEBUG
             ("d,debug", "Enable debugging")
@@ -21,13 +33,65 @@ ClientCtx::ClientCtx(const std::string& app_name, const std::string& app_desc):
             ;
     _options.add_options("connection")
             ("c,connect", "Connection address", cxxopts::value<std::string>())
-            ("p,port", "Connection port", cxxopts::value<int>())
+            ("p,port", "Connection port", cxxopts::value<int>()->default_value(std::to_string(H9_BUS_DEFAULT_PORT)))
             ("F,config", "User config file", cxxopts::value<std::string>()->default_value(H9_USER_CONFIG_FILE))
             ;
+
+    h9bus_host = "127.0.0.1";
+    h9bus_port = std::to_string(H9_BUS_DEFAULT_PORT);
+}
+
+static void cfg_err_func(cfg_t *cfg, const char* fmt, va_list args) {
+    /*std::string fmt_str = {fmt};
+    fmt_str.erase(std::find_if(fmt_str.rbegin(), fmt_str.rend(), [](int ch) {
+        return !std::isspace(ch);
+    }).base(), fmt_str.end());*/
+    Logger::default_log.vlog(Log::Level::INFO, __FILE__, __LINE__, fmt, args);
 }
 
 void ClientCtx::load_configuration(const cxxopts::ParseResult& opts) {
-    std::cout << "config: " << opts["config"].as<std::string>() << std::endl;
+    cfg = cfg_init(cfg_opts, CFGF_NONE);
+
+    cfg_set_error_function(cfg, cfg_err_func);
+
+    int result = cfg_parse(cfg, opts["config"].as<std::string>().c_str());
+    if (result == CFG_PARSE_ERROR) {
+        h9_log_warn("can't parse cfg file: %s", opts["config"].as<std::string>().c_str());
+        cfg_free(cfg);
+        cfg = nullptr;
+    }
+    else if (result == CFG_FILE_ERROR) {
+        h9_log_info("can't open cfg file: %s", opts["config"].as<std::string>().c_str());
+        cfg_free(cfg);
+        cfg = nullptr;
+    }
+    else {
+        if (opts.count("connect") == 1 && opts.count("port") == 1) {
+            h9bus_host = opts["connect"].as<std::string>();
+            h9bus_port = std::to_string(opts["port"].as<int>());
+        }
+        else {
+            std::string tmp_host = "default";
+            h9bus_host = "127.0.0.1";
+            h9bus_port = std::to_string(H9_BUS_DEFAULT_PORT);
+            if (opts.count("connect") == 1) {
+                tmp_host = opts["connect"].as<std::string>();
+                h9bus_host = tmp_host;
+            }
+            if (opts.count("port") == 1) {
+                h9bus_port = std::to_string(opts["port"].as<int>());
+            }
+            for (int i = 0; i < cfg_size(cfg, "H9bus"); i++) {
+                cfg_t *h9bus_sec = cfg_getnsec(cfg, "H9bus", i);
+                if (tmp_host == cfg_title(h9bus_sec)) {
+                    h9bus_host = cfg_getstr(h9bus_sec, "HostName");
+                    if (opts.count("port") == 0) {
+                        h9bus_port = std::to_string(cfg_getint(h9bus_sec, "Port"));
+                    }
+                }
+            }
+        }
+    }
     log().set_to_stderr(true);
 }
 
@@ -84,9 +148,9 @@ cxxopts::ParseResult ClientCtx::parse_options(int argc, char* argv[]) {
 }
 
 std::string ClientCtx::get_h9bus_host() {
-    return "127.0.0.1";
+    return h9bus_host;
 }
 
 std::string ClientCtx::get_h9bus_port() {
-    return "7878";
+    return h9bus_port;
 }

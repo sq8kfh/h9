@@ -1,3 +1,7 @@
+#include <utility>
+
+#include <utility>
+
 /*
  * H9 project
  *
@@ -30,7 +34,6 @@ std::uint32_t H9Connector::recv_header() {
         if (nbyte <= 0) {
             if (nbyte == 0) {
                 h9_log_debug("close connection during recv header");
-                //return;
             }
             throw std::system_error(errno, std::generic_category(),
                                     __FILE__ + std::string(":") + std::to_string(__LINE__));
@@ -54,8 +57,7 @@ std::string H9Connector::recv_data(std::uint32_t data_to_read) {
             if (nbyte == 0) {
                 h9_log_debug("close connection during recv data");
             }
-            throw std::system_error(errno, std::generic_category(),
-                                    __FILE__ + std::string(":") + std::to_string(__LINE__));
+            throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
         }
 
         recv_data_buf.append(buf, nbyte);
@@ -64,51 +66,51 @@ std::string H9Connector::recv_data(std::uint32_t data_to_read) {
     return std::move(recv_data_buf);
 }
 
-H9Connector::H9Connector(std::string hostname, std::string port) {
+H9Connector::H9Connector(std::string hostname, std::string port) noexcept: sockfd(-1), _hostname(std::move(hostname)), _port(std::move(port)) {
+}
+
+H9Connector::~H9Connector() noexcept {
+    ::close(sockfd);
+}
+
+int H9Connector::connect() noexcept {
     struct addrinfo hints, *servinfo, *p;
-    int rv;
-    char s[INET6_ADDRSTRLEN];
 
     memset(&hints, 0, sizeof hints);
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
 
-    if ((rv = getaddrinfo(hostname.c_str(), port.c_str(), &hints, &servinfo)) != 0) {
-        throw std::system_error(errno, std::generic_category(),
-                                __FILE__ + std::string(":") + std::to_string(__LINE__));
-        //h9_log_err("xmlsocket: getaddrinfo: %s", gai_strerror(rv));
+    int rv;
+    if ((rv = getaddrinfo(_hostname.c_str(), _port.c_str(), &hints, &servinfo)) != 0) {
+        h9_log_debug("H9Connector: getaddrinfo: %s", gai_strerror(rv));
+        return -1;
+        throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
 
     // loop through all the results and connect to the first we can
-    for(p = servinfo; p != NULL; p = p->ai_next) {
+    for(p = servinfo; p != nullptr; p = p->ai_next) {
         if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
-            //h9_log_warn("xmlsocket: socket %s", strerror(errno));
             continue;
         }
         if (::connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
             close(sockfd);
-            //h9_log_warn("xmlsocket: connect %s", strerror(errno));
             continue;
         }
         break;
     }
 
-    //if (p == NULL) {
-    //    h9_log_err("xmlsocket: failed to connect");
-    //    return NULL;
-    //}
-    //
+    if (p == nullptr) {
+        h9_log_err("connect to '%s' port %s: %s", _hostname.c_str(), _port.c_str(), strerror(errno));
+        return -1;
+        throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
+    }
+
+    //char s[INET6_ADDRSTRLEN];
     //inet_ntop(p->ai_family, get_in_sockaddr(p->ai_addr), s, sizeof s);
     //h9_log_info("xmlsocket: connecting to %s", s);
 
     freeaddrinfo(servinfo);
-}
-
-H9Connector::~H9Connector() {
-    ::close(sockfd);
-}
-
-int H9Connector::connect() {
+    h9_log_info("H9Connector: connect '%s' port %s", _hostname.c_str(), _port.c_str());
     return 0;
 }
 
@@ -128,8 +130,7 @@ void H9Connector::send(const GenericMsg &msg) {
         /*if (nbyte == 0) {
             return;
         }*/
-        throw std::system_error(errno, std::generic_category(),
-                                __FILE__ + std::string(":") + std::to_string(__LINE__));
+        throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
 
     nbyte = ::send(sockfd, raw_msg.c_str(), raw_msg.size(), 0);
@@ -137,7 +138,6 @@ void H9Connector::send(const GenericMsg &msg) {
         /*if (nbyte == 0) {
             return;
         }*/
-        throw std::system_error(errno, std::generic_category(),
-                                __FILE__ + std::string(":") + std::to_string(__LINE__));
+        throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
 }

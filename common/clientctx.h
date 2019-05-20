@@ -12,13 +12,20 @@
 #include "config.h"
 #include <string>
 #include <cxxopts/cxxopts.hpp>
+#include <confuse.h>
 
 #include "ctx.h"
 
 
 class ClientCtx: public Ctx {
 private:
+    cfg_t *cfg;
     cxxopts::Options _options;
+    cfg_opt_t cfg_opts[2];
+    cfg_opt_t cfg_h9bus_opts[3];
+
+    std::string h9bus_host;
+    std::string h9bus_port;
 public:
     ClientCtx(const std::string& app_name, const std::string& app_desc);
     void load_configuration(const cxxopts::ParseResult& opts);

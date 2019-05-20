@@ -24,7 +24,10 @@ int main(int argc, char **argv)
     ctx.load_configuration(res);
 
     H9Connector h9_connector = {ctx.get_h9bus_host(), ctx.get_h9bus_port()};
-    h9_connector.connect();
+
+    if (h9_connector.connect() == -1) {
+        return EXIT_FAILURE;
+    }
 
     h9_connector.send(SubscribeMsg(SubscribeMsg::Content::FRAME));
 
