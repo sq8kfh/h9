@@ -85,7 +85,6 @@ int H9Connector::connect() noexcept {
     if ((rv = getaddrinfo(_hostname.c_str(), _port.c_str(), &hints, &servinfo)) != 0) {
         h9_log_debug("H9Connector: getaddrinfo: %s", gai_strerror(rv));
         return -1;
-        throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
 
     // loop through all the results and connect to the first we can
@@ -103,7 +102,6 @@ int H9Connector::connect() noexcept {
     if (p == nullptr) {
         h9_log_err("connect to '%s' port %s: %s", _hostname.c_str(), _port.c_str(), strerror(errno));
         return -1;
-        throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
 
     //char s[INET6_ADDRSTRLEN];
