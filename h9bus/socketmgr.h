@@ -25,7 +25,7 @@ public:
     SocketMgr();
     void register_socket(Socket *socket);
     void unregister_socket(Socket *socket);
-    void select_loop(std::function<void(void)> after_select_callback = nullptr);
+    void select_loop(std::function<void(void)> after_select_callback = nullptr, std::function<void(void)> cron_func = nullptr);
 
     class Socket {
     private:

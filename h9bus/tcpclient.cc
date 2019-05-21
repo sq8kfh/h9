@@ -149,6 +149,7 @@ void TcpClient::close() {
     int socket = get_socket();
     ::close(socket);
     _event_callback.on_client_close(socket);
+    set_socket(0);
 }
 
 void TcpClient::on_select() {

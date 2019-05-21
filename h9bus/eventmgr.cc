@@ -70,3 +70,9 @@ void EventMgr::flush_msg(int client_socket, GenericMsg& msg) {
             break;
     }
 }
+
+void EventMgr::cron() {
+    h9_log_debug("EventMgr::cron");
+    _bus_mgr->cron();
+    _server_mgr->cron();
+}

@@ -119,6 +119,10 @@ void ServerMgr::send_msg_to_subscriber(GenericMsg& msg) {
     }
 }
 
+void ServerMgr::cron() {
+
+}
+
 ServerMgr::~ServerMgr() {
     delete tcp_server;
     for (auto& it: tcp_clients) {

@@ -55,6 +55,7 @@ public:
     void client_subscription(int client_socket, int active);
     void send_msg(int client_socket, GenericMsg& msg);
     void send_msg_to_subscriber(GenericMsg& msg);
+    void cron();
     ~ServerMgr();
 };
 

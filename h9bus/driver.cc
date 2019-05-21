@@ -26,16 +26,21 @@ void Driver::on_frame_send(const H9frame& frame) {
 Driver::Driver(BusMgr::EventCallback event_callback):
         _event_callback(std::move(event_callback)),
         next_seqnum(0) {
+
+    retry_auto_connect = 10;
 }
 
 void Driver::close() {
     int socket = get_socket();
+    ::close(socket);
     _event_callback.on_close();
     set_socket(0);
-    ::close(socket);
 }
 
 void Driver::send_frame(const H9frame& frame) {
+    if (get_socket() == 0) {
+        return;
+    }
     bool queue_empty = send_queue.empty();
     send_queue.push(frame);
     send_queue.back().seqnum = next_seqnum;

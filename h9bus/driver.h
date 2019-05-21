@@ -31,7 +31,7 @@ protected:
     virtual void recv_data() = 0;
     virtual void send_data(const H9frame& frame) = 0;
 public:
-
+    int retry_auto_connect;
     explicit Driver(BusMgr::EventCallback event_callback);
     virtual void open() = 0;
     void close();

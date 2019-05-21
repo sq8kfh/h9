@@ -46,8 +46,7 @@ void BusMgr::send_turned_on_broadcast() {
 void BusMgr::driver_close_callback(const std::string& bus_id) {
     h9_log_warn("driver: %s closed", bus_id.c_str());
     _socket_mgr->unregister_socket(dev[bus_id]);
-    //TODO: auto reconnect
-    dev.erase(bus_id);
+    //dev.erase(bus_id);
 }
 
 std::string BusMgr::frame_to_log_string(const std::string& bus_id, const H9frame& frame) {
@@ -134,5 +133,25 @@ void BusMgr::send_frame(const H9frame& frame, const std::string& bus_id) {
     }
     else if (dev.count(bus_id) == 1){
         dev[bus_id]->send_frame(frame);
+    }
+}
+
+void BusMgr::cron() {
+    for (auto it=dev.begin(); it!=dev.end(); ++it) {
+        if (it->second->get_socket() == 0) {
+            if (it->second->retry_auto_connect) {
+                try {
+                    it->second->open();
+                    _socket_mgr->register_socket(it->second);
+                }
+                catch (...) {
+                    --it->second->retry_auto_connect;
+                    if (it->second->retry_auto_connect == 0) {
+                        it = dev.erase(it);
+                        throw;
+                    }
+                }
+            }
+        }
     }
 }
