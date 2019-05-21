@@ -78,8 +78,18 @@ void BusMgr::load_config(Ctx *ctx) {
     //dev["can1"] = dummy;
     //Slcan *slcan = new Slcan(create_event_callback("can2"), "/dev/tty.usbserial-DA002NQW");
     //dev["can2"] = slcan;
+
+#if defined(__linux__)
     SocketCAN *socketcan = new SocketCAN(create_event_callback("can0"));
     dev["can0"] = socketcan;
+    socketcan->open();
+    _socket_mgr->register_socket(socketcan);
+#elif defined(__APPLE__)
+    Slcan *slcan = new Slcan(create_event_callback("can2"), "/dev/tty.usbserial-DA002NQW");
+    dev["can2"] = slcan;
+    slcan->open();
+    _socket_mgr->register_socket(slcan);
+#endif
 
     //loop->open();
     //_socket_mgr->register_socket(loop);
@@ -87,8 +97,6 @@ void BusMgr::load_config(Ctx *ctx) {
     //_socket_mgr->register_socket(dummy);
     //slcan->open();
     //_socket_mgr->register_socket(slcan);
-    socketcan->open();
-    _socket_mgr->register_socket(socketcan);
 
     /*H9frame tmp;
     tmp.priority = H9frame::Priority::LOW;
