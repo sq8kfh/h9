@@ -4,6 +4,12 @@
  * Created by SQ8KFH on 2019-04-09.
  *
  * Copyright (C) 2019 Kamil Palkowski. All rights reserved.
+ *
+ * ========================================================
+ *
+ * ip link set can0 type can bitrate 125000
+ * ifconfig can0 up
+ *
  */
 
 #ifndef _SOCKETCAN_H_

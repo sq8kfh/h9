@@ -1,6 +1,6 @@
 SET(DRIVERS dummy.cc dummy.h loop.cc loop.h slcan.cc slcan.h)
 
-if(LINUX)
+if(CMAKE_SYSTEM_NAME STREQUAL Linux)
     message("-- Enabled SocketCAN driver")
     list(APPEND DRIVERS socketcan.cc socketcan.h)
 else()
