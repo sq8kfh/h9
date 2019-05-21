@@ -9,6 +9,7 @@
 #include "genericmsg.h"
 
 #include <cassert>
+#include <algorithm>
 
 #include <libxml/parser.h>
 #include <libxml/xmlerror.h>

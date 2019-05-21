@@ -8,7 +8,8 @@
 
 #include "dummy.h"
 
-#include <stdlib.h>
+#include <cstdlib>
+#include <cstring>
 #include <fcntl.h>
 #include <unistd.h>
 #include <system_error>

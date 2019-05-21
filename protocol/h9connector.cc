@@ -13,6 +13,7 @@
 #include "h9connector.h"
 
 #include <system_error>
+#include <cstring>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>

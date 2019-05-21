@@ -100,10 +100,12 @@ TcpClient::TcpClient(ServerMgr::EventCallback event_callback, int sockfd, std::s
 
     set_socket(sockfd);
 
+#if defined(__APPLE__)
     int set = 1;
     if (setsockopt(sockfd, SOL_SOCKET, SO_NOSIGPIPE, (void *)&set, sizeof(int)) < 0) {
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
+#endif
 }
 
 bool TcpClient::is_subscriber() {
@@ -118,7 +120,11 @@ void TcpClient::send(GenericMsg& msg) {
     std::string raw_msg = msg.serialize();
     std::uint32_t header = htonl(raw_msg.size());
 
+#if defined(__linux__)
+    ssize_t nbyte = ::send(get_socket(), &header, sizeof(header), MSG_NOSIGNAL);
+#elif defined(__APPLE__)
     ssize_t nbyte = ::send(get_socket(), &header, sizeof(header), 0);
+#endif
     if (nbyte <= 0) {
         if (nbyte == 0 || errno == ECONNRESET || errno == EPIPE) {
             on_close();
@@ -126,8 +132,11 @@ void TcpClient::send(GenericMsg& msg) {
         }
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
-
+#if defined(__linux__)
+    nbyte = ::send(get_socket(), raw_msg.c_str(), raw_msg.size(), MSG_NOSIGNAL);
+#elif defined(__APPLE__)
     nbyte = ::send(get_socket(), raw_msg.c_str(), raw_msg.size(), 0);
+#endif
     if (nbyte <= 0) {
         if (nbyte == 0 || errno == ECONNRESET || errno == EPIPE) {
             on_close();
@@ -149,7 +158,6 @@ void TcpClient::close() {
     int socket = get_socket();
     ::close(socket);
     _event_callback.on_client_close(socket);
-    set_socket(0);
 }
 
 void TcpClient::on_select() {

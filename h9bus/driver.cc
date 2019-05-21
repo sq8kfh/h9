@@ -6,9 +6,10 @@
  * Copyright (C) 2019 Kamil Palkowski. All rights reserved.
  */
 
-#include <utility>
-
 #include "driver.h"
+
+#include <utility>
+#include <cstring>
 
 
 void Driver::on_frame_recv(const H9frame& frame) {
