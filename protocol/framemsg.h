@@ -11,6 +11,7 @@
 
 #include <cstdio>
 #include <string>
+#include <cstring>
 #include "common/logger.h"
 #include "concretizemsg.h"
 #include "bus/h9frame.h"

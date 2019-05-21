@@ -100,10 +100,10 @@ TcpClient::TcpClient(ServerMgr::EventCallback event_callback, int sockfd, std::s
 
     set_socket(sockfd);
 
-    int set = 1;
+    /*int set = 1;
     if (setsockopt(sockfd, SOL_SOCKET, SO_NOSIGPIPE, (void *)&set, sizeof(int)) < 0) {
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
-    }
+    }*/
 }
 
 bool TcpClient::is_subscriber() {
@@ -118,7 +118,7 @@ void TcpClient::send(GenericMsg& msg) {
     std::string raw_msg = msg.serialize();
     std::uint32_t header = htonl(raw_msg.size());
 
-    ssize_t nbyte = ::send(get_socket(), &header, sizeof(header), 0);
+    ssize_t nbyte = ::send(get_socket(), &header, sizeof(header), MSG_NOSIGNAL);
     if (nbyte <= 0) {
         if (nbyte == 0 || errno == ECONNRESET || errno == EPIPE) {
             on_close();
@@ -127,7 +127,7 @@ void TcpClient::send(GenericMsg& msg) {
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
 
-    nbyte = ::send(get_socket(), raw_msg.c_str(), raw_msg.size(), 0);
+    nbyte = ::send(get_socket(), raw_msg.c_str(), raw_msg.size(), MSG_NOSIGNAL);
     if (nbyte <= 0) {
         if (nbyte == 0 || errno == ECONNRESET || errno == EPIPE) {
             on_close();

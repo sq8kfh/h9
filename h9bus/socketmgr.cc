@@ -12,6 +12,10 @@
 #include <string>
 #include <iostream>
 #include <cassert>
+#include <sys/select.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include "common/logger.h"
 
@@ -41,7 +45,7 @@ void SocketMgr::select_loop(std::function<void(void)> after_select_callback, std
     while (!socket_map.empty()) {
         //h9_log_debug("select loop (socket list size: %d)", socket_map.size());
         fd_set rfds;
-        FD_COPY(&event_socket_set, &rfds);
+        rfds = event_socket_set;
 
         struct timeval tv;
         /*h9d_select_event_t tmp;

@@ -10,6 +10,7 @@
 
 #include <system_error>
 #include <string>
+#include <cstring>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>

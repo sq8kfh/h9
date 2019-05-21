@@ -12,6 +12,7 @@
 #include "config.h"
 #include <map>
 #include <exception>
+#include <functional>
 #include <unistd.h>
 
 
