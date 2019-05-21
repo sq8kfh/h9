@@ -25,7 +25,7 @@ EventMgr::EventMgr(DaemonCtx* ctx, BusMgr* bus_mgr, ServerMgr* server_mgr):
 void EventMgr::flush_frame_queue() {
     auto& frame_queue = _bus_mgr->get_recv_queue();
     while (!frame_queue.empty()) {
-        flush_frame(frame_queue.front().first, frame_queue.front().second);
+        flush_frame(std::get<0>(frame_queue.front()),std::get<1>(frame_queue.front()),  std::get<2>(frame_queue.front()));
         frame_queue.pop();
     }
 }
@@ -43,7 +43,7 @@ void EventMgr::flush_all() {
     flush_msg_queue();
 }
 
-void EventMgr::flush_frame(const std::string& bus_id, const H9frame& frame) {
+void EventMgr::flush_frame(bool recv_not_send, const std::string& bus_id, const H9frame& frame) {
     h9_log_debug("EventMgr::flush_frame(%s, ?)", bus_id.c_str());
     FrameReceivedMsg msg(frame);
     _server_mgr->send_msg_to_subscriber(msg);

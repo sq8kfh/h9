@@ -65,7 +65,7 @@ GenericMsg::GenericMsg(const GenericMsg& k) {
 }
 
 GenericMsg::GenericMsg(GenericMsg&& k) noexcept {
-    h9_log_debug("GenericMsg: exec move constructor");
+    //h9_log_debug("GenericMsg: exec move constructor");
     doc = k.doc;
     k.doc = nullptr;
 }

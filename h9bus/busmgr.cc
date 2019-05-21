@@ -114,15 +114,16 @@ BusMgr::EventCallback BusMgr::create_event_callback(const std::string &bus_id) {
 
 void BusMgr::recv_frame_callback(const H9frame& frame, const std::string& bus_id) {
     frame_log.log(std::string("recv ") + frame_to_log_string(bus_id, frame));
-    recv_queue.push(std::make_pair(bus_id, frame));
+    frame_queue.push(std::make_tuple(true, bus_id, frame));
 }
 
 void BusMgr::send_frame_callback(const H9frame& frame, const std::string& bus_id) {
     frame_log.log(std::string("send ") + frame_to_log_string(bus_id, frame));
+    frame_queue.push(std::make_tuple(false, bus_id, frame));
 }
 
-std::queue<std::pair<std::string, H9frame>>& BusMgr::get_recv_queue() {
-    return recv_queue;
+std::queue<std::tuple<bool, std::string, H9frame>>& BusMgr::get_recv_queue() {
+    return frame_queue;
 }
 
 void BusMgr::send_frame(const H9frame& frame, const std::string& bus_id) {
