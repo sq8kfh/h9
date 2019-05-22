@@ -172,7 +172,8 @@ void Slcan::parse_response(const std::string& response) {
 
             break;
         case 'T':
-            on_frame_recv(parse_slcan_msg(response));
+            if (response.size() >= 10)
+                on_frame_recv(parse_slcan_msg(response));
             //send_ack();
             break;
     }
