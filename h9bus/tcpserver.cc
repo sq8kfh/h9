@@ -69,7 +69,7 @@ TcpServer::TcpServer(ServerMgr::EventCallback event_callback, std::uint16_t port
         throw std::system_error(errno, std::generic_category(), std::string(__FILE__) + std::string(":") + std::to_string(__LINE__));
     }
 
-    set_socket(sockfd);
+    set_socket(sockfd, true);
 }
 
 static void *get_in_addr(struct sockaddr *sa) {
@@ -105,9 +105,7 @@ void TcpServer::on_select() {
     }
 }
 
-void TcpServer::close() {
-    int socket = get_socket();
-    _event_callback.on_server_close();
-    set_socket(0);
-    ::close(socket);
+void TcpServer::on_close() noexcept {
+    ::close(get_socket());
+    disconnected();
 }

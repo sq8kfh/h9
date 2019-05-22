@@ -29,7 +29,8 @@ void Dummy::open() {
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
 
-    set_socket(sockfd);
+    set_socket(sockfd, true);
+
 }
 
 void Dummy::recv_data() {

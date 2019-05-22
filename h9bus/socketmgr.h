@@ -10,7 +10,7 @@
 #define _H9_SOCKETMGR_H_
 
 #include "config.h"
-#include <map>
+#include <set>
 #include <exception>
 #include <functional>
 #include <unistd.h>
@@ -20,20 +20,23 @@ class SocketMgr {
 public:
     class Socket;
 private:
-    std::map<int, Socket*> socket_map;
+    std::set<Socket*> socket_set;
+    int socket_max;
     fd_set event_socket_set;
 public:
-    SocketMgr();
-    void register_socket(Socket *socket);
-    void unregister_socket(Socket *socket);
+    SocketMgr() noexcept;
+    void register_socket(Socket *socket) noexcept;
+    void unregister_socket(Socket *socket) noexcept;
     void select_loop(std::function<void(void)> after_select_callback = nullptr, std::function<void(void)> cron_func = nullptr);
 
     class Socket {
     private:
         int _socket;
+        bool _connected;
     protected:
-        void set_socket(int socket) {
+        void set_socket(int socket, bool connected) noexcept {
             _socket = socket;
+            _connected = connected;
         }
     public:
         class CloseSocketException: public std::exception {
@@ -42,19 +45,25 @@ public:
             explicit CloseSocketException(Socket *socket): _socket(socket) {}
         };
 
-        Socket(): _socket(0) {
+        Socket() noexcept: _socket(0), _connected(false) {
         }
-        virtual ~Socket() {
-            set_socket(0);
+        virtual ~Socket() noexcept {
+            set_socket(0, false);
         }
-        int get_socket() {
+        int get_socket() noexcept {
             return _socket;
         }
-        void on_close() {
+        bool is_connected() noexcept {
+            return _connected;
+        }
+        void disconnected() {
+            _connected = false;
+        }
+        void close() {
             throw CloseSocketException(this);
         }
         virtual void on_select() = 0;
-        virtual void close() = 0;
+        virtual void on_close() noexcept = 0;
     };
 };
 

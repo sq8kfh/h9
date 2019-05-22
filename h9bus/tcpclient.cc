@@ -32,7 +32,7 @@ void TcpClient::recv_header() {
     ssize_t nbyte = ::recv(get_socket(), reinterpret_cast<char*>(&recv_header) + recv_bytes, sizeof(recv_header) - recv_bytes, 0);
     if (nbyte <= 0) {
         if (nbyte == 0 || errno == ECONNRESET) {  /*Connection reset by peer*/
-            on_close();
+            close();
             return;
         }
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
@@ -53,7 +53,7 @@ void TcpClient::recv_data() {
     ssize_t nbyte = ::recv(get_socket(), buf, buf_len < bytes_to_recv ? buf_len : bytes_to_recv, 0);
     if (nbyte <= 0) {
         if (nbyte == 0 || errno == ECONNRESET) {
-            on_close();
+            close();
             return;
         }
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
@@ -98,7 +98,7 @@ TcpClient::TcpClient(ServerMgr::EventCallback event_callback, int sockfd, std::s
     data_to_read = 0;
     active_subscription = 0;
 
-    set_socket(sockfd);
+    set_socket(sockfd, true);
 
 #if defined(__APPLE__)
     int set = 1;
@@ -127,7 +127,7 @@ void TcpClient::send(GenericMsg& msg) {
 #endif
     if (nbyte <= 0) {
         if (nbyte == 0 || errno == ECONNRESET || errno == EPIPE) {
-            on_close();
+            close();
             return;
         }
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
@@ -139,7 +139,7 @@ void TcpClient::send(GenericMsg& msg) {
 #endif
     if (nbyte <= 0) {
         if (nbyte == 0 || errno == ECONNRESET || errno == EPIPE) {
-            on_close();
+            close();
             return;
         }
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
@@ -147,17 +147,11 @@ void TcpClient::send(GenericMsg& msg) {
 }
 
 TcpClient::~TcpClient() {
-    //h9_log_debug("TcpClient::~TcpClient (socket: %d)", get_socket());
-    if (get_socket() > 0) {
-        ::close(get_socket());
-        set_socket(0);
-    }
 }
 
-void TcpClient::close() {
-    int socket = get_socket();
-    ::close(socket);
-    _event_callback.on_client_close(socket);
+void TcpClient::on_close() noexcept {
+    ::close(get_socket());
+    disconnected();
 }
 
 void TcpClient::on_select() {

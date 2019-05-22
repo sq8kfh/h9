@@ -150,7 +150,7 @@ void BusMgr::send_frame(const H9frame& frame, const std::string& bus_id) {
 
 void BusMgr::cron() {
     for (auto it=dev.begin(); it!=dev.end(); ++it) {
-        if (it->second->get_socket() == 0) {
+        if (!it->second->is_connected()) {
             if (it->second->retry_auto_connect) {
                 try {
                     it->second->open();
@@ -159,11 +159,33 @@ void BusMgr::cron() {
                 catch (...) {
                     --it->second->retry_auto_connect;
                     if (it->second->retry_auto_connect == 0) {
-                        it = dev.erase(it);
-                        throw;
+                        it->second->on_close();
                     }
                 }
             }
+        }
+    }
+}
+
+void BusMgr::flush_dev() {
+    for (auto it = dev.cbegin(); it != dev.cend();) {
+        if (!it->second->is_connected()) {
+            Driver *tmp = it->second;
+            _socket_mgr->unregister_socket(tmp);
+            if (it->second->retry_auto_connect == 0) {
+                h9_log_notice("BusMgr: flush driver %s (%d)",
+                              it->first.c_str(),
+                              tmp->get_socket());
+
+                it = dev.erase(it);
+                delete tmp;
+            }
+            else {
+                ++it;
+            }
+        }
+        else {
+            ++it;
         }
     }
 }

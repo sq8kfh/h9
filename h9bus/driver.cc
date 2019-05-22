@@ -31,11 +31,11 @@ Driver::Driver(BusMgr::EventCallback event_callback):
     retry_auto_connect = 10;
 }
 
-void Driver::close() {
-    int socket = get_socket();
-    ::close(socket);
-    _event_callback.on_close();
-    set_socket(0);
+void Driver::on_close() noexcept {
+    ::close(get_socket());
+    disconnected();
+    //_event_callback.on_close();
+    //set_socket(0);
 }
 
 void Driver::send_frame(const H9frame& frame) {
@@ -59,8 +59,4 @@ void Driver::on_select() {
 }
 
 Driver::~Driver() {
-    if (get_socket() > 0) {
-        ::close(get_socket());
-        set_socket(0);
-    }
 }

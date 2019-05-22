@@ -32,8 +32,6 @@ public:
         void on_msg_recv(int client_socket, GenericMsg& msg);
         void on_msg_send();
         void on_new_connection(int client_socket, const std::string& remote_address, std::uint16_t remote_port);
-        void on_server_close();
-        void on_client_close(int client_socket);
     };
 private:
     SocketMgr* const _socket_mgr;
@@ -45,7 +43,6 @@ private:
 
     void recv_msg_callback(int client_socket, GenericMsg& msg);
     void new_connection_callback(int client_socket, const std::string& remote_address, std::uint16_t remote_port);
-    void client_close_callback(int client_socket);
     void server_close_callback();
     EventCallback create_event_callback();
 public:
@@ -55,7 +52,9 @@ public:
     void client_subscription(int client_socket, int active);
     void send_msg(int client_socket, GenericMsg& msg);
     void send_msg_to_subscriber(GenericMsg& msg);
+
     void cron();
+    void flush_clients();
     ~ServerMgr();
 };
 

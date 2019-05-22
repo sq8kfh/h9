@@ -32,7 +32,11 @@ int main(int argc, char **argv) {
     EventMgr event_mgr = {&ctx, &busmgr, &servermgr};
     //busmgr.set_frame_recv_callback(std::bind(&EventMgr::on_fame_recv, &event_mgr, std::placeholders::_1, std::placeholders::_2));
     //servermgr.set_msg_recv_callback(std::bind(&EventMgr::on_msg_recv, &event_mgr, std::placeholders::_1, std::placeholders::_2));
-
-    socketmgr.select_loop(std::bind(&EventMgr::flush_all, &event_mgr), std::bind(&EventMgr::cron, &event_mgr));
+//std::bind(&EventMgr::flush_all, &event_mgr);
+    socketmgr.select_loop([&event_mgr, &busmgr, &servermgr]() {
+        event_mgr.flush_all();
+        busmgr.flush_dev();
+        servermgr.flush_clients();
+        }, std::bind(&EventMgr::cron, &event_mgr));
     return EXIT_FAILURE;
 }

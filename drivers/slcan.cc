@@ -69,7 +69,7 @@ void Slcan::open() {
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
 
-    set_socket(fd);
+    set_socket(fd, true);
 }
 
 std::string Slcan::build_slcan_msg(const H9frame& frame) {
@@ -131,7 +131,7 @@ void Slcan::recv_data() {
     ssize_t nbyte = read(get_socket(), buf, sizeof(buf)-1);
     if (nbyte <= 0) {
         if (nbyte == 0 || errno == ENXIO) {
-            on_close();
+            close();
         }
         throw std::system_error(errno, std::system_category(), std::to_string(errno) + __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
@@ -152,7 +152,7 @@ void Slcan::send_data(const H9frame& frame) {
     //std::cout << "send raw: " << buf.c_str() << std::endl;
     if (nbyte <= 0) {
         if (nbyte == 0 || errno == ENXIO) {
-            on_close();
+            close();
         }
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
@@ -182,7 +182,7 @@ void Slcan::send_ack() {
     ssize_t nbyte = write(get_socket(), "\r", 1);
     if (nbyte <= 0) {
         if (nbyte == 0 || errno == ENXIO) {
-            on_close();
+            close();
         }
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }

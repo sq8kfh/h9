@@ -35,7 +35,7 @@ public:
     void send(GenericMsg& msg);
     ~TcpClient();
     void on_select();
-    void close();
+    void on_close() noexcept;
 };
 
 

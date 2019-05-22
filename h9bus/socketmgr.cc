@@ -19,30 +19,43 @@
 
 #include "common/logger.h"
 
-SocketMgr::SocketMgr() {
+SocketMgr::SocketMgr() noexcept {
     FD_ZERO(&event_socket_set);
+    socket_max = 0;
 }
 
-void SocketMgr::register_socket(Socket *socket) {
+void SocketMgr::register_socket(Socket *socket) noexcept {
     assert(socket->get_socket());
 
     if (socket->get_socket() != 0) {
         FD_SET(socket->get_socket(), &event_socket_set);
-        socket_map[socket->get_socket()] = socket;
+        socket_set.insert(socket);
+        if (socket->get_socket() > socket_max) {
+            socket_max = socket->get_socket();
+        }
     }
 }
 
-void SocketMgr::unregister_socket(Socket *socket) {
-    assert(socket->get_socket());
+void SocketMgr::unregister_socket(Socket *socket) noexcept {
+    //assert(socket->get_socket());
 
     if (socket->get_socket() != 0) {
         FD_CLR(socket->get_socket(), &event_socket_set);
-        socket_map.erase(socket->get_socket());
+        socket_set.erase(socket);
+        if (socket->get_socket() >= socket_max) {
+            socket_max = 0;
+            std::for_each(socket_set.begin(), socket_set.end(), [this](Socket* s) {
+                if (s->get_socket() > socket_max) {
+                    socket_max = s->get_socket();
+                }
+            });
+            socket_max = socket->get_socket();
+        }
     }
 }
 
 void SocketMgr::select_loop(std::function<void(void)> after_select_callback, std::function<void(void)> cron_func) {
-    while (!socket_map.empty()) {
+    while (!socket_set.empty()) {
         //h9_log_debug("select loop (socket list size: %d)", socket_map.size());
         fd_set rfds;
         rfds = event_socket_set;
@@ -56,22 +69,26 @@ void SocketMgr::select_loop(std::function<void(void)> after_select_callback, std
         tv.tv_sec = 15;
         tv.tv_usec = 0;
 
-        int retval = select(socket_map.rbegin()->first+1, &rfds, nullptr, nullptr, &tv);
+        int retval = select(socket_max+1, &rfds, nullptr, nullptr, &tv);
 
         if (retval == -1) {
             throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
         }
         else if (retval) {
-            for (auto it = socket_map.begin(); it != socket_map.end();) {
-                auto it_local = it;
-                ++it;
-                if (FD_ISSET(it_local->first, &rfds)) {
+            //for (auto it = socket_set.begin(); it != socket_set.end(); ++it) {
+            for (auto it : socket_set) {
+                //auto it_local = it;
+                //++it;
+                if (FD_ISSET(it->get_socket(), &rfds)) {
                     try {
-                        it_local->second->on_select();
+                        it->on_select();
+                        //it_local->second->on_select();
                     }
                     catch (SocketMgr::Socket::CloseSocketException& e) {
-                        h9_log_info("Close socket in select loop (socket: %d)", it_local->first);
-                        it_local->second->close();
+                        //h9_log_info("Close socket in select loop (socket: %d)", it_local->first);
+                        //it_local->second->on_close();
+                        h9_log_info("Close socket in select loop (socket: %d)", it->get_socket());
+                        it->on_close();
                     }
                 }
             }

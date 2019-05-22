@@ -34,10 +34,10 @@ public:
     int retry_auto_connect;
     explicit Driver(BusMgr::EventCallback event_callback);
     virtual void open() = 0;
-    void close();
+    void on_close() noexcept;
 
     void send_frame(const H9frame& frame);
-    void on_select();
+    void on_select() ;
     ~Driver();
 };
 

@@ -50,7 +50,7 @@ void SocketCAN::open() {
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
 
-    set_socket(sockfd);
+    set_socket(sockfd, true);
 }
 
 void SocketCAN::recv_data() {
@@ -59,7 +59,7 @@ void SocketCAN::recv_data() {
     size_t nbyte = read(get_socket(), &can_msg, sizeof(can_frame));
     if (nbyte <= 0) {
         if (nbyte == 0 || errno == ENXIO) {
-            on_close();
+            close();
         }
         throw std::system_error(errno, std::system_category(), std::to_string(errno) + __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
@@ -111,7 +111,7 @@ void SocketCAN::send_data(const H9frame& frame) {
     ssize_t nbyte = write(get_socket(), &can_msg, sizeof(can_frame));
     if (nbyte <= 0) {
         if (nbyte == 0 || errno == ENXIO) {
-            on_close();
+            close();
         }
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
