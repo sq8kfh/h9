@@ -15,6 +15,49 @@
 #include "protocol/framereceivedmsg.h"
 #include "common/clientctx.h"
 
+void print_reg_value(const H9frame& frame) {
+    if (frame.dlc > 1) {
+        std::cout << "    value: ";
+        switch (frame.dlc) {
+            case 2:
+                std::cout << static_cast<int>(frame.data[1]);
+                break;
+            case 3:
+                std::cout << static_cast<int>((frame.data[1] << 8) | frame.data[2]);
+                break;
+            case 5:
+                std::cout << static_cast<int>((frame.data[1] << 24) | (frame.data[2] << 16) | (frame.data[3] << 8) | frame.data[4]);
+                break;
+        }
+        char buf[8] = {'\0'};
+        for (int i = frame.dlc - 1; i > 0; --i) {
+            if (isprint(frame.data[i])) {
+                buf[i-1] = frame.data[i];
+            }
+            else {
+                break;
+            }
+        }
+        std::cout << " " << buf << std::endl;
+    }
+}
+
+void print_frame(const H9frame& frame) {
+    if (frame.destination_id == H9frame::BROADCAST_ID)
+        std::cout << "    destination: BROADCAST\n";
+    std::cout << "    type name: " << H9frame::type_to_string(frame.type) << std::endl;
+    if (frame.type == H9frame::Type::REG_EXTERNALLY_CHANGED ||
+        frame.type == H9frame::Type::REG_INTERNALLY_CHANGED ||
+        frame.type == H9frame::Type::REG_VALUE_BROADCAST ||
+        frame.type == H9frame::Type::REG_VALUE ||
+        frame.type == H9frame::Type::SET_REG ||
+        frame.type == H9frame::Type::GET_REG) {
+
+        std::cout << "    reg: " << static_cast<unsigned int>(frame.data[0]) << std::endl;
+        print_reg_value(frame);
+    }
+}
+
 int main(int argc, char **argv)
 {
     ClientCtx ctx = ClientCtx("h9spy", "The H9 bus packets sniffer.");
@@ -68,9 +111,7 @@ int main(int argc, char **argv)
             else {
                 std::cout << frame << std::endl;
                 if (output == 2) {
-                    if (frame.destination_id == H9frame::BROADCAST_ID)
-                        std::cout << "    destination: BROADCAST\n";
-                    std::cout << "    type name: " << H9frame::type_to_string(frame.type) << std::endl;
+                    print_frame(frame);
                 }
             }
         }
