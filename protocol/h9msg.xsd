@@ -17,6 +17,8 @@
                         <xs:attribute name="msg" type="xs:string" />
                     </xs:complexType>
                 </xs:element>
+                <xs:element name="methodcall" type="methodcall_t" />
+                <xs:element name="methodresponse" type="methodresponse_t" />
             </xs:choice>
 
             <xs:attribute name="version" use="required">
@@ -28,6 +30,34 @@
             </xs:attribute>
         </xs:complexType>
     </xs:element>
+
+    <xs:complexType name="methodcall_t">
+        <xs:sequence minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="param">
+                <xs:complexType>
+                    <xs:simpleContent>
+                        <xs:extension base="xs:string"/>
+                    </xs:simpleContent>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+
+        <xs:attribute name="name" type="xs:string" use="required" />
+    </xs:complexType>
+
+    <xs:complexType name="methodresponse_t">
+        <xs:sequence minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="arg">
+                <xs:complexType>
+                    <xs:simpleContent>
+                        <xs:extension base="xs:string"/>
+                    </xs:simpleContent>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+
+        <xs:attribute name="name" type="xs:string" use="required" />
+    </xs:complexType>
 
     <xs:complexType name="h9frame_t">
         <xs:attribute name="priority" use="required">

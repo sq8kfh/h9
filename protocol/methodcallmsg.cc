@@ -7,3 +7,12 @@
  */
 
 #include "methodcallmsg.h"
+
+
+MethodCallMsg::MethodCallMsg(GenericMsg&& k): GenericMethod(std::move(k)) {
+
+}
+
+MethodCallMsg::MethodCallMsg(const std::string& method_name): GenericMethod(method_name) {
+
+}

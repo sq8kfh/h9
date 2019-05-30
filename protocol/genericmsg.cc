@@ -40,6 +40,12 @@ GenericMsg::GenericMsg(GenericMsg::Type msg_type) {
         case Type::ERROR:
             node = xmlNewNode(nullptr, reinterpret_cast<xmlChar const *>("error"));
             break;
+        case Type::METHODCALL:
+            node = xmlNewNode(nullptr, reinterpret_cast<xmlChar const *>("methodcall"));
+            break;
+        case Type::METHODRESPONSE:
+            node = xmlNewNode(nullptr, reinterpret_cast<xmlChar const *>("methodresponse"));
+            break;
     }
     xmlAddChild(root, node);
     xmlDocSetRootElement(doc, root);
@@ -92,6 +98,10 @@ GenericMsg::Type GenericMsg::get_type() {
             return Type::SUBSCRIBE;
         else if (xmlStrcmp(node->name,reinterpret_cast<xmlChar const *>("error")) == 0)
             return Type::ERROR;
+        else if (xmlStrcmp(node->name,reinterpret_cast<xmlChar const *>("methodcall")) == 0)
+            return Type::METHODCALL;
+        else if (xmlStrcmp(node->name,reinterpret_cast<xmlChar const *>("methodresponse")) == 0)
+            return Type::METHODRESPONSE;
     }
     return Type::GENERIC;
 }
