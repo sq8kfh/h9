@@ -10,16 +10,17 @@
 #define _H9_EVENTMGR_H_
 
 #include "config.h"
-#include "common/daemonctx.h"
-#include "servermgr.h"
 #include "busmgr.h"
-
+#include "servermgr.h"
+#include "common/daemonctx.h"
+#include "protocol/methodcallmsg.h"
 
 class EventMgr {
 private:
     BusMgr* const _bus_mgr;
     ServerMgr* const _server_mgr;
     DaemonCtx* const _ctx;
+    void exec_method_call(int client_socket, MethodCallMsg call_msg);
 public:
     EventMgr(DaemonCtx* ctx, BusMgr* bus_mgr, ServerMgr* server_mgr);
     void flush_frame_queue();

@@ -12,9 +12,11 @@
 #define H9_GENERICMETHOD_H
 
 #include "concretizemsg.h"
+#include "common/logger.h"
+#include "value.h"
 
 
-template<GenericMsg::Type msg_type, const char* arg_node_name, typename Derived>
+template<GenericMsg::Type msg_type, typename Derived>
 class GenericMethod: public ConcretizeMsg<msg_type>  {
 protected:
     GenericMethod(GenericMsg&& k): ConcretizeMsg<msg_type>(std::move(k)) {
@@ -40,80 +42,47 @@ public:
         xmlNewProp(msg, reinterpret_cast<xmlChar const *>("name"), reinterpret_cast<xmlChar const *>(name.c_str()));
     }
 
-    int parse_arg(const char *format, ...) {
+    Derived& set_value(const std::string &name, const char* value) {
         xmlNodePtr msg = ConcretizeMsg<msg_type>::get_msg_root();
-        va_list vargs;
-        va_start(vargs, format);
-
-        const char *p = format;
-        for (xmlNode *node = msg->children; node; node = node->next) {
-            if (node->type == XML_ELEMENT_NODE && xmlStrcmp(node->name,reinterpret_cast<xmlChar const *>(arg_node_name)) == 0) {
-                xmlNodePtr text_node = node->children;
-                if(text_node->type == XML_TEXT_NODE) {
-                    xmlChar* tmp = xmlNodeGetContent(text_node);
-
-                    switch (*p) {
-                        case 'S': {
-                            std::string* s = va_arg(vargs, std::string*);
-                            *s = std::string(reinterpret_cast<char*>(tmp));
-                            break;
-                        }
-                        case 'i': {
-                            int *i = va_arg(vargs, int*);
-                            *i = std::stoi(reinterpret_cast<const char*>(tmp), nullptr, 10);
-                            break;
-                        }
-                        case 'u': {
-                            unsigned int *i = va_arg(vargs, unsigned int*);
-                            *i = std::stoul(reinterpret_cast<const char*>(tmp), nullptr, 10);
-                            break;
-                        }
-                        default:
-                            throw std::invalid_argument("GenericMethod::parse_arg: unknown argument: " + std::string(1, *p));
-                    }
-
-                    xmlFree(tmp);
-                }
-                ++p;
-            }
-        }
-
-        va_end(vargs);
-        return 0;
+        xmlNodePtr val = xmlNewTextChild(msg, nullptr, reinterpret_cast<xmlChar const *>("value"), reinterpret_cast<xmlChar const *>(value));
+        xmlNewProp(val, reinterpret_cast<xmlChar const *>("name"), reinterpret_cast<xmlChar const *>(name.c_str()));
+        return dynamic_cast<Derived&>(*this);
     }
 
-    Derived& build_arg(const char *format, ...) {
+    Derived& set_value(const std::string &name, const std::string& value) {
+        return set_value(name, value.c_str());
+    }
+
+    template<typename value_t>
+    Derived& set_value(const std::string &name, value_t value) {
+        return set_value(name, std::to_string(value));
+    }
+
+    Value set_array(const char* name) {
         xmlNodePtr msg = ConcretizeMsg<msg_type>::get_msg_root();
-        va_list vargs;
-        va_start(vargs, format);
+        xmlNodePtr array = xmlNewNode(nullptr, reinterpret_cast<xmlChar const *>("array"));
+        xmlNewProp(array, reinterpret_cast<xmlChar const *>("name"), reinterpret_cast<xmlChar const *>(name));
+        xmlAddChild(msg, array);
+        return Value(array);
+    }
 
-        for (const char *p = format; *p != '\0'; ++p) {
-            std::string val;
-            switch (*p) {
-                case 's': {
-                    const char *s = va_arg(vargs, const char*);
-                    val = s;
-                    break;
+    Value operator[](const char* name) {
+        xmlNodePtr msg = ConcretizeMsg<msg_type>::get_msg_root();
+        for (xmlNode *node = msg->children; node; node = node->next) {
+            if (node->type == XML_ELEMENT_NODE && (xmlStrcmp(node->name, reinterpret_cast<xmlChar const *>("array")) == 0 ||
+                    xmlStrcmp(node->name, reinterpret_cast<xmlChar const *>("value")) == 0)) {
+                xmlChar *tmp = xmlGetProp(node, (const xmlChar *) "name");
+                if (tmp) {
+                    if (xmlStrcmp(tmp, reinterpret_cast<xmlChar const *>(name)) == 0) {
+                        Value res = {node};
+                        xmlFree(tmp);
+                        return res;
+                    }
+                    xmlFree(tmp);
                 }
-                case 'i': {
-                    int i = va_arg(vargs, int);
-                    val = std::to_string(i);
-                    break;
-                }
-                case 'u': {
-                    unsigned int u = va_arg(vargs, unsigned int);
-                    val = std::to_string(u);
-                    break;
-                }
-                default:
-                    throw std::invalid_argument("GenericMethod::build_arg: unknown argument: " + std::string(1, *p));
             }
-            xmlNewTextChild(msg, nullptr, reinterpret_cast<xmlChar const *>(arg_node_name), reinterpret_cast<xmlChar const *>(val.c_str()));
         }
-
-        va_end(vargs);
-
-        return dynamic_cast<Derived&>(*this);
+        throw std::out_of_range(name);
     }
 };
 

@@ -18,7 +18,8 @@ add_library(PROTOCOL OBJECT
         methodcallmsg.h
         methodresponsemsg.cc
         methodresponsemsg.h
-        genericmethod.h)
+        genericmethod.h
+        value.cc value.h)
 
 add_custom_command (
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/h9msg.xsd.h

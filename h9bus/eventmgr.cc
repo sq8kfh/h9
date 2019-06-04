@@ -10,11 +10,14 @@
 
 #include "tcpclient.h"
 #include "busmgr.h"
+#include "common/logger.h"
 #include "protocol/errormsg.h"
+#include "protocol/framereceivedmsg.h"
+#include "protocol/methodcallmsg.h"
+#include "protocol/methodresponsemsg.h"
 #include "protocol/sendframemsg.h"
 #include "protocol/subscribemsg.h"
-#include "protocol/framereceivedmsg.h"
-#include "common/logger.h"
+
 
 EventMgr::EventMgr(DaemonCtx* ctx, BusMgr* bus_mgr, ServerMgr* server_mgr):
         _ctx(ctx),
@@ -63,6 +66,10 @@ void EventMgr::flush_msg(int client_socket, GenericMsg& msg) {
             _server_mgr->client_subscription(client_socket, 1);
             break;
         }
+        case GenericMsg::Type::METHODCALL: {
+            exec_method_call(client_socket, std::move(msg));
+            break;
+        }
         default:
             h9_log_err("recv unknown msg: %d", msg.get_type());
             ErrorMsg err_msg = {ErrorMsg::ErrorNumber::UNSUPPORTED_MESSAGE_TYPE, "EventMgr::flush_msg"};
@@ -72,7 +79,15 @@ void EventMgr::flush_msg(int client_socket, GenericMsg& msg) {
 }
 
 void EventMgr::cron() {
-    h9_log_debug("EventMgr::cron");
+    //h9_log_debug("EventMgr::cron");
     _bus_mgr->cron();
     _server_mgr->cron();
+}
+
+void EventMgr::exec_method_call(int client_socket, MethodCallMsg call_msg) {
+    std::string mnethod_name = call_msg.get_method_name();
+    if (mnethod_name == "get_h9bus_stat") {
+        MethodResponseMsg res = {mnethod_name};
+        _server_mgr->send_msg(client_socket, res);
+    }
 }

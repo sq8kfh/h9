@@ -12,11 +12,8 @@
 #include "concretizemsg.h"
 #include "genericmethod.h"
 
-namespace {
-    constexpr char methodresponse_arg_node_name[] = "arg";
-}
 
-class MethodResponseMsg:public GenericMethod<GenericMsg::Type::METHODRESPONSE, methodresponse_arg_node_name, MethodResponseMsg>  {
+class MethodResponseMsg:public GenericMethod<GenericMsg::Type::METHODRESPONSE, MethodResponseMsg>  {
 public:
     MethodResponseMsg(GenericMsg&& k);
     MethodResponseMsg(const std::string& method_name);

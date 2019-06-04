@@ -33,13 +33,10 @@
 
     <xs:complexType name="methodcall_t">
         <xs:sequence minOccurs="0" maxOccurs="unbounded">
-            <xs:element name="param">
-                <xs:complexType>
-                    <xs:simpleContent>
-                        <xs:extension base="xs:string"/>
-                    </xs:simpleContent>
-                </xs:complexType>
-            </xs:element>
+            <xs:choice>
+                <xs:element name="value" type="value_t"/>
+                <xs:element name="array" type="array_t"/>
+            </xs:choice>
         </xs:sequence>
 
         <xs:attribute name="name" type="xs:string" use="required" />
@@ -47,16 +44,28 @@
 
     <xs:complexType name="methodresponse_t">
         <xs:sequence minOccurs="0" maxOccurs="unbounded">
-            <xs:element name="arg">
-                <xs:complexType>
-                    <xs:simpleContent>
-                        <xs:extension base="xs:string"/>
-                    </xs:simpleContent>
-                </xs:complexType>
-            </xs:element>
+            <xs:choice>
+                <xs:element name="value" type="value_t"/>
+                <xs:element name="array" type="array_t"/>
+            </xs:choice>
         </xs:sequence>
 
         <xs:attribute name="name" type="xs:string" use="required" />
+    </xs:complexType>
+
+    <xs:complexType name="value_t">
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute name="name" type="xs:string" />
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+
+    <xs:complexType name="array_t">
+        <xs:sequence minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="value" type="value_t"/>
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string" />
     </xs:complexType>
 
     <xs:complexType name="h9frame_t">

@@ -13,11 +13,8 @@
 #include "concretizemsg.h"
 #include "genericmethod.h"
 
-namespace {
-    constexpr char methodcall_arg_node_name[] = "param";
-}
 
-class MethodCallMsg: public GenericMethod<GenericMsg::Type::METHODCALL, methodcall_arg_node_name, MethodCallMsg> {
+class MethodCallMsg: public GenericMethod<GenericMsg::Type::METHODCALL, MethodCallMsg> {
 public:
     MethodCallMsg(GenericMsg&& k);
     MethodCallMsg(const std::string& method_name);
