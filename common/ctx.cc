@@ -6,10 +6,7 @@
  * Copyright (C) 2019 Kamil Palkowski. All rights reserved.
  */
 
-#include <utility>
-
-#include <utility>
-
+#include <ctime>
 #include <utility>
 #include "ctx.h"
 #include "config.h"
@@ -22,8 +19,8 @@ void Ctx::raise_verbose_level(unsigned int how_much) {
 Ctx::Ctx(std::string app_name, std::string app_desc):
         _debug(false),
         _app_name(std::move(app_name)),
-        _app_desc(std::move(app_desc)) {
-
+        _app_desc(std::move(app_desc)),
+        start_time(std::time(nullptr)) {
     log().set_debug(_debug);
 }
 
@@ -46,4 +43,8 @@ Log& Ctx::log() {
 
 Log& Ctx::log(const std::string& log_name) {
     return Logger::default_log;
+}
+
+time_t Ctx::get_start_time() {
+    return start_time;
 }

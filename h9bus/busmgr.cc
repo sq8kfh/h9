@@ -189,3 +189,15 @@ void BusMgr::flush_dev() {
         }
     }
 }
+
+std::vector<std::string> BusMgr::get_dev_list() {
+    std::vector<std::string> ret;
+    for(auto& it: dev) {
+        ret.push_back(it.first);
+    }
+    return std::move(ret);
+}
+
+std::uint32_t BusMgr::get_dev_counter(const std::string& dev_name, BusMgr::CounterType counter) {
+    return dev[dev_name]->get_counter(counter);
+}

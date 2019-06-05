@@ -87,7 +87,22 @@ void EventMgr::cron() {
 void EventMgr::exec_method_call(int client_socket, MethodCallMsg call_msg) {
     std::string mnethod_name = call_msg.get_method_name();
     if (mnethod_name == "get_h9bus_stat") {
-        MethodResponseMsg res = {mnethod_name};
+        MethodResponseMsg res = get_stat(client_socket);
         _server_mgr->send_msg(client_socket, res);
     }
+}
+
+MethodResponseMsg EventMgr::get_stat(int client_socket) {
+    MethodResponseMsg res = {"get_h9bus_stat"};
+    res.set_value("version", H9_VERSION);
+    res.set_value("uptime", std::time(nullptr) - _ctx->get_start_time());
+    res.set_value("connected_clients_count", _server_mgr->connected_clients_count());
+    auto devs = res.set_array("dev");
+    for(std::string& dev_name: _bus_mgr->get_dev_list()) {
+        auto dev = devs.set_array(dev_name.c_str());
+        dev.set_value("name", dev_name);
+        dev.set_value("send_frames_counter", _bus_mgr->get_dev_counter(dev_name, BusMgr::CounterType::SEND_FRAMES));
+        dev.set_value("received_frames_counter", _bus_mgr->get_dev_counter(dev_name, BusMgr::CounterType::RECEIVED_FRAMES));
+    }
+    return std::move(res);
 }

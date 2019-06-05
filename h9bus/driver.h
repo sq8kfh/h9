@@ -24,6 +24,9 @@ private:
     std::uint8_t next_seqnum;
 
     BusMgr::EventCallback _event_callback;
+
+    std::uint32_t sent_frames;
+    std::uint32_t received_frames;
 protected:
     void on_frame_recv(const H9frame& frame);
     void on_frame_send(const H9frame& frame);
@@ -35,6 +38,8 @@ public:
     explicit Driver(BusMgr::EventCallback event_callback);
     virtual void open() = 0;
     void on_close() noexcept;
+
+    std::uint32_t get_counter(BusMgr::CounterType counter);
 
     void send_frame(const H9frame& frame);
     void on_select() ;

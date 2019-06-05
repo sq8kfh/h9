@@ -124,4 +124,6 @@ ServerMgr::~ServerMgr() {
     tcp_clients.clear();
 }
 
-
+int ServerMgr::connected_clients_count() {
+    return tcp_clients.size();
+}

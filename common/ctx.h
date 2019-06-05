@@ -18,6 +18,7 @@
 class Ctx {
 private:
     bool _debug;
+    const time_t start_time;
 protected:
     const std::string _app_name;
     const std::string _app_desc;
@@ -29,6 +30,7 @@ public:
 
     Log& log();
     Log& log(const std::string& log_name);
+    time_t get_start_time();
 };
 
 

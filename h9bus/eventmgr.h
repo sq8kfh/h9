@@ -14,6 +14,7 @@
 #include "servermgr.h"
 #include "common/daemonctx.h"
 #include "protocol/methodcallmsg.h"
+#include "protocol/methodresponsemsg.h"
 
 class EventMgr {
 private:
@@ -21,6 +22,7 @@ private:
     ServerMgr* const _server_mgr;
     DaemonCtx* const _ctx;
     void exec_method_call(int client_socket, MethodCallMsg call_msg);
+    MethodResponseMsg get_stat(int client_socket);
 public:
     EventMgr(DaemonCtx* ctx, BusMgr* bus_mgr, ServerMgr* server_mgr);
     void flush_frame_queue();

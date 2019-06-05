@@ -30,6 +30,8 @@ public:
     Value& set_value(const std::string &name, value_t value) {
         return set_value(name, std::to_string(value));
     }
+
+    Value set_array(const char* name);
 };
 
 

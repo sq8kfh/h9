@@ -53,6 +53,8 @@ public:
     void send_msg(int client_socket, GenericMsg& msg);
     void send_msg_to_subscriber(GenericMsg& msg);
 
+    int connected_clients_count();
+
     void cron();
     void flush_clients();
     ~ServerMgr();

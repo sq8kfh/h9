@@ -49,10 +49,18 @@ private:
 
     std::string frame_to_log_string(const std::string& bus_id, const H9frame& frame);
 public:
+    enum class CounterType {
+        SEND_FRAMES,
+        RECEIVED_FRAMES,
+    };
+
     explicit BusMgr(SocketMgr *socket_mgr);
     void load_config(Ctx *ctx);
     std::queue<std::tuple<bool, std::string, H9frame>>& get_recv_queue();
     void send_frame(const H9frame& frame, const std::string& bus_id = std::string("*"));
+
+    std::vector<std::string> get_dev_list();
+    std::uint32_t get_dev_counter(const std::string& dev_name, CounterType counter);
 
     void cron();
     void flush_dev();

@@ -58,3 +58,10 @@ Value& Value::set_value(const std::string &name, const char* value) {
 Value& Value::set_value(const std::string &name, const std::string& value) {
     return set_value(name, value.c_str());
 }
+
+Value Value::set_array(const char* name) {
+    xmlNodePtr array = xmlNewNode(nullptr, reinterpret_cast<xmlChar const *>("array"));
+    xmlNewProp(array, reinterpret_cast<xmlChar const *>("name"), reinterpret_cast<xmlChar const *>(name));
+    xmlAddChild(_node, array);
+    return Value(array);
+}
