@@ -38,6 +38,7 @@ int main(int argc, char **argv)
         GenericMsg raw_msg = h9_connector.recv();
         if (raw_msg.get_type() == GenericMsg::Type::METHODRESPONSE) {
             MethodResponseMsg msg = std::move(raw_msg);
+            std::system("clear");
             std::cout << msg.serialize() << std::endl;
         }
 
