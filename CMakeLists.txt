@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.7)
-project(h9)
+
+project(h9 VERSION 0.2.0)
 
 INCLUDE(FindPkgConfig)
 
@@ -8,7 +9,7 @@ set(CMAKE_CXX_STANDARD 14)
 set(H9_USER_CONFIG_FILE "~/.h9")
 set(H9D_CONFIG_FILE "./h9d.cfg")
 set(H9_BUS_CONFIG_FILE "./h9.cfg")
-set(H9_VERSION "0.2.0")
+set(H9_VERSION ${PROJECT_VERSION})
 
 find_package(LibXml2 REQUIRED)
 
