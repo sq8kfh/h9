@@ -21,8 +21,11 @@ add_library(PROTOCOL OBJECT
         genericmethod.h
         value.cc value.h)
 
+target_include_directories(PROTOCOL PUBLIC ${LIBXML2_INCLUDE_DIRS})
+target_compile_options(PROTOCOL PUBLIC ${LIBXML2_CFLAGS_OTHER})
+
 add_custom_command (
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/h9msg.xsd.h
-        COMMAND xxd -i h9msg.xsd ${CMAKE_CURRENT_BINARY_DIR}/h9msg.xsd.h
+        COMMAND ${XXD_EXECUTABLE} -i h9msg.xsd ${CMAKE_CURRENT_BINARY_DIR}/h9msg.xsd.h
         DEPENDS h9msg.xsd
 )

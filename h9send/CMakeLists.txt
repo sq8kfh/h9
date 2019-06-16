@@ -1,2 +1,4 @@
 add_executable(h9send h9send.cc $<TARGET_OBJECTS:BUS> $<TARGET_OBJECTS:PROTOCOL> $<TARGET_OBJECTS:CTXCLIENT>)
-target_link_libraries(h9send ${confuse_LIBRARIES} ${libxml2_LIBRARIES})
+target_include_directories(h9send PUBLIC ${CONFUSE_INCLUDE_DIRS} ${LIBXML2_INCLUDE_DIRS})
+target_compile_options(h9send PUBLIC ${CONFUSE_CFLAGS_OTHER} ${LIBXML2_CFLAGS_OTHER})
+target_link_libraries(h9send ${CONFUSE_LIBRARIES} ${LIBXML2_LIBRARIES})
