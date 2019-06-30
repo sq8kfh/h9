@@ -10,6 +10,8 @@
 #include <cstdlib>
 #include <cstdio>
 #include <sstream>
+#include <cstring>
+#include <functional>
 
 #include <readline/readline.h>
 #include <readline/history.h>
@@ -18,31 +20,9 @@
 #include "common/clientctx.h"
 #include "cliparser.h"
 
-char **character_name_completion(const char *, int, int);
-char *character_name_generator(const char *, int);
+const char** completion_list = nullptr;
 
-const char *character_names[] = {
-        "node",
-        "reg",
-        "write",
-        "read",
-        nullptr
-};
-
-char **
-character_name_completion(const char *text, int start, int end)
-{
-    printf("rl_attempted_completion_function: (%s, %d, %d0\n", text, start, end);
-    printf("<%s>\n", rl_line_buffer);
-
-    rl_attempted_completion_over = 1;
-    return rl_completion_matches(text, character_name_generator);
-}
-
-char *
-character_name_generator(const char *text, int state)
-{
-    printf("character_name_generator (%s, %d)\n", text, state);
+char* cli_completion_generator(const char *text, int state) {
     static int list_index, len;
     const char *name;
 
@@ -51,63 +31,97 @@ character_name_generator(const char *text, int state)
         len = strlen(text);
     }
 
-    while ((name = character_names[list_index++])) {
+    if (completion_list == nullptr)
+        return nullptr;
+
+    while ((name = completion_list[list_index++])) {
         if (strncmp(name, text, len) == 0) {
             return strdup(name);
         }
     }
 
-    return NULL;
+    return nullptr;
 }
 
-class Node {
-public:
-    void operator()();
-    Node operator[](int a);
-};
+char** cli_completion(const char *text, int start, int end) {
+    CLIParser cli_parser = {false};
+    char *input = strndup(rl_line_buffer, start);
+    int res = cli_parser.parse(input);
+    free(input);
 
-//Command["node"](12)["reg"](10)["write"](0x12)
-//                              ["read"]()
-//                   ["restart"]
+    //std::cout << cli_parser.last_match << std::endl;
 
-int main(int argc, char **argv)
-{
+    //printf("<%s>:<%s> %d %d %d\n", rl_line_buffer, text, start, end, res);
+
+    if (res == 0) {
+        if (cli_parser.last_match) {
+            completion_list = cli_parser.last_match->get_completion_list();
+        } else {
+            completion_list = cli_parser.get_completion_list();
+        }
+    }
+    else {
+        completion_list = nullptr;
+    }
+
+    rl_attempted_completion_over = 1;
+    return rl_completion_matches(text, cli_completion_generator);
+}
+
+int main(int argc, char **argv) {
     ClientCtx ctx = ClientCtx("h9cli", "Command line interface to the H9.");
+    ctx.add_positional_option("h9file", "<h9 file>", "");
 
     auto res = ctx.parse_options(argc, argv);
     ctx.load_configuration(res);
 
-    rl_attempted_completion_function = character_name_completion;
+
+    if (res.count("h9file")) {
+        CLIParser cli_parser;
+
+        FILE *fp = stdin;
+        if (res["h9file"].as<std::string>() != "-") {
+            fp = fopen(res["h9file"].as<std::string>().c_str(), "r");
+            if (fp == nullptr)
+                return EXIT_SUCCESS;
+        }
+
+        char* line = nullptr;
+        size_t len = 0;
+        while ((getline(&line, &len, fp)) != -1) {
+            int res = cli_parser.parse(line);
+            //std::cout << "result(" << res << "): "<< cli_parser.result << std::endl;
+            if (cli_parser.result && cli_parser.result->is_command()) {
+                cli_parser.result->operator()();
+            }
+        }
+        fclose(fp);
+        if (line)
+            free(line);
+        
+        return EXIT_SUCCESS;
+    }
+
+
+    rl_attempted_completion_function = cli_completion;
 
     std::stringstream ss;
+    CLIParser cli_parser;
     while (true) {
-        // Display prompt and read input
         char* input = readline("h9> ");
 
         // Check for EOF.
         if (!input)
             break;
 
-        // Add input to readline history.
         if (strlen(input)) add_history(input);
-        //ss.str(input);
-        //yyFlexLexer lexer = {&ss};
-
-        int yv;
-        CLIParser cli_parser;
-        cli_parser.parse(input);
-        //parser.
-        //auto a = yylex(cli_parser);
-        /*while ((yv=lexer.yylex()) != 0) {
-            printf(": %d\n", yv);
-            //40            std::cout << " yylex() " << yv << " yylval.dval " << yylval.dval << std::endl;
-            //41            t0.value=yylval.dval;
-            //42            Parse (pParser, yv, t0);
-
-        }*/
 
 
-        // Do stuff...
+        int res = cli_parser.parse(input);
+        //std::cout << "result(" << res << "): "<< cli_parser.result << std::endl;
+        if (cli_parser.result && cli_parser.result->is_command()) {
+            cli_parser.result->operator()();
+        }
 
         // Free buffer that was allocated by readline
         free(input);
