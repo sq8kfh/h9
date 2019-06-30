@@ -27,6 +27,7 @@
 %define api.token.prefix {TOK_}
 
 %token END  0      "end of file"
+%token LF_SEMICOLON
 %token T_NODE      "node"
 %token T_RESTART   "restart"
 %token T_REG       "reg"
@@ -59,10 +60,10 @@
 %start unit;
 unit:
         %empty
-        | node_exp              	{ cli_parser.result = $1; }
-        | node_command          	{ cli_parser.result = $1; }
-	| node_reg_exp          	{ cli_parser.result = $1; }
-	| node_reg_command		{ cli_parser.result = $1; }
+        | node_exp             	{ cli_parser.result = $1; }
+        | node_command         	{ cli_parser.result = $1; }
+	| node_reg_exp         	{ cli_parser.result = $1; }
+	| node_reg_command	{ cli_parser.result = $1; }
 
 node_exp:
 	"node" num_exp			{ $$ = new NodeExp($2); cli_parser.last_match = $$; }

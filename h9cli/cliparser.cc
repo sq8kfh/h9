@@ -18,6 +18,8 @@ void CLIParser::clean_up() {
         delete last_match;
     }
     delete result;
+    last_match = nullptr;
+    result = nullptr;
 }
 
 CLIParser::CLIParser(bool print_parse_error): print_parse_error(print_parse_error), result(nullptr), last_match(nullptr) {

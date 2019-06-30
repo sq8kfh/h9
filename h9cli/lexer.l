@@ -12,6 +12,8 @@
 
 [ \t\n]                 /*white space*/
 
+;|\n                    return yy::parser::make_LF_SEMICOLON();
+
 "-"                     return yy::parser::make_MINUS();
 "+"                     return yy::parser::make_PLUS();
 "*"                     return yy::parser::make_STAR();
@@ -54,8 +56,7 @@ b[01]{1,32}             {
                         }
 
 .|[^ \t\n]+             {
-                            std::cerr << "invalid input: " << yytext << '\n';
-                            return yy::parser::make_END();
+                            throw yy::parser::syntax_error(std::string("invalid input: ") + yytext);
                         }
 
 %%

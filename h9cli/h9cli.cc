@@ -77,7 +77,7 @@ void exec_unit(AbstractExp* unit, CommandCtx* cmd_ctx) {
     }
 }
 
-void write_readline_history(void) {
+void write_readline_history() {
     std::string const HOME = std::getenv("HOME") ? std::getenv("HOME") : ".";
     write_history((HOME + "/.h9cli_history").c_str());
 }
@@ -117,7 +117,8 @@ int main(int argc, char **argv) {
         size_t len = 0;
 
         while ((getline(&line, &len, fp)) != -1) {
-            int res = cli_parser.parse(line);
+            int parse_res = cli_parser.parse(line);
+            if (parse_res) break;
             exec_unit(cli_parser.result, &cmd_ctx);
         }
         fclose(fp);
@@ -131,7 +132,6 @@ int main(int argc, char **argv) {
         std::string const HOME = std::getenv("HOME") ? std::getenv("HOME") : ".";
         read_history((HOME + "/.h9cli_history").c_str());
         atexit(write_readline_history);
-        //std::set_terminate(write_readline_history);
 
         std::stringstream ss;
         while (true) {
@@ -140,8 +140,10 @@ int main(int argc, char **argv) {
             if (!input) break;
 
             if (strlen(input)) add_history(input);
+
             write_readline_history();
-            int res = cli_parser.parse(input);
+            int parse_res = cli_parser.parse(input);
+            if(parse_res) continue;
             exec_unit(cli_parser.result, &cmd_ctx);
 
             free(input);
