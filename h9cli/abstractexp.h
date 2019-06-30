@@ -10,6 +10,7 @@
 #define H9_ABSTRACTEXP_H
 
 #include "config.h"
+#include "commandctx.h"
 
 
 class AbstractExp {
@@ -18,7 +19,7 @@ public:
     virtual bool is_command() {
         return false;
     }
-    virtual void operator()() {};
+    virtual void operator()(CommandCtx* ctx) {};
     virtual const char** get_completion_list() = 0;
     virtual ~AbstractExp() {};
 };

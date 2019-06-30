@@ -19,6 +19,8 @@
 
 #include "common/clientctx.h"
 #include "cliparser.h"
+#include "commandctx.h"
+
 
 const char** completion_list = nullptr;
 
@@ -68,64 +70,82 @@ char** cli_completion(const char *text, int start, int end) {
     return rl_completion_matches(text, cli_completion_generator);
 }
 
+void exec_unit(AbstractExp* unit, CommandCtx* cmd_ctx) {
+    //std::cout << "result(" << res << "): "<< cli_parser.result << std::endl;
+    if (unit && unit->is_command()) {
+        unit->operator()(cmd_ctx);
+    }
+}
+
+void write_readline_history(void) {
+    std::string const HOME = std::getenv("HOME") ? std::getenv("HOME") : ".";
+    write_history((HOME + "/.h9cli_history").c_str());
+}
+
 int main(int argc, char **argv) {
     ClientCtx ctx = ClientCtx("h9cli", "Command line interface to the H9.");
+    ctx.add_options("s,src_id", "Source id", cxxopts::value<std::uint16_t>());
     ctx.add_positional_option("h9file", "<h9 file>", "");
 
     auto res = ctx.parse_options(argc, argv);
     ctx.load_configuration(res);
 
 
-    if (res.count("h9file")) {
-        CLIParser cli_parser;
+    std::uint16_t source_id = ctx.get_default_source_id();
 
+    if (res.count("src_id")) {
+        source_id = res["src_id"].as<std::uint16_t>();
+    }
+
+    H9Connector h9_connector = {ctx.get_h9bus_host(), ctx.get_h9bus_port()};
+
+    if (h9_connector.connect() == -1) {
+        return EXIT_FAILURE;
+    }
+
+    CommandCtx cmd_ctx = {&h9_connector, source_id};
+    CLIParser cli_parser;
+
+    if (res.count("h9file")) {
         FILE *fp = stdin;
         if (res["h9file"].as<std::string>() != "-") {
             fp = fopen(res["h9file"].as<std::string>().c_str(), "r");
-            if (fp == nullptr)
-                return EXIT_SUCCESS;
+            if (fp == nullptr) return EXIT_FAILURE;
         }
 
         char* line = nullptr;
         size_t len = 0;
+
         while ((getline(&line, &len, fp)) != -1) {
             int res = cli_parser.parse(line);
-            //std::cout << "result(" << res << "): "<< cli_parser.result << std::endl;
-            if (cli_parser.result && cli_parser.result->is_command()) {
-                cli_parser.result->operator()();
-            }
+            exec_unit(cli_parser.result, &cmd_ctx);
         }
         fclose(fp);
-        if (line)
+        if (line) {
             free(line);
-        
-        return EXIT_SUCCESS;
-    }
-
-
-    rl_attempted_completion_function = cli_completion;
-
-    std::stringstream ss;
-    CLIParser cli_parser;
-    while (true) {
-        char* input = readline("h9> ");
-
-        // Check for EOF.
-        if (!input)
-            break;
-
-        if (strlen(input)) add_history(input);
-
-
-        int res = cli_parser.parse(input);
-        //std::cout << "result(" << res << "): "<< cli_parser.result << std::endl;
-        if (cli_parser.result && cli_parser.result->is_command()) {
-            cli_parser.result->operator()();
         }
-
-        // Free buffer that was allocated by readline
-        free(input);
     }
+    else {
+        rl_attempted_completion_function = cli_completion;
 
+        std::string const HOME = std::getenv("HOME") ? std::getenv("HOME") : ".";
+        read_history((HOME + "/.h9cli_history").c_str());
+        atexit(write_readline_history);
+        //std::set_terminate(write_readline_history);
+
+        std::stringstream ss;
+        while (true) {
+            char *input = readline("h9> ");
+
+            if (!input) break;
+
+            if (strlen(input)) add_history(input);
+            write_readline_history();
+            int res = cli_parser.parse(input);
+            exec_unit(cli_parser.result, &cmd_ctx);
+
+            free(input);
+        }
+    }
     return EXIT_SUCCESS;
 }

@@ -58,8 +58,6 @@ b[01]{1,32}             {
                             return yy::parser::make_END();
                         }
 
-<<EOF>>                 return yy::parser::make_END();
-
 %%
 
 void CLIParser::scan_string(const char *str) {

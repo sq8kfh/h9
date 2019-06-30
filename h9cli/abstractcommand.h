@@ -21,7 +21,7 @@ public:
     const char** get_completion_list() {
         return nullptr;
     }
-    virtual void operator()() = 0;
+    virtual void operator()(CommandCtx* ctx) = 0;
 };
 
 

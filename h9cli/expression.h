@@ -10,9 +10,11 @@
 #define H9_EXPRESSION_H
 
 #include "config.h"
+
+#include <iostream>
+
 #include "abstractexp.h"
 #include "abstractcommand.h"
-#include <iostream>
 
 
 class NodeExp: public AbstractExp {
@@ -58,9 +60,7 @@ public:
         //std::cout << "NodeRestart\n";
     }
 
-    void operator()() {
-        std::cout << "restart\n";
-    }
+    void operator()(CommandCtx* ctx);
 
     ~NodeRestart() {
         //std::cout << "~NodeRestart\n";
@@ -75,9 +75,7 @@ public:
         //std::cout << "NodeGetReg\n";
     }
 
-    void operator()() {
-        std::cout << "get reg\n";
-    }
+    void operator()(CommandCtx* ctx);
 
     ~NodeGetReg() {
         //std::cout << "~NodeGetReg\n";
@@ -93,9 +91,7 @@ public:
         //std::cout << "NodeSetReg\n";
     }
 
-    void operator()() {
-        std::cout << "set reg\n";
-    }
+    void operator()(CommandCtx* ctx);
 
     ~NodeSetReg() {
         //std::cout << "~NodeSetReg\n";
