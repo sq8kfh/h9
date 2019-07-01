@@ -11,15 +11,9 @@
 
 #include "config.h"
 #include "genericmsg.h"
+#include "h9socket.h"
 
-
-class H9Connector {
-private:
-    int sockfd;
-    std::string _hostname;
-    std::string _port;
-    std::uint32_t recv_header();
-    std::string recv_data(std::uint32_t data_to_read);
+class H9Connector: protected H9Socket {
 public:
     H9Connector(std::string hostname, std::string port) noexcept;
     ~H9Connector() noexcept;

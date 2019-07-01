@@ -19,7 +19,7 @@ add_library(PROTOCOL OBJECT
         methodresponsemsg.cc
         methodresponsemsg.h
         genericmethod.h
-        value.cc value.h)
+        value.cc value.h h9socket.cc h9socket.h)
 
 target_include_directories(PROTOCOL PUBLIC ${LIBXML2_INCLUDE_DIRS})
 target_compile_options(PROTOCOL PUBLIC ${LIBXML2_CFLAGS_OTHER})
