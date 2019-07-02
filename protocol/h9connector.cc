@@ -1,7 +1,3 @@
-#include <utility>
-
-#include <utility>
-
 /*
  * H9 project
  *
@@ -36,12 +32,15 @@ int H9Connector::connect() noexcept {
     return H9Socket::connect();
 }
 
-GenericMsg H9Connector::recv() {
+GenericMsg H9Connector::recv(int timeout_in_seconds) {
     std::string data;
 
     while (true) {
-        if (H9Socket::recv(data) <= 0) {
+        if (H9Socket::recv(data, timeout_in_seconds) <= 0) {
             if (errno == EAGAIN || errno == EWOULDBLOCK) { //incomplete message
+                if (timeout_in_seconds) {
+                    break;
+                }
                 continue;
             }
             throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
@@ -55,5 +54,7 @@ GenericMsg H9Connector::recv() {
 
 void H9Connector::send(const GenericMsg &msg) {
     std::string raw_msg = msg.serialize();
-    H9Socket::send(raw_msg);
+    if (H9Socket::send(raw_msg) <=0) {
+        throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
+    }
 }

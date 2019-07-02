@@ -18,7 +18,7 @@ public:
     H9Connector(std::string hostname, std::string port) noexcept;
     ~H9Connector() noexcept;
     int connect() noexcept;
-    GenericMsg recv();
+    GenericMsg recv(int timeout_in_seconds = 0);
     void send(const GenericMsg& msg);
 };
 
