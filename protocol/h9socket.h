@@ -29,8 +29,11 @@ public:
     H9Socket(std::string hostname, std::string port) noexcept;
     ~H9Socket() noexcept;
     int connect() noexcept;
+    void close();
     int recv(std::string& buf, int timeout_in_seconds = 0) noexcept;
     int send(const std::string& buf) noexcept;
+    std::string get_remote_address() noexcept;
+    std::string get_remote_port() noexcept;
 };
 
 

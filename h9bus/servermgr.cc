@@ -39,7 +39,7 @@ void ServerMgr::new_connection_callback(int client_socket, const std::string& re
                   remote_port,
                   client_socket);
 
-    TcpClient *tmp = new TcpClient(create_event_callback(), client_socket, remote_address, remote_port);
+    TcpClient *tmp = new TcpClient(create_event_callback(), client_socket);
     tcp_clients[client_socket] = tmp;
     _socket_mgr->register_socket(tmp);
 }
@@ -101,9 +101,9 @@ void ServerMgr::flush_clients() {
     for (auto it = tcp_clients.cbegin(); it != tcp_clients.cend();) {
         if (!it->second->is_connected()) {
             TcpClient *tmp = it->second;
-            h9_log_notice("Server: flush connection from %s:%d on socket %d",
-                          tmp->remote_address.c_str(),
-                          tmp->remote_port,
+            h9_log_notice("Server: flush connection from %s:%s on socket %d",
+                          tmp->get_remote_address().c_str(),
+                          tmp->get_remote_port().c_str(),
                           tmp->get_socket());
 
             _socket_mgr->unregister_socket(tmp);

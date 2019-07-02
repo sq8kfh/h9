@@ -18,57 +18,20 @@
 #include "protocol/genericmsg.h"
 
 void TcpClient::recv() {
-    if (data_to_read > 0) {
-        recv_data();
-    }
-    else {
-        recv_header();
-    }
-}
-
-void TcpClient::recv_header() {
-    static size_t recv_bytes = 0;
-    std::uint32_t recv_header = 0;
-    ssize_t nbyte = ::recv(get_socket(), reinterpret_cast<char*>(&recv_header) + recv_bytes, sizeof(recv_header) - recv_bytes, 0);
-    if (nbyte <= 0) {
-        if (nbyte == 0 || errno == ECONNRESET) {  /*Connection reset by peer*/
+    std::string raw_msg;
+    int res = h9socket.recv(raw_msg);
+    if (res <=0) {
+        if (res == 0 || errno == ECONNRESET) {  /*Connection reset by peer*/
             close();
             return;
         }
-        throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
-    }
-    recv_bytes += nbyte;
-    if (recv_bytes == sizeof(recv_header)) {
-        recv_bytes = 0;
-        data_to_read = ntohl(recv_header);
-    }
-}
-
-void TcpClient::recv_data() {
-    static size_t buf_len = 4096;
-    static char* buf = new char[buf_len];
-
-    size_t bytes_to_recv = data_to_read - recv_data_buf.size();
-
-    ssize_t nbyte = ::recv(get_socket(), buf, buf_len < bytes_to_recv ? buf_len : bytes_to_recv, 0);
-    if (nbyte <= 0) {
-        if (nbyte == 0 || errno == ECONNRESET) {
-            close();
+        else if (errno == EAGAIN || errno == EWOULDBLOCK) { //incomplete message
             return;
         }
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
 
-    recv_data_buf.append(buf, nbyte);
-
-    if (recv_data_buf.size() == data_to_read) {
-        std::string tmp = std::move(recv_data_buf);
-
-        data_to_read = 0;
-        recv_data_buf.clear();
-
-        recv_msg(tmp);
-    }
+    recv_msg(raw_msg);
 }
 
 void TcpClient::recv_msg(const std::string& msg_str) {
@@ -90,22 +53,12 @@ void TcpClient::recv_msg(const std::string& msg_str) {
     _event_callback.on_msg_recv(get_socket(), msg);
 }
 
-TcpClient::TcpClient(ServerMgr::EventCallback event_callback, int sockfd, std::string remote_address, std::uint16_t remote_port):
+TcpClient::TcpClient(ServerMgr::EventCallback event_callback, int sockfd):
         _event_callback(event_callback),
-        remote_address(std::move(remote_address)),
-        remote_port(remote_port) {
-
-    data_to_read = 0;
-    active_subscription = 0;
+        h9socket(sockfd) {
 
     set_socket(sockfd, true);
-
-#if defined(__APPLE__)
-    int set = 1;
-    if (setsockopt(sockfd, SOL_SOCKET, SO_NOSIGPIPE, (void *)&set, sizeof(int)) < 0) {
-        throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
-    }
-#endif
+    h9socket.connect();
 }
 
 bool TcpClient::is_subscriber() {
@@ -118,27 +71,11 @@ void TcpClient::subscriber(int active) {
 
 void TcpClient::send(GenericMsg& msg) {
     std::string raw_msg = msg.serialize();
-    std::uint32_t header = htonl(raw_msg.size());
 
-#if defined(__linux__)
-    ssize_t nbyte = ::send(get_socket(), &header, sizeof(header), MSG_NOSIGNAL);
-#elif defined(__APPLE__)
-    ssize_t nbyte = ::send(get_socket(), &header, sizeof(header), 0);
-#endif
-    if (nbyte <= 0) {
-        if (nbyte == 0 || errno == ECONNRESET || errno == EPIPE) {
-            close();
-            return;
-        }
-        throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
-    }
-#if defined(__linux__)
-    nbyte = ::send(get_socket(), raw_msg.c_str(), raw_msg.size(), MSG_NOSIGNAL);
-#elif defined(__APPLE__)
-    nbyte = ::send(get_socket(), raw_msg.c_str(), raw_msg.size(), 0);
-#endif
-    if (nbyte <= 0) {
-        if (nbyte == 0 || errno == ECONNRESET || errno == EPIPE) {
+    int res = h9socket.send(raw_msg);
+
+    if (res <= 0) {
+        if (res == 0 || errno == ECONNRESET || errno == EPIPE) {
             close();
             return;
         }
@@ -150,8 +87,16 @@ TcpClient::~TcpClient() {
 }
 
 void TcpClient::on_close() noexcept {
-    ::close(get_socket());
+    h9socket.close();
     disconnected();
+}
+
+std::string TcpClient::get_remote_address() noexcept {
+    return std::move(h9socket.get_remote_address());
+}
+
+std::string TcpClient::get_remote_port() noexcept {
+    return std::move(h9socket.get_remote_port());
 }
 
 void TcpClient::on_select() {

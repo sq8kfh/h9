@@ -39,9 +39,17 @@ int H9Connector::connect() noexcept {
 GenericMsg H9Connector::recv() {
     std::string data;
 
-    int res;
-    for(res = H9Socket::recv(data); res == -2; res = H9Socket::recv(data));
-    //printf("<%s>%d\n", data.c_str(), res);
+    while (true) {
+        if (H9Socket::recv(data) <= 0) {
+            if (errno == EAGAIN || errno == EWOULDBLOCK) { //incomplete message
+                continue;
+            }
+            throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
+        }
+        else {
+            break;
+        }
+    }
     return GenericMsg(data);
 }
 

@@ -1,7 +1,3 @@
-#include <utility>
-
-#include <utility>
-
 /*
  * H9 project
  *
@@ -95,7 +91,7 @@ int H9Socket::connect() noexcept {
                 continue;
             }
             if (::connect(_socket, p->ai_addr, p->ai_addrlen) == -1) {
-                close(_socket);
+                ::close(_socket);
                 continue;
             }
             break;
@@ -107,15 +103,20 @@ int H9Socket::connect() noexcept {
         }
         freeaddrinfo(servinfo);
     }
-/*
+
 #if defined(__APPLE__)
     int set = 1;
     ret = setsockopt(_socket, SOL_SOCKET, SO_NOSIGPIPE, (void *)&set, sizeof(int));
     if (ret < 0) {
         return ret;
     }
-#endif*/
+#endif
     return 0;
+}
+
+void H9Socket::close() {
+    ::close(_socket);
+    _socket = -1;
 }
 
 int H9Socket::recv(std::string& buf, int timeout_in_seconds) noexcept {
@@ -128,9 +129,14 @@ int H9Socket::recv(std::string& buf, int timeout_in_seconds) noexcept {
         }
     }
 
+    int recv_flags = 0;
+
     if (recv_bytes < 4) { //header
         ssize_t nbyte = ::recv(_socket, reinterpret_cast<char *>(&header_buf) + recv_bytes,
-                sizeof(header_buf) - recv_bytes, 0);
+                sizeof(header_buf) - recv_bytes, recv_flags);
+
+        recv_flags |= MSG_DONTWAIT;
+
         if (nbyte <= 0) {
             if (nbyte == 0) {
                 h9_log_debug("close connection during recv header");
@@ -152,7 +158,7 @@ int H9Socket::recv(std::string& buf, int timeout_in_seconds) noexcept {
     if (recv_bytes >= 4) { //data
         size_t tmp_to_recv = bytes_to_recv - recv_bytes;
 
-        ssize_t nbyte = ::recv(_socket, &data_buf[recv_bytes - sizeof(header_buf)], tmp_to_recv, 0);
+        ssize_t nbyte = ::recv(_socket, &data_buf[recv_bytes - sizeof(header_buf)], tmp_to_recv, recv_flags);
         if (nbyte <= 0) {
             if (nbyte == 0) {
                 h9_log_debug("close connection during recv data");
@@ -163,7 +169,8 @@ int H9Socket::recv(std::string& buf, int timeout_in_seconds) noexcept {
     }
 
     if (recv_bytes < bytes_to_recv) {
-        return -2;
+        errno = EAGAIN; //emulate nonblocking operation
+        return -1;
     }
 
     data_buf[recv_bytes - sizeof(header_buf)] = '\0';
@@ -176,19 +183,32 @@ int H9Socket::recv(std::string& buf, int timeout_in_seconds) noexcept {
 int H9Socket::send(const std::string& buf) noexcept {
     std::uint32_t header = htonl(buf.size());
 
-    ssize_t nbyte = ::send(_socket, &header, sizeof(header), 0);
+    int send_flags = 0;
+#if defined(__linux__)
+    send_flags |= MSG_NOSIGNAL;
+#endif
+
+    ssize_t nbyte = ::send(_socket, &header, sizeof(header), send_flags);
     if (nbyte <= 0) {
         return nbyte;
     }
 
-    nbyte = ::send(_socket, buf.c_str(), buf.size(), 0);
+    nbyte = ::send(_socket, buf.c_str(), buf.size(), send_flags);
 
     if (nbyte <= 0) {
         return nbyte;
     }
     else if (nbyte != buf.size()) {
         h9_log_err("sent incomplete msg");
-        return -2;
+        return -1;
     }
-    return 1;
+    return nbyte + sizeof(header);
+}
+
+std::string H9Socket::get_remote_address() noexcept {
+    return _hostname;
+}
+
+std::string H9Socket::get_remote_port() noexcept {
+    return _port;
 }
