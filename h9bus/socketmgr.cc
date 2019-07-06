@@ -8,6 +8,7 @@
 
 #include "socketmgr.h"
 
+#include <algorithm>
 #include <system_error>
 #include <string>
 #include <iostream>

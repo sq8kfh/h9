@@ -8,6 +8,7 @@
 
 #include "eventmgr.h"
 
+#include <ctime>
 #include "tcpclient.h"
 #include "busmgr.h"
 #include "common/logger.h"

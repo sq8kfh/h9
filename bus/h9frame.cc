@@ -71,4 +71,5 @@ const char* H9frame::type_to_string(H9frame::Type type) {
         case Type::U28: return "U28";
         case Type::U31: return "U31";
     }
+    return nullptr;
 }
