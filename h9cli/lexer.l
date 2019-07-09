@@ -26,7 +26,10 @@
 node                    return yy::parser::make_T_NODE();
 restart                 return yy::parser::make_T_RESTART();
 reg                     return yy::parser::make_T_REG();
-set                     return yy::parser::make_T_SET();
+set1                    return yy::parser::make_T_SET1();
+set2                    return yy::parser::make_T_SET2();
+set3                    return yy::parser::make_T_SET3();
+set4                    return yy::parser::make_T_SET4();
 get                     return yy::parser::make_T_GET();
 
 [0-9]+                  {

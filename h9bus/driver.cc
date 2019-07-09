@@ -49,6 +49,7 @@ std::uint32_t Driver::get_counter(BusMgr::CounterType counter) {
         case BusMgr::CounterType::RECEIVED_FRAMES:
             return received_frames;
     }
+    return 0;
 }
 
 void Driver::send_frame(const H9frame& frame) {

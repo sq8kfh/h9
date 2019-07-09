@@ -42,7 +42,7 @@ const char* H9frame::type_to_string(H9frame::Type type) {
         case Type::PAGE_START: return "PAGE_START";
         case Type::QUIT_BOOTLOADER: return "QUIT_BOOTLOADER";
         case Type::PAGE_FILL: return "PAGE_FILL";
-        case Type::ENTER_INTO_BOOTLOADER: return "ENTER_INTO_BOOTLOADER";
+        case Type::BOOTLOADER_TURNED_ON: return "BOOTLOADER_TURNED_ON";
         case Type::PAGE_FILL_NEXT: return "PAGE_FILL_NEXT";
         case Type::PAGE_WRITED: return "PAGE_WRITED";
         case Type::PAGE_FILL_BREAK: return "PAGE_FILL_BREAK";
@@ -51,7 +51,7 @@ const char* H9frame::type_to_string(H9frame::Type type) {
         case Type::REG_VALUE_BROADCAST: return "REG_VALUE_BROADCAST";
         case Type::REG_VALUE: return "REG_VALUE";
         case Type::NODE_HEARTBEAT: return "NODE_HEARTBEAT";
-        case Type::NODE_ERROR: return "NODE_ERROR";
+        case Type::ERROR: return "ERROR";
         case Type::U14: return "U14";
         case Type::U15: return "U15";
         case Type::SET_REG: return "SET_REG";
@@ -71,4 +71,5 @@ const char* H9frame::type_to_string(H9frame::Type type) {
         case Type::U28: return "U28";
         case Type::U31: return "U31";
     }
+    return nullptr;
 }

@@ -170,7 +170,7 @@ int main(int argc, char **argv)
                 continue;
             }
 
-            if (recv_frame.type == H9frame::Type::ENTER_INTO_BOOTLOADER || recv_frame.type == H9frame::Type::PAGE_WRITED) {
+            if (recv_frame.type == H9frame::Type::BOOTLOADER_TURNED_ON || recv_frame.type == H9frame::Type::PAGE_WRITED) {
                 if (recv_frame.type == H9frame::Type::PAGE_WRITED) {
                     h9_log_stderr("Writted page %hu, byte %u", page, fw_idx);
                     if (fw_idx >= fw_size) {

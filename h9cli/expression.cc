@@ -20,7 +20,10 @@ const char* NodeExp::completion_list[] = {
 
 const char* NodeRegExp::completion_list[] = {
         "get",
-        "set",
+        "set1",
+        "set2",
+        "set3",
+        "set4",
         nullptr
 };
 
@@ -61,7 +64,19 @@ void NodeGetReg::operator()(CommandCtx* ctx) {
                 && frame.dlc > 1
                 && frame.data[0] == reg->reg_number) {
 
-                std::cout << static_cast<int>(frame.data[1]) << std::endl;
+                std::uint64_t tmp = static_cast<int>(frame.data[1]);
+                for(int i = 2; i < frame.dlc; ++i) {
+                    tmp <<= 8;
+                    tmp |= frame.data[i];
+                }
+                std::cout << tmp << std::endl;
+                break;
+            }
+            else if (frame.source_id == reg->node->node_id
+                     && frame.type == H9frame::Type::ERROR
+                     && frame.dlc == 1) {
+
+                std::cout << "Whoops, looks like something went wrong: " << static_cast<int>(frame.data[0]) << std::endl;
                 break;
             }
         }
@@ -69,8 +84,38 @@ void NodeGetReg::operator()(CommandCtx* ctx) {
     ctx->get_connector()->send(SubscribeMsg(SubscribeMsg::Content::NONE));
 }
 
-void NodeSetReg::operator()(CommandCtx* ctx) {
-    std::cout << "set reg\n";
+void NodeSetReg::print_response(CommandCtx* ctx) {
+    while (true) {
+        GenericMsg raw_msg = ctx->get_connector()->recv();
+        if (raw_msg.get_type() == GenericMsg::Type::FRAME_RECEIVED) {
+            FrameReceivedMsg msg = std::move(raw_msg);
+            H9frame frame = msg.get_frame();
+
+            if (frame.source_id == reg->node->node_id
+                && frame.type == H9frame::Type::REG_EXTERNALLY_CHANGED
+                && frame.dlc > 1
+                && frame.data[0] == reg->reg_number) {
+
+                std::uint64_t tmp = static_cast<int>(frame.data[1]);
+                for(int i = 2; i < frame.dlc; ++i) {
+                    tmp <<= 8;
+                    tmp |= frame.data[i];
+                }
+                std::cout << tmp << std::endl;
+                break;
+            }
+            else if (frame.source_id == reg->node->node_id
+                     && frame.type == H9frame::Type::ERROR
+                     && frame.dlc == 1) {
+
+                std::cout << "Whoops, looks like something went wrong: " << static_cast<int>(frame.data[0]) << std::endl;
+                break;
+            }
+        }
+    }
+}
+
+void NodeSet1Reg::operator()(CommandCtx* ctx) {
     H9frame frame;
 
     frame.priority = H9frame::Priority::LOW;
@@ -83,21 +128,71 @@ void NodeSetReg::operator()(CommandCtx* ctx) {
 
     ctx->get_connector()->send(SubscribeMsg(SubscribeMsg::Content::FRAME));
     ctx->get_connector()->send(SendFrameMsg(frame));
-    while (true) {
-        GenericMsg raw_msg = ctx->get_connector()->recv();
-        if (raw_msg.get_type() == GenericMsg::Type::FRAME_RECEIVED) {
-            FrameReceivedMsg msg = std::move(raw_msg);
-            H9frame frame = msg.get_frame();
 
-            if (frame.source_id == reg->node->node_id
-                && frame.type == H9frame::Type::REG_EXTERNALLY_CHANGED
-                && frame.dlc > 1
-                && frame.data[0] == reg->reg_number) {
+    print_response(ctx);
 
-                std::cout << static_cast<int>(frame.data[1]) << std::endl;
-                break;
-            }
-        }
-    }
+    ctx->get_connector()->send(SubscribeMsg(SubscribeMsg::Content::NONE));
+}
+
+void NodeSet2Reg::operator()(CommandCtx* ctx) {
+    H9frame frame;
+
+    frame.priority = H9frame::Priority::LOW;
+    frame.source_id = ctx->get_source_id();
+    frame.destination_id = reg->node->node_id;
+    frame.type = H9frame::Type::SET_REG;
+    frame.dlc = 3;
+    frame.data[0] = reg->reg_number;
+    frame.data[1] = value << 8;
+    frame.data[2] = value;
+
+    ctx->get_connector()->send(SubscribeMsg(SubscribeMsg::Content::FRAME));
+    ctx->get_connector()->send(SendFrameMsg(frame));
+
+    print_response(ctx);
+
+    ctx->get_connector()->send(SubscribeMsg(SubscribeMsg::Content::NONE));
+}
+
+void NodeSet3Reg::operator()(CommandCtx* ctx) {
+    H9frame frame;
+
+    frame.priority = H9frame::Priority::LOW;
+    frame.source_id = ctx->get_source_id();
+    frame.destination_id = reg->node->node_id;
+    frame.type = H9frame::Type::SET_REG;
+    frame.dlc = 4;
+    frame.data[0] = reg->reg_number;
+    frame.data[1] = value << 16;
+    frame.data[2] = value << 8;
+    frame.data[3] = value;
+
+    ctx->get_connector()->send(SubscribeMsg(SubscribeMsg::Content::FRAME));
+    ctx->get_connector()->send(SendFrameMsg(frame));
+
+    print_response(ctx);
+
+    ctx->get_connector()->send(SubscribeMsg(SubscribeMsg::Content::NONE));
+}
+
+void NodeSet4Reg::operator()(CommandCtx* ctx) {
+    H9frame frame;
+
+    frame.priority = H9frame::Priority::LOW;
+    frame.source_id = ctx->get_source_id();
+    frame.destination_id = reg->node->node_id;
+    frame.type = H9frame::Type::SET_REG;
+    frame.dlc = 5;
+    frame.data[0] = reg->reg_number;
+    frame.data[1] = value << 24;
+    frame.data[2] = value << 16;
+    frame.data[3] = value << 8;
+    frame.data[4] = value;
+
+    ctx->get_connector()->send(SubscribeMsg(SubscribeMsg::Content::FRAME));
+    ctx->get_connector()->send(SendFrameMsg(frame));
+
+    print_response(ctx);
+
     ctx->get_connector()->send(SubscribeMsg(SubscribeMsg::Content::NONE));
 }

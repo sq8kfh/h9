@@ -88,15 +88,44 @@ public:
     NodeRegExp* const reg;
     const int value;
     NodeSetReg(NodeRegExp* reg, int value): reg(reg), value(value) {
-        //std::cout << "NodeSetReg\n";
+    }
+
+    ~NodeSetReg() {
+        delete reg;
+    }
+    void print_response(CommandCtx* ctx);
+};
+
+class NodeSet1Reg: public NodeSetReg {
+public:
+    NodeSet1Reg(NodeRegExp* reg, int value): NodeSetReg(reg, value) {
     }
 
     void operator()(CommandCtx* ctx);
+};
 
-    ~NodeSetReg() {
-        //std::cout << "~NodeSetReg\n";
-        delete reg;
+class NodeSet2Reg: public NodeSetReg {
+public:
+    NodeSet2Reg(NodeRegExp* reg, int value): NodeSetReg(reg, value) {
     }
+
+    void operator()(CommandCtx* ctx);
+};
+
+class NodeSet3Reg: public NodeSetReg {
+public:
+    NodeSet3Reg(NodeRegExp* reg, int value): NodeSetReg(reg, value) {
+    }
+
+    void operator()(CommandCtx* ctx);
+};
+
+class NodeSet4Reg: public NodeSetReg {
+public:
+    NodeSet4Reg(NodeRegExp* reg, int value): NodeSetReg(reg, value) {
+    }
+
+    void operator()(CommandCtx* ctx);
 };
 
 #endif //H9_EXPRESSION_H
