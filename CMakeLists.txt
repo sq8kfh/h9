@@ -10,11 +10,11 @@ set(H9_BUS_CONFIG_FILE "./h9.cfg")
 set(H9_VERSION ${PROJECT_VERSION})
 
 find_package(PkgConfig REQUIRED)
-find_package(Flex 2.6.4 REQUIRED)
-find_package(Bison 3.4.1 REQUIRED)
+find_package(FLEX 2.6.1 REQUIRED)
+find_package(BISON 3.3.2 REQUIRED)
 
-pkg_check_modules(CONFUSE libconfuse)
-pkg_check_modules(LIBXML2 libxml-2.0)
+pkg_check_modules(CONFUSE libconfuse REQUIRED)
+pkg_check_modules(LIBXML2 libxml-2.0 REQUIRED)
 pkg_check_modules(READLINE readline>=8.0)
 
 find_program(XXD_EXECUTABLE xxd)
