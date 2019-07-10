@@ -76,7 +76,9 @@ void NodeGetReg::operator()(CommandCtx* ctx) {
                      && frame.type == H9frame::Type::ERROR
                      && frame.dlc == 1) {
 
-                std::cout << "Whoops, looks like something went wrong: " << static_cast<int>(frame.data[0]) << std::endl;
+                int err_num = static_cast<int>(frame.data[0]);
+                std::cout << "Whoops, looks like something went wrong: ";
+                std::cout << err_num << " - " << H9frame::error_to_string(H9frame::from_underlying<H9frame::Error>(err_num)) << std::endl;
                 break;
             }
         }
@@ -108,7 +110,9 @@ void NodeSetReg::print_response(CommandCtx* ctx) {
                      && frame.type == H9frame::Type::ERROR
                      && frame.dlc == 1) {
 
-                std::cout << "Whoops, looks like something went wrong: " << static_cast<int>(frame.data[0]) << std::endl;
+                int err_num = static_cast<int>(frame.data[0]);
+                std::cout << "Whoops, looks like something went wrong: ";
+                std::cout << err_num << " - " << H9frame::error_to_string(H9frame::from_underlying<H9frame::Error>(err_num)) << std::endl;
                 break;
             }
         }

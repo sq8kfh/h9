@@ -52,24 +52,33 @@ const char* H9frame::type_to_string(H9frame::Type type) {
         case Type::REG_VALUE: return "REG_VALUE";
         case Type::NODE_HEARTBEAT: return "NODE_HEARTBEAT";
         case Type::ERROR: return "ERROR";
-        case Type::U14: return "U14";
+        case Type::NODE_TURNED_ON: return "NODE_TURNED_ON";
         case Type::U15: return "U15";
         case Type::SET_REG: return "SET_REG";
         case Type::GET_REG: return "GET_REG";
         case Type::NODE_INFO: return "NODE_INFO";
-        case Type::NODE_RESET: return "NODE_RESET";
+        case Type::U19: return "U19";
         case Type::NODE_UPGRADE: return "NODE_UPGRADE";
         case Type::U21: return "U21";
         case Type::U22: return "U22";
         case Type::U23: return "U23";
         case Type::DISCOVERY: return "DISCOVERY";
-        case Type::NODE_TURNED_ON: return "NODE_TURNED_ON";
-        case Type::POWER_OFF: return "POWER_OFF";
+        case Type::NODE_RESET: return "NODE_RESET";
+        case Type::U26: return "U26";
         case Type::U27: return "U27";
         case Type::U29: return "U29";
         case Type::U30: return "U30";
         case Type::U28: return "U28";
         case Type::U31: return "U31";
+    }
+    return nullptr;
+}
+
+const char* H9frame::error_to_string(Error error) {
+    switch (error) {
+        case Error::INVALID_MSG: return "INVALID_MSG";
+        case Error::UNSUPPORTED_BOOTLOADER: return "UNSUPPORTED_BOOTLOADER";
+        case Error::INVALID_REGISTER: return "INVALID_REGISTER";
     }
     return nullptr;
 }

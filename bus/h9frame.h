@@ -32,24 +32,30 @@ public:
         REG_VALUE = 11,
         NODE_HEARTBEAT = 12,
         ERROR = 13,
-        U14 = 14,
+        NODE_TURNED_ON = 14,
         U15 = 15,
         SET_REG = 16,
         GET_REG = 17,
         NODE_INFO = 18,
-        NODE_RESET = 19,
+        U19 = 19,
         NODE_UPGRADE = 20,
         U21 = 21,
         U22 = 22,
         U23 = 23,
         DISCOVERY = 24,
-        NODE_TURNED_ON = 25,
-        POWER_OFF = 26,
+        NODE_RESET = 25,
+        U26 = 26,
         U27 = 27,
         U29 = 29,
         U30 = 30,
         U28 = 28,
         U31 = 31
+    };
+
+    enum class Error : std::uint8_t {
+        INVALID_MSG = 1,
+        UNSUPPORTED_BOOTLOADER = 2,
+        INVALID_REGISTER = 3,
     };
 
     constexpr static std::uint16_t BROADCAST_ID = 0x01ff;
@@ -87,6 +93,7 @@ public:
     }
 
     static const char* type_to_string(Type type);
+    static const char* error_to_string(Error error);
 };
 
 std::ostream& operator<<(std::ostream& os, const H9frame& frame);

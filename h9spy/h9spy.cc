@@ -43,9 +43,9 @@ void print_reg_value(const H9frame& frame) {
 }
 
 void print_frame(const H9frame& frame) {
+    std::cout << "    type name: " << H9frame::type_to_string(frame.type) << std::endl;
     if (frame.destination_id == H9frame::BROADCAST_ID)
         std::cout << "    destination: BROADCAST\n";
-    std::cout << "    type name: " << H9frame::type_to_string(frame.type) << std::endl;
     if (frame.type == H9frame::Type::REG_EXTERNALLY_CHANGED ||
         frame.type == H9frame::Type::REG_INTERNALLY_CHANGED ||
         frame.type == H9frame::Type::REG_VALUE_BROADCAST ||
@@ -55,6 +55,13 @@ void print_frame(const H9frame& frame) {
 
         std::cout << "    reg: " << static_cast<unsigned int>(frame.data[0]) << std::endl;
         print_reg_value(frame);
+    }
+    else if (frame.type == H9frame::Type::NODE_TURNED_ON) {
+        std::cout << "    node type: " << static_cast<unsigned int>(frame.data[0] << 8 | frame.data[1]) << std::endl;
+    }
+    else if (frame.type == H9frame::Type::ERROR) {
+        int err_num = static_cast<int>(frame.data[0]);
+        std::cout << "    error: " << err_num << " - " << H9frame::error_to_string(H9frame::from_underlying<H9frame::Error>(err_num)) << std::endl;
     }
 }
 
