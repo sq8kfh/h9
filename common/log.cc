@@ -3,7 +3,7 @@
  *
  * Created by SQ8KFH on 2019-05-14.
  *
- * Copyright (C) 2019 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2019-2020 Kamil Palkowski. All rights reserved.
  */
 
 #include "log.h"
@@ -47,6 +47,10 @@ void Log::stderr(const char *file_name, int line_number, const char* fmt, ...) c
     va_end(args);
 }
 
+void Log::stderr(const char *file_name, int line_number, const std::string &msg) const {
+    log(Level::STDERR, file_name, line_number, msg);
+}
+
 void Log::crit(const char *file_name, int line_number, const char* fmt, ...) const {
     va_list args;
     va_start(args, fmt);
@@ -54,6 +58,10 @@ void Log::crit(const char *file_name, int line_number, const char* fmt, ...) con
     vlog(Level::CRIT, file_name, line_number, fmt, args);
 
     va_end(args);
+}
+
+void Log::crit(const char *file_name, int line_number, const std::string &msg) const {
+    log(Level::CRIT, file_name, line_number, msg);
 }
 
 void Log::err(const char *file_name, int line_number, const char* fmt, ...) const {
@@ -65,6 +73,10 @@ void Log::err(const char *file_name, int line_number, const char* fmt, ...) cons
     va_end(args);
 }
 
+void Log::err(const char *file_name, int line_number, const std::string &msg) const {
+    log(Level::ERR, file_name, line_number, msg);
+}
+
 void Log::warn(const char *file_name, int line_number, const char* fmt, ...) const {
     va_list args;
     va_start(args, fmt);
@@ -72,6 +84,10 @@ void Log::warn(const char *file_name, int line_number, const char* fmt, ...) con
     vlog(Level::WARN, file_name, line_number, fmt, args);
 
     va_end(args);
+}
+
+void Log::warn(const char *file_name, int line_number, const std::string &msg) const {
+    log(Level::WARN, file_name, line_number, msg);
 }
 
 void Log::notice(const char *file_name, int line_number, const char* fmt, ...) const{
@@ -83,6 +99,10 @@ void Log::notice(const char *file_name, int line_number, const char* fmt, ...) c
     va_end(args);
 }
 
+void Log::notice(const char *file_name, int line_number, const std::string &msg) const {
+    log(Level::NOTICE, file_name, line_number, msg);
+}
+
 void Log::info(const char *file_name, int line_number, const char* fmt, ...) const {
     va_list args;
     va_start(args, fmt);
@@ -92,6 +112,10 @@ void Log::info(const char *file_name, int line_number, const char* fmt, ...) con
     va_end(args);
 }
 
+void Log::info(const char *file_name, int line_number, const std::string &msg) const {
+    log(Level::INFO, file_name, line_number, msg);
+}
+
 void Log::debug(const char *file_name, int line_number, const char* fmt, ...) const {
     va_list args;
     va_start(args, fmt);
@@ -99,6 +123,10 @@ void Log::debug(const char *file_name, int line_number, const char* fmt, ...) co
     vlog(Level::DEBUG, file_name, line_number, fmt, args);
 
     va_end(args);
+}
+
+void Log::debug(const char *file_name, int line_number, const std::string &msg) const {
+    log(Level::DEBUG, file_name, line_number, msg);
 }
 
 void Log::vlog(const Level& level, const char *file_name, int line_number, const char* fmt, va_list args) const {

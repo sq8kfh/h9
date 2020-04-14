@@ -3,7 +3,7 @@
  *
  * Created by SQ8KFH on 2019-05-14.
  *
- * Copyright (C) 2019 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2019-2020 Kamil Palkowski. All rights reserved.
  */
 
 #ifndef _H9_LOG_H_
@@ -45,12 +45,19 @@ public:
     void set_to_stderr(bool to_stderr);
 
     void stderr(const char *file_name, int line_number, const char* fmt, ...) const;
+    void stderr(const char *file_name, int line_number, const std::string &msg) const;
     void crit(const char *file_name, int line_number, const char* fmt, ...) const;
+    void crit(const char *file_name, int line_number, const std::string &msg) const;
     void err(const char *file_name, int line_number, const char* fmt, ...) const;
+    void err(const char *file_name, int line_number, const std::string &msg) const;
     void warn(const char *file_name, int line_number, const char* fmt, ...) const;
+    void warn(const char *file_name, int line_number, const std::string &msg) const;
     void notice(const char *file_name, int line_number, const char* fmt, ...) const;
+    void notice(const char *file_name, int line_number, const std::string &msg) const;
     void info(const char *file_name, int line_number, const char* fmt, ...) const;
+    void info(const char *file_name, int line_number, const std::string &msg) const;
     void debug(const char *file_name, int line_number, const char* fmt, ...) const;
+    void debug(const char *file_name, int line_number, const std::string &msg) const;
 
     void vlog(const Level& level, const char *file_name, int line_number, const char* fmt, va_list args) const;
 
