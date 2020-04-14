@@ -75,7 +75,7 @@ void TcpClient::send(GenericMsg& msg) {
     int res = h9socket.send(raw_msg);
 
     if (res <= 0) {
-        if (res == 0 || errno == ECONNRESET || errno == EPIPE) {
+        if (res == 0 || errno == ECONNRESET || errno == EPIPE || errno == EBADF) {
             close();
             return;
         }
