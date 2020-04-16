@@ -3,7 +3,7 @@
  *
  * Created by SQ8KFH on 2019-04-17.
  *
- * Copyright (C) 2019 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2019-2020 Kamil Palkowski. All rights reserved.
  */
 
 #include <ctime>
@@ -13,7 +13,7 @@
 #include "logger.h"
 
 void Ctx::raise_verbose_level(unsigned int how_much) {
-    log().set_level(log().get_level() + how_much);
+    logger().set_level(logger().get_level() + how_much);
 }
 
 Ctx::Ctx(std::string app_name, std::string app_desc):
@@ -21,7 +21,7 @@ Ctx::Ctx(std::string app_name, std::string app_desc):
         _app_name(std::move(app_name)),
         _app_desc(std::move(app_desc)),
         start_time(std::time(nullptr)) {
-    log().set_debug(_debug);
+    logger().set_debug(_debug);
 }
 
 void Ctx::enable_debug(bool debug) {
@@ -30,20 +30,20 @@ void Ctx::enable_debug(bool debug) {
 #else
     _debug = false;
 #endif
-    log().set_debug(debug);
+    logger().set_debug(debug);
 }
 
-inline bool Ctx::is_debug() {
+inline bool Ctx::cfg_debug() {
     return _debug;
 }
 
-Log& Ctx::log() {
+Log& Ctx::logger() {
     return Logger::default_log;
 }
 
-Log& Ctx::log(const std::string& log_name) {
+/*Log& Ctx::log(const std::string& log_name) {
     return Logger::default_log;
-}
+}*/
 
 time_t Ctx::get_start_time() {
     return start_time;

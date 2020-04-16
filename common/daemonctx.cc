@@ -3,18 +3,18 @@
  *
  * Created by SQ8KFH on 2019-04-17.
  *
- * Copyright (C) 2019 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2019-2020 Kamil Palkowski. All rights reserved.
  */
 
 #include "daemonctx.h"
-
 #include <cxxopts/cxxopts.hpp>
+#include "common/logger.h"
+
 
 DaemonCtx::DaemonCtx(const std::string& app_name, const std::string& app_desc): Ctx(app_name, app_desc) {
-
 }
 
-void DaemonCtx::load_configuration(int argc, char* argv[]) {
+void DaemonCtx::load(int argc, char* argv[]) {
     cxxopts::Options options = {_app_name, _app_desc};
     options.add_options("other")
 #ifdef H9_DEBUG
@@ -25,7 +25,9 @@ void DaemonCtx::load_configuration(int argc, char* argv[]) {
             ("V,version", "Show version")
             ;
     options.add_options("daemon")
-            ("c,config", "Config file", cxxopts::value<std::string>()->default_value(H9_BUS_CONFIG_FILE))
+            ("c,config", "Config file", cxxopts::value<std::string>()->default_value(H9_CONFIG_PATH + _app_name + ".conf"))
+            ("D,daemonize", "Run in the background")
+            ("p,pidfile", "PID file", cxxopts::value<std::string>())
             ;
 
     cxxopts::ParseResult result = options.parse(argc, argv);
@@ -36,7 +38,7 @@ void DaemonCtx::load_configuration(int argc, char* argv[]) {
 
     if (result.count("version")) {
         std::cerr << _app_name << " version " << H9_VERSION << " by SQ8KFH." << std::endl;
-        std::cerr << "Copyright (C) 2017-2019 Kamil Palkowski. All rights reserved." << std::endl;
+        std::cerr << "Copyright (C) 2017-2020 Kamil Palkowski. All rights reserved." << std::endl;
         exit(EXIT_SUCCESS);
     }
 
@@ -47,14 +49,12 @@ void DaemonCtx::load_configuration(int argc, char* argv[]) {
 #endif
     raise_verbose_level(result.count("verbose"));
 
-    if (result.count("config")) {
-        std::cout << "config: " << result["config"].as<std::string>() << std::endl;
+    bool override_daemonize = result.count("daemonize") > 0;
+    std::string override_pidfile;
+
+    if (result.count("pidfile")) {
+        override_pidfile = std::string(result["pidfile"].as<std::string>());
     }
 
-
-
+    load_configuration(result["config"].as<std::string>(), override_daemonize, override_pidfile);
 }
-
-//T& DaemonCtx<T>::get_cfg() {
-//
-//}

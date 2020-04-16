@@ -3,7 +3,7 @@
  *
  * Created by SQ8KFH on 2019-05-14.
  *
- * Copyright (C) 2019 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2019-2020 Kamil Palkowski. All rights reserved.
  */
 
 #ifndef _H9_SERVERMGR_H_
@@ -14,7 +14,7 @@
 #include <queue>
 #include <functional>
 #include "socketmgr.h"
-#include "common/ctx.h"
+#include "busctx.h"
 #include "protocol/genericmsg.h"
 #include "busmgr.h"
 
@@ -47,7 +47,7 @@ private:
     EventCallback create_event_callback();
 public:
     explicit ServerMgr(SocketMgr* socket_mgr);
-    void load_config(Ctx *ctx);
+    void load_config(BusCtx *ctx);
     std::queue<std::pair<int, GenericMsg>>& get_recv_queue();
     void client_subscription(int client_socket, int active);
     void send_msg(int client_socket, GenericMsg& msg);

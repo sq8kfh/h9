@@ -3,7 +3,7 @@
  *
  * Created by SQ8KFH on 2019-04-09.
  *
- * Copyright (C) 2019 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2019-2020 Kamil Palkowski. All rights reserved.
  */
 
 #include "socketcan.h"
@@ -17,9 +17,8 @@
 #include <linux/can.h>
 #include <linux/can/raw.h>
 
-SocketCAN::SocketCAN(BusMgr::EventCallback event_callback):
-        Driver(std::move(event_callback)) {
-
+SocketCAN::SocketCAN(BusMgr::EventCallback event_callback, const std::string& interface):
+        Driver(std::move(event_callback)), _interface(interface) {
 }
 
 void SocketCAN::open() {
@@ -31,7 +30,7 @@ void SocketCAN::open() {
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
 
-    strcpy(ifr.ifr_name, "can0");
+    strcpy(ifr.ifr_name, _interface.c_str());
     if (ioctl(sockfd, SIOCGIFINDEX, &ifr) < 0) {
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }

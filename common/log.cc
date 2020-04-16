@@ -169,7 +169,17 @@ void Log::log(const Log::Level& level, const std::string& msg) const {
         std::cerr << msg << std::endl;
     }
     else {
-        std::cout << msg << std::endl;
+        const char *level_name;
+        switch(level) {
+            case Level::CRIT: level_name = "CRITICAL"; break;
+            case Level::ERR: level_name = "ERROR"; break;
+            case Level::WARN: level_name = "WARNING"; break;
+            case Level::NOTICE: level_name = "NOTICE"; break;
+            case Level::INFO: level_name = "INFO"; break;
+            case Level::DEBUG: level_name = "DEBUG"; break;
+            case Level::STDERR: level_name = "STDERR"; break;
+        }
+        std::cout << '[' << level_name << "] " << msg << std::endl;
     }
 
     /*

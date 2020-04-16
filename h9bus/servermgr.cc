@@ -3,7 +3,7 @@
  *
  * Created by SQ8KFH on 2019-05-14.
  *
- * Copyright (C) 2019 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2019-2020 Kamil Palkowski. All rights reserved.
  */
 
 #include "servermgr.h"
@@ -53,11 +53,11 @@ ServerMgr::ServerMgr(SocketMgr* socket_mgr):
         tcp_server(nullptr) {
 }
 
-void ServerMgr::load_config(Ctx *ctx) {
-    tcp_server = new TcpServer(create_event_callback(), 7878);
+void ServerMgr::load_config(BusCtx *ctx) {
+    tcp_server = new TcpServer(create_event_callback(), ctx->cfg_server_port());
     _socket_mgr->register_socket(tcp_server);
 
-    msg_log = ctx->log("h9msg");
+    msg_log = ctx->logger();
 }
 
 std::queue<std::pair<int, GenericMsg>>& ServerMgr::get_recv_queue() {

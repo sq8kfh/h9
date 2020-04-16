@@ -3,7 +3,7 @@
  *
  * Created by SQ8KFH on 2019-04-17.
  *
- * Copyright (C) 2019 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2019-2020 Kamil Palkowski. All rights reserved.
  */
 
 #ifndef _H9_CTX_H_
@@ -23,13 +23,13 @@ protected:
     const std::string _app_name;
     const std::string _app_desc;
     void raise_verbose_level(unsigned int how_much);
-public:
     Ctx(std::string app_name, std::string app_desc);
     void enable_debug(bool debug);
-    inline bool is_debug();
+public:
+    inline bool cfg_debug();
 
-    Log& log();
-    Log& log(const std::string& log_name);
+    Log& logger();
+    //Log& log(const std::string& log_name);
     time_t get_start_time();
 };
 

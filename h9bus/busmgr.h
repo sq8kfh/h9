@@ -3,10 +3,8 @@
  *
  * Created by SQ8KFH on 2019-05-10.
  *
- * Copyright (C) 2019 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2019-2020 Kamil Palkowski. All rights reserved.
  */
-
-#include <utility>
 
 #ifndef _H9_BUS_H_
 #define _H9_BUS_H_
@@ -14,8 +12,11 @@
 #include "config.h"
 #include <map>
 #include <queue>
+#include <utility>
+#include <confuse.h>
 #include "socketmgr.h"
-#include "common/ctx.h"
+#include "framelogger.h"
+#include "busctx.h"
 #include "bus/h9frame.h"
 
 
@@ -38,7 +39,7 @@ private:
     std::queue<std::tuple<bool, std::string, H9frame>> frame_queue; //RECV/!SEND, bus id, frame
 
     std::map<std::string, Driver*> dev;
-    Log frame_log;
+    FrameLogger *frame_log;
 
     void recv_frame_callback(const H9frame& frame, const std::string& bus_id);
     void send_frame_callback(const H9frame& frame, const std::string& bus_id);
@@ -48,14 +49,19 @@ private:
     void send_turned_on_broadcast();
 
     std::string frame_to_log_string(const std::string& bus_id, const H9frame& frame);
+
+    static cfg_opt_t cfg_bus_sec[];
 public:
+    static cfg_opt_t cfg_section;
     enum class CounterType {
         SEND_FRAMES,
         RECEIVED_FRAMES,
     };
 
     explicit BusMgr(SocketMgr *socket_mgr);
-    void load_config(Ctx *ctx);
+    ~BusMgr();
+
+    void load_config(BusCtx *ctx);
     std::queue<std::tuple<bool, std::string, H9frame>>& get_recv_queue();
     void send_frame(const H9frame& frame, const std::string& bus_id = std::string("*"));
 

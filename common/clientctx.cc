@@ -3,7 +3,7 @@
  *
  * Created by SQ8KFH on 2019-04-17.
  *
- * Copyright (C) 2019 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2019-2020 Kamil Palkowski. All rights reserved.
  */
 
 #include "clientctx.h"
@@ -94,7 +94,7 @@ void ClientCtx::load_configuration(const cxxopts::ParseResult& opts) {
             }
         }
     }
-    log().set_to_stderr(true);
+    logger().set_to_stderr(true);
 }
 
 void ClientCtx::add_options(const std::string& opts,
@@ -137,7 +137,7 @@ cxxopts::ParseResult ClientCtx::parse_options(int argc, char* argv[]) {
         if (result.count("version"))
         {
             std::cerr << _app_name << " version " << H9_VERSION << " by SQ8KFH." << std::endl;
-            std::cerr << "Copyright (C) 2017-2019 Kamil Palkowski. All rights reserved." << std::endl;
+            std::cerr << "Copyright (C) 2017-2020 Kamil Palkowski. All rights reserved." << std::endl;
             exit(EXIT_SUCCESS);
         }
 

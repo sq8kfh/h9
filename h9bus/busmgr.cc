@@ -3,12 +3,11 @@
  *
  * Created by SQ8KFH on 2019-05-10.
  *
- * Copyright (C) 2019 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2019-2020 Kamil Palkowski. All rights reserved.
  */
 
 #include "busmgr.h"
 
-//#include <iostream>
 #include <sstream>
 #include <iomanip>
 
@@ -17,6 +16,7 @@
 #include "drivers/slcan.h"
 #include "drivers/socketcan.h"
 #include "common/logger.h"
+
 
 void BusMgr::EventCallback::on_fame_recv(const H9frame& frame) {
     _bus_mgr->recv_frame_callback(frame, _bus_id);
@@ -67,54 +67,51 @@ std::string BusMgr::frame_to_log_string(const std::string& bus_id, const H9frame
     return frame_string.str();
 }
 
-BusMgr::BusMgr(SocketMgr *socket_mgr): _socket_mgr(socket_mgr) {
+BusMgr::BusMgr(SocketMgr *socket_mgr): _socket_mgr(socket_mgr), frame_log(nullptr) {
 }
 
-void BusMgr::load_config(Ctx *ctx) {
-    frame_log = ctx->log("h9frame");
-    //Loop *loop = new Loop(std::move(create_event_callback("can3")));
-    //dev["can3"] = loop;
-    //Dummy *dummy = new Dummy(create_event_callback("can1"));
-    //dev["can1"] = dummy;
-    //Slcan *slcan = new Slcan(create_event_callback("can2"), "/dev/tty.usbserial-DA002NQW");
-    //dev["can2"] = slcan;
+BusMgr::~BusMgr() {
+    delete frame_log;
+}
 
+void BusMgr::load_config(BusCtx *ctx) {
+    frame_log = new FrameLogger(ctx->cfg_log_send_logfile(),ctx->cfg_log_recv_logfile());
+
+    for(std::string bus_name: ctx->cfg_bus_list()) {
+        std::string driver = ctx->cfg_bus_driver(bus_name);
+        std::string cs = ctx->cfg_bus_connection_string(bus_name);
+
+        if (driver == "dummy") {
+            Dummy *dummy = new Dummy(create_event_callback(bus_name));
+            dev[bus_name] = dummy;
+            dummy->open();
+            _socket_mgr->register_socket(dummy);
+        }
+        else if (driver == "loop") {
+            Loop *loop = new Loop(std::move(create_event_callback(bus_name)));
+            dev[bus_name] = loop;
+            loop->open();
+            _socket_mgr->register_socket(loop);
+        }
+        else if (driver == "slcan") {
+            Slcan *slcan = new Slcan(create_event_callback(bus_name), cs);
+            dev[bus_name] = slcan;
+            slcan->open();
+            _socket_mgr->register_socket(slcan);
+        }
 #if defined(__linux__)
-    SocketCAN *socketcan = new SocketCAN(create_event_callback("can0"));
-    dev["can0"] = socketcan;
-    socketcan->open();
-    _socket_mgr->register_socket(socketcan);
-#elif defined(__APPLE__)
-    Slcan *slcan = new Slcan(create_event_callback("can2"), "/dev/tty.usbserial-DA002NQW");
-    dev["can2"] = slcan;
-    slcan->open();
-    _socket_mgr->register_socket(slcan);
+        else if (driver == "socketcan") {
+            SocketCAN *socketcan = new SocketCAN(create_event_callback(bus_name), cs);
+            dev[bus_name] = socketcan;
+            socketcan->open();
+            _socket_mgr->register_socket(socketcan);
+        }
 #endif
-
-    //loop->open();
-    //_socket_mgr->register_socket(loop);
-    //dummy->open();
-    //_socket_mgr->register_socket(dummy);
-    //slcan->open();
-    //_socket_mgr->register_socket(slcan);
-
-    /*H9frame tmp;
-    tmp.priority = H9frame::Priority::LOW;
-    tmp.source_id = 16;
-    tmp.destination_id = 0;
-    tmp.seqnum = 0;
-    tmp.type = H9frame::Type::REG_VALUE;
-    tmp.dlc = 2;
-    tmp.data[0] = 0x0a;
-    tmp.data[1] = 1;
-    loop->send_frame(tmp);
-    dummy->send_frame(tmp);
-    slcan->send_frame(tmp);
-    tmp.source_id = 32;
-    slcan->send_frame(tmp);
-    slcan->send_frame(tmp);
-    slcan->send_frame(tmp);
-    loop->send_frame(tmp);*/
+        else {
+            h9_log_crit("Unsupported bus(%s) driver: %s", bus_name.c_str(), driver.c_str());
+            exit(EXIT_FAILURE);
+        }
+    }
 
     send_turned_on_broadcast();
 }
@@ -124,12 +121,14 @@ BusMgr::EventCallback BusMgr::create_event_callback(const std::string &bus_id) {
 }
 
 void BusMgr::recv_frame_callback(const H9frame& frame, const std::string& bus_id) {
-    frame_log.log(std::string("recv ") + frame_to_log_string(bus_id, frame));
+    frame_log->log_recv(bus_id, frame);
+    h9_log_debug(std::string("recv frame: ") + frame_to_log_string(bus_id, frame));
     frame_queue.push(std::make_tuple(true, bus_id, frame));
 }
 
 void BusMgr::send_frame_callback(const H9frame& frame, const std::string& bus_id) {
-    frame_log.log(std::string("send ") + frame_to_log_string(bus_id, frame));
+    frame_log->log_send(bus_id, frame);
+    h9_log_debug(std::string("send frame: ") + frame_to_log_string(bus_id, frame));
     frame_queue.push(std::make_tuple(false, bus_id, frame));
 }
 

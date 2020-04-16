@@ -3,7 +3,7 @@
  *
  * Created by SQ8KFH on 2019-04-09.
  *
- * Copyright (C) 2019 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2019-2020 Kamil Palkowski. All rights reserved.
  *
  * ========================================================
  *
@@ -19,8 +19,10 @@
 
 
 class SocketCAN: public Driver {
+private:
+    const std::string _interface;
 public:
-    explicit SocketCAN(BusMgr::EventCallback event_callback);
+    explicit SocketCAN(BusMgr::EventCallback event_callback, const std::string& interface);
     void open();
 private:
     void recv_data();

@@ -5,8 +5,7 @@ project(h9 VERSION 0.2.0)
 set(CMAKE_CXX_STANDARD 14)
 
 set(H9_USER_CONFIG_FILE "~/.h9")
-set(H9D_CONFIG_FILE "./h9d.cfg")
-set(H9_BUS_CONFIG_FILE "./h9.cfg")
+set(H9_CONFIG_PATH "./")
 set(H9_VERSION ${PROJECT_VERSION})
 
 find_package(PkgConfig REQUIRED)
@@ -22,7 +21,7 @@ find_program(XXD_EXECUTABLE xxd)
 configure_file(config.h.in config.h)
 
 include_directories(${CMAKE_SOURCE_DIR}/thirdparty/ ${CMAKE_SOURCE_DIR})
-#include_directories(/usr/local/include/ ${CMAKE_SOURCE_DIR}/thirdparty/ ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR} ${LIBXML2_INCLUDE_DIR})
+
 link_directories(/usr/local/lib/ /opt/local/lib/)
 
 add_subdirectory(bus)
