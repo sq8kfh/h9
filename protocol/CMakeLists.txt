@@ -3,13 +3,13 @@ add_library(PROTOCOL OBJECT
         genericmsg.cc
         genericmsg.h
         concretizemsg.h
-        framereceivedmsg.cc
-        framereceivedmsg.h
+        framemsg.cc
+        framemsg.h
         sendframemsg.cc
         sendframemsg.h
         h9connector.cc
         h9connector.h
-        framemsg.h
+        genericframemsg.h
         subscribemsg.cc
         subscribemsg.h
         errormsg.cc

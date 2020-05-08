@@ -3,7 +3,7 @@
  *
  * Created by SQ8KFH on 2019-04-28.
  *
- * Copyright (C) 2019 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2019-2020 Kamil Palkowski. All rights reserved.
  */
 
 #ifndef _H9_H9FRAME_H_
@@ -46,9 +46,9 @@ public:
         NODE_RESET = 25,
         U26 = 26,
         U27 = 27,
+        U28 = 28,
         U29 = 29,
         U30 = 30,
-        U28 = 28,
         U31 = 31
     };
 

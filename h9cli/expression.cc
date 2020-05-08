@@ -3,12 +3,12 @@
  *
  * Created by SQ8KFH on 2019-06-29.
  *
- * Copyright (C) 2019 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2019-2020 Kamil Palkowski. All rights reserved.
  */
 
 #include "expression.h"
 #include "bus/h9frame.h"
-#include "protocol/framereceivedmsg.h"
+#include "protocol/framemsg.h"
 #include "protocol/sendframemsg.h"
 #include "protocol/subscribemsg.h"
 
@@ -55,8 +55,8 @@ void NodeGetReg::operator()(CommandCtx* ctx) {
     ctx->get_connector()->send(SendFrameMsg(frame));
     while (true) {
         GenericMsg raw_msg = ctx->get_connector()->recv();
-        if (raw_msg.get_type() == GenericMsg::Type::FRAME_RECEIVED) {
-            FrameReceivedMsg msg = std::move(raw_msg);
+        if (raw_msg.get_type() == GenericMsg::Type::FRAME) {
+            FrameMsg msg = std::move(raw_msg);
             H9frame frame = msg.get_frame();
 
             if (frame.source_id == reg->node->node_id
@@ -89,8 +89,8 @@ void NodeGetReg::operator()(CommandCtx* ctx) {
 void NodeSetReg::print_response(CommandCtx* ctx) {
     while (true) {
         GenericMsg raw_msg = ctx->get_connector()->recv();
-        if (raw_msg.get_type() == GenericMsg::Type::FRAME_RECEIVED) {
-            FrameReceivedMsg msg = std::move(raw_msg);
+        if (raw_msg.get_type() == GenericMsg::Type::FRAME) {
+            FrameMsg msg = std::move(raw_msg);
             H9frame frame = msg.get_frame();
 
             if (frame.source_id == reg->node->node_id

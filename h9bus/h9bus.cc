@@ -9,6 +9,7 @@
 #include "config.h"
 #include <functional>
 #include <cstdlib>
+#include <cstring>
 #include <unistd.h>
 #include "common/logger.h"
 #include "busctx.h"
@@ -49,7 +50,7 @@ int main(int argc, char **argv) {
             return EXIT_FAILURE;
         }
         if (setuid(ctx.cfg_drop_privileges_uid()) != 0) {
-            h9_log_crit("Unable to drop user privileges: %S", strerror(errno));
+            h9_log_crit("Unable to drop user privileges: %s", strerror(errno));
             return EXIT_FAILURE;
         }
     }

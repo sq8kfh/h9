@@ -18,6 +18,7 @@
 #include "framelogger.h"
 #include "busctx.h"
 #include "bus/h9frame.h"
+#include "busframe.h"
 
 
 class Driver;
@@ -31,18 +32,18 @@ public:
     public:
         EventCallback(BusMgr *const bus_mgr, std::string bus_id): _bus_mgr(bus_mgr), _bus_id(std::move(bus_id)) {};
         void on_fame_recv(const H9frame& frame);
-        void on_fame_send(const H9frame& frame);
+        void on_fame_send(BusFrame *busframe);
         void on_close();
     };
 private:
     SocketMgr * const _socket_mgr;
-    std::queue<std::tuple<bool, std::string, H9frame>> frame_queue; //RECV/!SEND, bus id, frame
+    std::queue<std::tuple<std::string, std::string, H9frame>> frame_queue; //origin, endpoint, frame
 
     std::map<std::string, Driver*> dev;
     FrameLogger *frame_log;
 
-    void recv_frame_callback(const H9frame& frame, const std::string& bus_id);
-    void send_frame_callback(const H9frame& frame, const std::string& bus_id);
+    void recv_frame_callback(const H9frame& frame, const std::string& endpoint);
+    void send_frame_callback(BusFrame *busframe, const std::string& endpoint);
     void driver_close_callback(const std::string& bus_id);
     EventCallback create_event_callback(const std::string& bus_id);
 
@@ -62,8 +63,8 @@ public:
     ~BusMgr();
 
     void load_config(BusCtx *ctx);
-    std::queue<std::tuple<bool, std::string, H9frame>>& get_recv_queue();
-    void send_frame(const H9frame& frame, const std::string& bus_id = std::string("*"));
+    std::queue<std::tuple<std::string, std::string, H9frame>>& get_recv_queue();
+    void send_frame(const H9frame& frame, const std::string& origin, const std::string& endpoint = "");
 
     std::vector<std::string> get_dev_list();
     std::uint32_t get_dev_counter(const std::string& dev_name, CounterType counter);

@@ -114,5 +114,5 @@ void SocketCAN::send_data(const H9frame& frame) {
         }
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
-    on_frame_send(frame);
+    on_frame_send();
 }

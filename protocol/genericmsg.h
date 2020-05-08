@@ -3,7 +3,7 @@
  *
  * Created by SQ8KFH on 2019-05-16.
  *
- * Copyright (C) 2019 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2019-2020 Kamil Palkowski. All rights reserved.
  */
 
 #ifndef _H9_GENERICMSG_H_
@@ -19,7 +19,7 @@ class GenericMsg {
 public:
     enum class Type {
         GENERIC = 0,
-        FRAME_RECEIVED,
+        FRAME,
         SEND_FRAME,
         SUBSCRIBE,
         ERROR,

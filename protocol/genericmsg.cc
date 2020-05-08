@@ -3,7 +3,7 @@
  *
  * Created by SQ8KFH on 2019-05-16.
  *
- * Copyright (C) 2019 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2019-2020 Kamil Palkowski. All rights reserved.
  */
 
 #include "genericmsg.h"
@@ -28,8 +28,8 @@ GenericMsg::GenericMsg(GenericMsg::Type msg_type) {
         case Type::GENERIC:
             throw std::invalid_argument("Trying create a GENERIC message");
             break;
-        case Type::FRAME_RECEIVED:
-            node = xmlNewNode(nullptr, reinterpret_cast<xmlChar const *>("frame_received"));
+        case Type::FRAME:
+            node = xmlNewNode(nullptr, reinterpret_cast<xmlChar const *>("frame"));
             break;
         case Type::SEND_FRAME:
             node = xmlNewNode(nullptr, reinterpret_cast<xmlChar const *>("send_frame"));
@@ -90,8 +90,8 @@ GenericMsg::Type GenericMsg::get_type() {
     assert(node);
 
     if (node) {
-        if (xmlStrcmp(node->name,reinterpret_cast<xmlChar const *>("frame_received")) == 0)
-            return Type::FRAME_RECEIVED;
+        if (xmlStrcmp(node->name,reinterpret_cast<xmlChar const *>("frame")) == 0)
+            return Type::FRAME;
         else if (xmlStrcmp(node->name,reinterpret_cast<xmlChar const *>("send_frame")) == 0)
             return Type::SEND_FRAME;
         else if (xmlStrcmp(node->name,reinterpret_cast<xmlChar const *>("subscribe")) == 0)

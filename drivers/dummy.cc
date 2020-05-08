@@ -3,7 +3,7 @@
  *
  * Created by SQ8KFH on 2019-04-28.
  *
- * Copyright (C) 2019 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2019-2020 Kamil Palkowski. All rights reserved.
  */
 
 #include "dummy.h"
@@ -45,5 +45,5 @@ void Dummy::recv_data() {
 }
 
 void Dummy::send_data(const H9frame& frame) {
-    on_frame_send(frame);
+    on_frame_send();
 }

@@ -3,7 +3,7 @@
  *
  * Created by SQ8KFH on 2019-05-18.
  *
- * Copyright (C) 2019 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2019-2020 Kamil Palkowski. All rights reserved.
  */
 
 #include "eventmgr.h"
@@ -13,7 +13,7 @@
 #include "busmgr.h"
 #include "common/logger.h"
 #include "protocol/errormsg.h"
-#include "protocol/framereceivedmsg.h"
+#include "protocol/framemsg.h"
 #include "protocol/methodcallmsg.h"
 #include "protocol/methodresponsemsg.h"
 #include "protocol/sendframemsg.h"
@@ -29,7 +29,7 @@ EventMgr::EventMgr(DaemonCtx* ctx, BusMgr* bus_mgr, ServerMgr* server_mgr):
 void EventMgr::flush_frame_queue() {
     auto& frame_queue = _bus_mgr->get_recv_queue();
     while (!frame_queue.empty()) {
-        flush_frame(std::get<0>(frame_queue.front()),std::get<1>(frame_queue.front()),  std::get<2>(frame_queue.front()));
+        flush_frame(std::get<0>(frame_queue.front()),std::get<1>(frame_queue.front()), std::get<2>(frame_queue.front()));
         frame_queue.pop();
     }
 }
@@ -47,9 +47,9 @@ void EventMgr::flush_all() {
     flush_msg_queue();
 }
 
-void EventMgr::flush_frame(bool recv_not_send, const std::string& bus_id, const H9frame& frame) {
-    h9_log_debug("EventMgr::flush_frame(%s, ?)", bus_id.c_str());
-    FrameReceivedMsg msg(frame);
+void EventMgr::flush_frame(const std::string& origin, const std::string& endpoint, const H9frame& frame) {
+    h9_log_debug("EventMgr::flush_frame(%s, ?)", endpoint.c_str());
+    FrameMsg msg(frame, origin, endpoint);
     _server_mgr->send_msg_to_subscriber(msg);
 }
 
@@ -59,7 +59,7 @@ void EventMgr::flush_msg(int client_socket, GenericMsg& msg) {
         case GenericMsg::Type::SEND_FRAME: {
             SendFrameMsg sf_msg = std::move(msg);
             H9frame tmp = sf_msg.get_frame();
-            _bus_mgr->send_frame(tmp);
+            _bus_mgr->send_frame(tmp, std::string("tcp#") + std::to_string(client_socket));
             break;
         }
         case GenericMsg::Type::SUBSCRIBE: {

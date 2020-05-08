@@ -5,20 +5,20 @@
             <xs:choice minOccurs="1" maxOccurs="1">
                 <xs:element name="subscribe">
                     <xs:complexType>
-                        <xs:attribute name="content" type="xs:string" use="required" />
+                        <xs:attribute name="content" type="xs:string" use="required"/>
                     </xs:complexType>
                 </xs:element>
-                <xs:element name="send_frame" type="h9frame_t"/>
-                <xs:element name="frame_received" type="h9frame_t"/>
+                <xs:element name="send_frame" type="h9sendframe_t"/>
+                <xs:element name="frame" type="h9frame_t"/>
                 <xs:element name="error">
                     <xs:complexType>
-                        <xs:attribute name="errnum" type="xs:nonNegativeInteger" use="required" />
-                        <xs:attribute name="name" type="xs:string" />
-                        <xs:attribute name="msg" type="xs:string" />
+                        <xs:attribute name="errnum" type="xs:nonNegativeInteger" use="required"/>
+                        <xs:attribute name="name" type="xs:string"/>
+                        <xs:attribute name="msg" type="xs:string"/>
                     </xs:complexType>
                 </xs:element>
-                <xs:element name="methodcall" type="methodcall_t" />
-                <xs:element name="methodresponse" type="methodresponse_t" />
+                <xs:element name="methodcall" type="methodcall_t"/>
+                <xs:element name="methodresponse" type="methodresponse_t"/>
             </xs:choice>
 
             <xs:attribute name="version" use="required">
@@ -39,7 +39,7 @@
             </xs:choice>
         </xs:sequence>
 
-        <xs:attribute name="name" type="xs:string" use="required" />
+        <xs:attribute name="name" type="xs:string" use="required"/>
     </xs:complexType>
 
     <xs:complexType name="methodresponse_t">
@@ -50,13 +50,13 @@
             </xs:choice>
         </xs:sequence>
 
-        <xs:attribute name="name" type="xs:string" use="required" />
+        <xs:attribute name="name" type="xs:string" use="required"/>
     </xs:complexType>
 
     <xs:complexType name="value_t">
         <xs:simpleContent>
             <xs:extension base="xs:string">
-                <xs:attribute name="name" type="xs:string" />
+                <xs:attribute name="name" type="xs:string"/>
             </xs:extension>
         </xs:simpleContent>
     </xs:complexType>
@@ -65,10 +65,11 @@
         <xs:sequence minOccurs="0" maxOccurs="unbounded">
             <xs:element name="value" type="value_t"/>
         </xs:sequence>
-        <xs:attribute name="name" type="xs:string" />
+        <xs:attribute name="name" type="xs:string"/>
     </xs:complexType>
 
-    <xs:complexType name="h9frame_t">
+    <xs:complexType name="h9sendframe_t">
+        <xs:attribute name="endpont" type="xs:string" use="optional"/>
         <xs:attribute name="priority" use="required">
             <xs:simpleType>
                 <xs:restriction base="xs:string">
@@ -119,6 +120,14 @@
                 </xs:restriction>
             </xs:simpleType>
         </xs:attribute>
-        <xs:attribute name="data" type="xs:hexBinary" />
+        <xs:attribute name="data" type="xs:hexBinary"/>
+    </xs:complexType>
+
+    <xs:complexType name="h9frame_t">
+        <xs:complexContent>
+            <xs:extension base="h9sendframe_t">
+                <xs:attribute name="origin" type="xs:string" use="required"/>
+            </xs:extension>
+        </xs:complexContent>
     </xs:complexType>
 </xs:schema>

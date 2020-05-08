@@ -28,7 +28,7 @@ public:
     void flush_frame_queue();
     void flush_msg_queue();
     void flush_all();
-    void flush_frame(bool recv_not_send, const std::string& bus_id, const H9frame& frame);
+    void flush_frame(const std::string& origin, const std::string& endpoint, const H9frame& frame);
     void flush_msg(int client_socket, GenericMsg& msg);
     void cron();
 };

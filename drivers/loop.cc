@@ -3,7 +3,7 @@
  *
  * Created by SQ8KFH on 2019-04-28.
  *
- * Copyright (C) 2019 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2019-2020 Kamil Palkowski. All rights reserved.
  */
 
 #include <system_error>
@@ -49,6 +49,6 @@ void Loop::send_data(const H9frame& frame) {
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
     else {
-        on_frame_send(frame);
+        on_frame_send();
     }
 }

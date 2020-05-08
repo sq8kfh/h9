@@ -3,7 +3,7 @@
  *
  * Created by SQ8KFH on 2019-04-09.
  *
- * Copyright (C) 2019 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2019-2020 Kamil Palkowski. All rights reserved.
  */
 
 #include "config.h"
@@ -12,7 +12,7 @@
 
 #include "protocol/h9connector.h"
 #include "protocol/subscribemsg.h"
-#include "protocol/framereceivedmsg.h"
+#include "protocol/framemsg.h"
 #include "common/clientctx.h"
 
 void print_reg_value(const H9frame& frame) {
@@ -94,8 +94,8 @@ int main(int argc, char **argv)
 
     while (true) {
         GenericMsg raw_msg = h9_connector.recv();
-        if (raw_msg.get_type() == GenericMsg::Type::FRAME_RECEIVED) {
-            FrameReceivedMsg msg = std::move(raw_msg);
+        if (raw_msg.get_type() == GenericMsg::Type::FRAME) {
+            FrameMsg msg = std::move(raw_msg);
 
             H9frame frame = msg.get_frame();
 

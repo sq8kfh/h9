@@ -3,7 +3,7 @@
  *
  * Created by SQ8KFH on 2019-04-28.
  *
- * Copyright (C) 2019 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2019-2020 Kamil Palkowski. All rights reserved.
  */
 
 #include "slcan.h"
@@ -164,10 +164,10 @@ void Slcan::parse_response(const std::string& response) {
         case '\r':
             //std::cout << "pare \\r" << std::endl;
             if (last_send) {
-                const H9frame* tmp = last_send;
+                //const H9frame* tmp = last_send;
                 last_send = nullptr;
                 //printf("debug: %p\n", tmp);
-                on_frame_send(*tmp);
+                on_frame_send();
             }
 
             break;

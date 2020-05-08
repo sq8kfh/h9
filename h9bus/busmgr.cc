@@ -22,8 +22,8 @@ void BusMgr::EventCallback::on_fame_recv(const H9frame& frame) {
     _bus_mgr->recv_frame_callback(frame, _bus_id);
 }
 
-void BusMgr::EventCallback::on_fame_send(const H9frame& frame) {
-    _bus_mgr->send_frame_callback(frame, _bus_id);
+void BusMgr::EventCallback::on_fame_send(BusFrame *busframe) {
+    _bus_mgr->send_frame_callback(busframe, _bus_id);
 }
 
 void BusMgr::EventCallback::on_close() {
@@ -40,7 +40,7 @@ void BusMgr::send_turned_on_broadcast() {
     cm.destination_id = H9frame::BROADCAST_ID;
     cm.dlc = 0;
 
-    send_frame(cm);
+    send_frame(cm, "h9bus");
 }
 
 void BusMgr::driver_close_callback(const std::string& bus_id) {
@@ -120,30 +120,37 @@ BusMgr::EventCallback BusMgr::create_event_callback(const std::string &bus_id) {
     return BusMgr::EventCallback(this, bus_id);
 }
 
-void BusMgr::recv_frame_callback(const H9frame& frame, const std::string& bus_id) {
-    frame_log->log_recv(bus_id, frame);
-    h9_log_debug(std::string("recv frame: ") + frame_to_log_string(bus_id, frame));
-    frame_queue.push(std::make_tuple(true, bus_id, frame));
+void BusMgr::recv_frame_callback(const H9frame& frame, const std::string& endpoint) {
+    frame_log->log_recv(endpoint, frame);
+    h9_log_debug(std::string("recv frame: ") + frame_to_log_string(endpoint, frame));
+    frame_queue.push(std::make_tuple(endpoint, endpoint, frame));
 }
 
-void BusMgr::send_frame_callback(const H9frame& frame, const std::string& bus_id) {
-    frame_log->log_send(bus_id, frame);
-    h9_log_debug(std::string("send frame: ") + frame_to_log_string(bus_id, frame));
-    frame_queue.push(std::make_tuple(false, bus_id, frame));
+void BusMgr::send_frame_callback(BusFrame *busframe, const std::string& endpoint) {
+    unsigned int tmp = busframe->int_completed_endpoint_count();
+    frame_log->log_send(endpoint, busframe->get_frame());
+    h9_log_debug(std::string("send frame: ") + frame_to_log_string(endpoint, busframe->get_frame()));
+    frame_queue.push(std::make_tuple(busframe->get_origin(), endpoint, busframe->get_frame()));
+    if (tmp == busframe->get_total_endpoint_count()) {
+        delete busframe;
+    }
 }
 
-std::queue<std::tuple<bool, std::string, H9frame>>& BusMgr::get_recv_queue() {
+std::queue<std::tuple<std::string, std::string, H9frame>>& BusMgr::get_recv_queue() {
     return frame_queue;
 }
 
-void BusMgr::send_frame(const H9frame& frame, const std::string& bus_id) {
-    if (bus_id == "*") {
+void BusMgr::send_frame(const H9frame& frame, const std::string& origin, const std::string& endpoint) {
+    BusFrame* bus_frame = new BusFrame(frame, origin);
+    if (endpoint.empty()) {
         for (auto& it: dev) {
-            it.second->send_frame(frame);
+            bus_frame->inc_total_endpoint_count();
+            it.second->send_frame(bus_frame);
         }
     }
-    else if (dev.count(bus_id) == 1){
-        dev[bus_id]->send_frame(frame);
+    else if (dev.count(endpoint) == 1){
+        bus_frame->inc_total_endpoint_count();
+        dev[endpoint]->send_frame(bus_frame);
     }
 }
 
