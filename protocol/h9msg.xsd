@@ -17,8 +17,8 @@
                         <xs:attribute name="msg" type="xs:string"/>
                     </xs:complexType>
                 </xs:element>
-                <xs:element name="methodcall" type="methodcall_t"/>
-                <xs:element name="methodresponse" type="methodresponse_t"/>
+                <xs:element name="call" type="methodcall_t"/>
+                <xs:element name="response" type="methodresponse_t"/>
             </xs:choice>
 
             <xs:attribute name="version" use="required">
@@ -39,7 +39,7 @@
             </xs:choice>
         </xs:sequence>
 
-        <xs:attribute name="name" type="xs:string" use="required"/>
+        <xs:attribute name="method" type="xs:string" use="required"/>
     </xs:complexType>
 
     <xs:complexType name="methodresponse_t">
@@ -50,7 +50,7 @@
             </xs:choice>
         </xs:sequence>
 
-        <xs:attribute name="name" type="xs:string" use="required"/>
+        <xs:attribute name="method" type="xs:string" use="required"/>
     </xs:complexType>
 
     <xs:complexType name="value_t">

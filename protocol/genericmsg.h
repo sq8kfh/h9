@@ -23,8 +23,8 @@ public:
         SEND_FRAME,
         SUBSCRIBE,
         ERROR,
-        METHODCALL,
-        METHODRESPONSE,
+        CALL,
+        RESPONSE,
     };
     class InvalidMsg: public std::runtime_error {
     public:

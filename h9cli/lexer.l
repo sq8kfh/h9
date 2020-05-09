@@ -22,6 +22,7 @@
 ")"                     return yy::parser::make_RPAREN();
 
 "="                     return yy::parser::make_ASSIGN();
+":"                     return yy::parser::make_COLON();
 
 node                    return yy::parser::make_T_NODE();
 restart                 return yy::parser::make_T_RESTART();

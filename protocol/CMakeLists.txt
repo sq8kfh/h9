@@ -14,10 +14,10 @@ add_library(PROTOCOL OBJECT
         subscribemsg.h
         errormsg.cc
         errormsg.h
-        methodcallmsg.cc
-        methodcallmsg.h
-        methodresponsemsg.cc
-        methodresponsemsg.h
+        callmsg.cc
+        callmsg.h
+        responsemsg.cc
+        responsemsg.h
         genericmethod.h
         value.cc value.h h9socket.cc h9socket.h)
 

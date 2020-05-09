@@ -43,6 +43,7 @@
 %token LPAREN      "("
 %token RPAREN      ")"
 %token ASSIGN      "="
+%token COLON       ":"
 %token <std::string> STRING
 %token <int> NUMBER "number"
 %type  <int> num_exp

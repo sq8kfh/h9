@@ -5,7 +5,7 @@
  *
  * Created by SQ8KFH on 2019-05-30.
  *
- * Copyright (C) 2019 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2019-2020 Kamil Palkowski. All rights reserved.
  */
 
 #ifndef H9_GENERICMETHOD_H
@@ -28,9 +28,9 @@ public:
     std::string get_method_name() {
         xmlNodePtr msg = ConcretizeMsg<msg_type>::get_msg_root();
         xmlChar *tmp;
-        if ((tmp = xmlGetProp(msg, (const xmlChar *) "name")) == nullptr) {
-            h9_log_err("GenericMethod: missing 'name' property");
-            throw GenericMsg::InvalidMsg("missing 'name' property");
+        if ((tmp = xmlGetProp(msg, (const xmlChar *) "method")) == nullptr) {
+            h9_log_err("GenericMethod: missing 'method' property");
+            throw GenericMsg::InvalidMsg("missing 'method' property");
         }
         std::string ret = {reinterpret_cast<char const *>(tmp)};
         xmlFree(tmp);
@@ -39,7 +39,7 @@ public:
 
     void set_method_name(const std::string& name) {
         xmlNodePtr msg = ConcretizeMsg<msg_type>::get_msg_root();
-        xmlNewProp(msg, reinterpret_cast<xmlChar const *>("name"), reinterpret_cast<xmlChar const *>(name.c_str()));
+        xmlNewProp(msg, reinterpret_cast<xmlChar const *>("method"), reinterpret_cast<xmlChar const *>(name.c_str()));
     }
 
     Derived& set_value(const std::string &name, const char* value) {

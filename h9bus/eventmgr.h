@@ -3,7 +3,7 @@
  *
  * Created by SQ8KFH on 2019-05-18.
  *
- * Copyright (C) 2019 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2019-2020 Kamil Palkowski. All rights reserved.
  */
 
 #ifndef _H9_EVENTMGR_H_
@@ -13,16 +13,16 @@
 #include "busmgr.h"
 #include "servermgr.h"
 #include "common/daemonctx.h"
-#include "protocol/methodcallmsg.h"
-#include "protocol/methodresponsemsg.h"
+#include "protocol/callmsg.h"
+#include "protocol/responsemsg.h"
 
 class EventMgr {
 private:
     BusMgr* const _bus_mgr;
     ServerMgr* const _server_mgr;
     DaemonCtx* const _ctx;
-    void exec_method_call(int client_socket, MethodCallMsg call_msg);
-    MethodResponseMsg get_stat(int client_socket);
+    void exec_method_call(int client_socket, CallMsg call_msg);
+    ResponseMsg get_stat(int client_socket);
 public:
     EventMgr(DaemonCtx* ctx, BusMgr* bus_mgr, ServerMgr* server_mgr);
     void flush_frame_queue();

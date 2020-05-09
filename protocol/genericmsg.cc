@@ -40,11 +40,11 @@ GenericMsg::GenericMsg(GenericMsg::Type msg_type) {
         case Type::ERROR:
             node = xmlNewNode(nullptr, reinterpret_cast<xmlChar const *>("error"));
             break;
-        case Type::METHODCALL:
-            node = xmlNewNode(nullptr, reinterpret_cast<xmlChar const *>("methodcall"));
+        case Type::CALL:
+            node = xmlNewNode(nullptr, reinterpret_cast<xmlChar const *>("call"));
             break;
-        case Type::METHODRESPONSE:
-            node = xmlNewNode(nullptr, reinterpret_cast<xmlChar const *>("methodresponse"));
+        case Type::RESPONSE:
+            node = xmlNewNode(nullptr, reinterpret_cast<xmlChar const *>("response"));
             break;
     }
     xmlAddChild(root, node);
@@ -98,10 +98,10 @@ GenericMsg::Type GenericMsg::get_type() {
             return Type::SUBSCRIBE;
         else if (xmlStrcmp(node->name,reinterpret_cast<xmlChar const *>("error")) == 0)
             return Type::ERROR;
-        else if (xmlStrcmp(node->name,reinterpret_cast<xmlChar const *>("methodcall")) == 0)
-            return Type::METHODCALL;
-        else if (xmlStrcmp(node->name,reinterpret_cast<xmlChar const *>("methodresponse")) == 0)
-            return Type::METHODRESPONSE;
+        else if (xmlStrcmp(node->name,reinterpret_cast<xmlChar const *>("call")) == 0)
+            return Type::CALL;
+        else if (xmlStrcmp(node->name,reinterpret_cast<xmlChar const *>("response")) == 0)
+            return Type::RESPONSE;
     }
     return Type::GENERIC;
 }

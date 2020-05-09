@@ -14,8 +14,8 @@
 #include "common/logger.h"
 #include "protocol/errormsg.h"
 #include "protocol/framemsg.h"
-#include "protocol/methodcallmsg.h"
-#include "protocol/methodresponsemsg.h"
+#include "protocol/callmsg.h"
+#include "protocol/responsemsg.h"
 #include "protocol/sendframemsg.h"
 #include "protocol/subscribemsg.h"
 
@@ -67,7 +67,7 @@ void EventMgr::flush_msg(int client_socket, GenericMsg& msg) {
             _server_mgr->client_subscription(client_socket, 1);
             break;
         }
-        case GenericMsg::Type::METHODCALL: {
+        case GenericMsg::Type::CALL: {
             exec_method_call(client_socket, std::move(msg));
             break;
         }
@@ -85,25 +85,25 @@ void EventMgr::cron() {
     _server_mgr->cron();
 }
 
-void EventMgr::exec_method_call(int client_socket, MethodCallMsg call_msg) {
+void EventMgr::exec_method_call(int client_socket, CallMsg call_msg) {
     std::string mnethod_name = call_msg.get_method_name();
-    if (mnethod_name == "get_h9bus_stat") {
-        MethodResponseMsg res = get_stat(client_socket);
+    if (mnethod_name == "h9bus_stat") {
+        ResponseMsg res = get_stat(client_socket);
         _server_mgr->send_msg(client_socket, res);
     }
 }
 
-MethodResponseMsg EventMgr::get_stat(int client_socket) {
-    MethodResponseMsg res = {"get_h9bus_stat"};
+ResponseMsg EventMgr::get_stat(int client_socket) {
+    ResponseMsg res = {"h9bus_stat"};
     res.set_value("version", H9_VERSION);
     res.set_value("uptime", std::time(nullptr) - _ctx->get_start_time());
     res.set_value("connected_clients_count", _server_mgr->connected_clients_count());
-    auto devs = res.set_array("dev");
+    auto devs = res.set_array("endpoint");
     for(std::string& dev_name: _bus_mgr->get_dev_list()) {
-        auto dev = devs.set_array(dev_name.c_str());
-        dev.set_value("name", dev_name);
-        dev.set_value("send_frames_counter", _bus_mgr->get_dev_counter(dev_name, BusMgr::CounterType::SEND_FRAMES));
-        dev.set_value("received_frames_counter", _bus_mgr->get_dev_counter(dev_name, BusMgr::CounterType::RECEIVED_FRAMES));
+        auto dev = devs.add_array(dev_name.c_str());
+        dev.add_value("name", dev_name);
+        dev.add_value("send_frames_counter", _bus_mgr->get_dev_counter(dev_name, BusMgr::CounterType::SEND_FRAMES));
+        dev.add_value("received_frames_counter", _bus_mgr->get_dev_counter(dev_name, BusMgr::CounterType::RECEIVED_FRAMES));
     }
     return std::move(res);
 }
