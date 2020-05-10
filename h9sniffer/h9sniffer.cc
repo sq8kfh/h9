@@ -67,7 +67,7 @@ void print_frame(const H9frame& frame) {
 
 int main(int argc, char **argv)
 {
-    ClientCtx ctx = ClientCtx("h9spy", "The H9 bus packets sniffer.");
+    ClientCtx ctx = ClientCtx("h9sniffer", "The H9 bus packets sniffer.");
 
     ctx.add_options("e,extended", "Extended output");
     ctx.add_options("s,simple", "Simple output");

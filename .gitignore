@@ -46,5 +46,5 @@ h9cli/parser.hh
 h9d/h9d
 h9fwu/h9fwu
 h9send/h9send
-h9spy/h9spy
+h9sniffer/h9sniffer
 h9stat/h9stat
