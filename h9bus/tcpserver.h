@@ -3,22 +3,24 @@
  *
  * Created by SQ8KFH on 2019-05-14.
  *
- * Copyright (C) 2019 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2019-2020 Kamil Palkowski. All rights reserved.
  */
 
 #ifndef _H9_TCPSERVER_H_
 #define _H9_TCPSERVER_H_
 
 #include "config.h"
+#include <functional>
 #include "socketmgr.h"
-#include "servermgr.h"
 
 
 class TcpServer: public SocketMgr::Socket {
-private:
-    ServerMgr::EventCallback _event_callback;
 public:
-    TcpServer(ServerMgr::EventCallback event_callback, std::uint16_t port);
+    using TNewConnectionCallback = std::function<void(int client_socket, const std::string& remote_address, std::uint16_t remote_port)>;
+private:
+    TNewConnectionCallback new_connection_callback;
+public:
+    TcpServer(TNewConnectionCallback new_connection_callback, std::uint16_t port);
     void on_select();
     void on_close() noexcept;
 };

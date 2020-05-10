@@ -1,9 +1,11 @@
+#include <utility>
+
 /*
  * H9 project
  *
  * Created by SQ8KFH on 2019-05-15.
  *
- * Copyright (C) 2019 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2019-2020 Kamil Palkowski. All rights reserved.
  */
 
 #include "tcpclient.h"
@@ -50,11 +52,11 @@ void TcpClient::recv_msg(const std::string& msg_str) {
         }
         return;
     }
-    _event_callback.on_msg_recv(get_socket(), msg);
+    recv_msg_callback(this, msg);
 }
 
-TcpClient::TcpClient(ServerMgr::EventCallback event_callback, int sockfd):
-        _event_callback(event_callback),
+TcpClient::TcpClient(TNewMsgCallback new_msg_callback, int sockfd):
+        recv_msg_callback(std::move(new_msg_callback)),
         h9socket(sockfd) {
 
     set_socket(sockfd, true);

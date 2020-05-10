@@ -24,6 +24,8 @@ EventMgr::EventMgr(DaemonCtx* ctx, BusMgr* bus_mgr, ServerMgr* server_mgr):
         _ctx(ctx),
         _bus_mgr(bus_mgr),
         _server_mgr(server_mgr) {
+
+    _server_mgr->set_eventmgr_handler(this);
 }
 
 void EventMgr::flush_frame_queue() {
@@ -83,6 +85,33 @@ void EventMgr::cron() {
     //h9_log_debug("EventMgr::cron");
     _bus_mgr->cron();
     _server_mgr->cron();
+}
+
+void EventMgr::process_msg(TcpClient* origin_tcp_client, GenericMsg& msg) {
+    int client_socket = origin_tcp_client->get_socket();
+    h9_log_debug("EventMgr::process_msg(%d, ?)", client_socket);
+    switch (msg.get_type()) {
+        case GenericMsg::Type::SEND_FRAME: {
+            SendFrameMsg sf_msg = std::move(msg);
+            H9frame tmp = sf_msg.get_frame();
+            _bus_mgr->send_frame(tmp, std::string("tcp#") + std::to_string(client_socket));
+            break;
+        }
+        case GenericMsg::Type::SUBSCRIBE: {
+            SubscribeMsg sc_msg = std::move(msg);
+            _server_mgr->client_subscription(client_socket, 1);
+            break;
+        }
+        case GenericMsg::Type::CALL: {
+            exec_method_call(client_socket, std::move(msg));
+            break;
+        }
+        default:
+            h9_log_err("recv unknown msg: %d", msg.get_type());
+            ErrorMsg err_msg = {ErrorMsg::ErrorNumber::UNSUPPORTED_MESSAGE_TYPE, "EventMgr::flush_msg"};
+            _server_mgr->send_msg(client_socket, err_msg);
+            break;
+    }
 }
 
 void EventMgr::exec_method_call(int client_socket, CallMsg call_msg) {

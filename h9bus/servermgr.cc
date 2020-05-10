@@ -13,19 +13,7 @@
 #include "common/logger.h"
 #include "tcpclient.h"
 #include "socketmgr.h"
-
-
-void ServerMgr::EventCallback::on_msg_recv(int client_socket, GenericMsg& msg) {
-    _server_mgr->recv_msg_callback(client_socket, msg);
-}
-
-void ServerMgr::EventCallback::on_msg_send() {
-
-}
-
-void ServerMgr::EventCallback::on_new_connection(int client_socket, const std::string& remote_address, std::uint16_t remote_port) {
-    _server_mgr->new_connection_callback(client_socket, remote_address, remote_port);
-}
+#include "eventmgr.h"
 
 
 void ServerMgr::recv_msg_callback(int client_socket, GenericMsg& msg) {
@@ -39,25 +27,28 @@ void ServerMgr::new_connection_callback(int client_socket, const std::string& re
                   remote_port,
                   client_socket);
 
-    TcpClient *tmp = new TcpClient(create_event_callback(), client_socket);
+    TcpClient::TNewMsgCallback tmp_f = std::bind(&EventMgr::process_msg, eventmgr_handler, std::placeholders::_1, std::placeholders::_2);
+    TcpClient *tmp = new TcpClient(tmp_f, client_socket);
     tcp_clients[client_socket] = tmp;
     _socket_mgr->register_socket(tmp);
 }
 
-ServerMgr::EventCallback ServerMgr::create_event_callback() {
-    return ServerMgr::EventCallback(this);
-}
-
 ServerMgr::ServerMgr(SocketMgr* socket_mgr):
         _socket_mgr(socket_mgr),
-        tcp_server(nullptr) {
+        tcp_server(nullptr),
+        eventmgr_handler(nullptr) {
 }
 
 void ServerMgr::load_config(BusCtx *ctx) {
-    tcp_server = new TcpServer(create_event_callback(), ctx->cfg_server_port());
+    TcpServer::TNewConnectionCallback tmp_f = std::bind(&ServerMgr::new_connection_callback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+    tcp_server = new TcpServer(tmp_f, ctx->cfg_server_port());
     _socket_mgr->register_socket(tcp_server);
 
     msg_log = ctx->logger();
+}
+
+void ServerMgr::set_eventmgr_handler(EventMgr* handler) {
+    eventmgr_handler = handler;
 }
 
 std::queue<std::pair<int, GenericMsg>>& ServerMgr::get_recv_queue() {

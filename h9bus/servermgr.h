@@ -18,23 +18,15 @@
 #include "protocol/genericmsg.h"
 #include "busmgr.h"
 
-
 class TcpServer;
 class TcpClient;
+class EventMgr;
 
 class ServerMgr {
-public:
-    class EventCallback {
-    private:
-        ServerMgr *const _server_mgr;
-    public:
-        explicit EventCallback(ServerMgr *const server_mgr): _server_mgr(server_mgr) {};
-        void on_msg_recv(int client_socket, GenericMsg& msg);
-        void on_msg_send();
-        void on_new_connection(int client_socket, const std::string& remote_address, std::uint16_t remote_port);
-    };
 private:
     SocketMgr* const _socket_mgr;
+    EventMgr* eventmgr_handler;
+
     std::queue<std::pair<int, GenericMsg>> recv_queue;
 
     TcpServer *tcp_server;
@@ -44,10 +36,11 @@ private:
     void recv_msg_callback(int client_socket, GenericMsg& msg);
     void new_connection_callback(int client_socket, const std::string& remote_address, std::uint16_t remote_port);
     void server_close_callback();
-    EventCallback create_event_callback();
 public:
     explicit ServerMgr(SocketMgr* socket_mgr);
     void load_config(BusCtx *ctx);
+    void set_eventmgr_handler(EventMgr* handler);
+
     std::queue<std::pair<int, GenericMsg>>& get_recv_queue();
     void client_subscription(int client_socket, int active);
     void send_msg(int client_socket, GenericMsg& msg);

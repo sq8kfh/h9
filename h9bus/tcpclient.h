@@ -3,21 +3,24 @@
  *
  * Created by SQ8KFH on 2019-05-15.
  *
- * Copyright (C) 2019 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2019-2020 Kamil Palkowski. All rights reserved.
  */
 
 #ifndef _H9_TCPCLIENT_H_
 #define _H9_TCPCLIENT_H_
 
 #include "config.h"
+#include <functional>
 #include "protocol/h9socket.h"
 #include "socketmgr.h"
 #include "servermgr.h"
 
 
 class TcpClient: public SocketMgr::Socket {
+public:
+    using TNewMsgCallback = std::function<void(TcpClient*, GenericMsg&)>;
 private:
-    ServerMgr::EventCallback _event_callback;
+    TNewMsgCallback recv_msg_callback;
     H9Socket h9socket;
 
     int active_subscription;
@@ -25,7 +28,7 @@ private:
     void recv();
     void recv_msg(const std::string& msg_str);
 public:
-    TcpClient(ServerMgr::EventCallback event_callback, int sockfd);
+    TcpClient(TNewMsgCallback new_msg_callback, int sockfd);
     bool is_subscriber();
     void subscriber(int active);
     void send(GenericMsg& msg);

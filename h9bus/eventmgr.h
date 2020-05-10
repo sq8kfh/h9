@@ -31,6 +31,8 @@ public:
     void flush_frame(const std::string& origin, const std::string& endpoint, const H9frame& frame);
     void flush_msg(int client_socket, GenericMsg& msg);
     void cron();
+
+    void process_msg(TcpClient* origin_tcp_client, GenericMsg& msg);
 };
 
 
