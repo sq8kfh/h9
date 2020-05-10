@@ -8,6 +8,7 @@
 
 #include "config.h"
 #include <cstdlib>
+#include <unistd.h>
 
 #include "protocol/h9connector.h"
 #include "protocol/sendframemsg.h"
@@ -21,6 +22,7 @@ int main(int argc, char* argv[]) {
     ctx.add_options("i,dst_id", "Destination id", cxxopts::value<std::uint16_t>());
     ctx.add_options("H,high_priority", "High priority");
     ctx.add_options("t,type", "Frame type", cxxopts::value<std::underlying_type_t<H9frame::Type >>());
+    ctx.add_options("r,repeat", "Repeat the frame every given time in seconds", cxxopts::value<unsigned int>());
     ctx.add_positional_options_list("data", "[hex data]", "");
 
     auto res = ctx.parse_options(argc, argv);
@@ -70,7 +72,15 @@ int main(int argc, char* argv[]) {
 
     std::cout << SendFrameMsg(frame).serialize() << std::endl;
 
-    h9_connector.send(SendFrameMsg(frame));
-
+    if (res.count("repeat")) {
+        unsigned int sleep_time = res["repeat"].as<unsigned int>();
+        while(true) {
+            h9_connector.send(SendFrameMsg(frame));
+            sleep(sleep_time);
+        }
+    }
+    else {
+        h9_connector.send(SendFrameMsg(frame));
+    }
     return EXIT_SUCCESS;
 }

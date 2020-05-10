@@ -75,7 +75,9 @@ void TcpClient::send(GenericMsg& msg) {
     int res = h9socket.send(raw_msg);
 
     if (res <= 0) {
-        if (res == 0 || errno == ECONNRESET || errno == EPIPE || errno == EBADF) {
+        if (res == 0 || errno == ECONNRESET || errno == EPIPE || errno == EBADF || errno == EPROTOTYPE) {
+            // EPROTOTYPE - Protocol wrong type for socket - on mac os during high trafic - i don't know why
+
             close();
             return;
         }

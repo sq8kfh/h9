@@ -79,11 +79,11 @@ int main(int argc, char **argv)
                 int frames_sent = endpoint["send_frames_counter"].get_value_as_int();
                 float fps = frames_sent - last_frames_sent;
                 fps /= uptime - last_uptime_value;
-                std::cout << "  Frames sent: " << frames_sent << " (" << std::setprecision(2) << fps << " f/s)" << std::endl;
+                std::cout << "  Frames sent: " << frames_sent << " (" << std::fixed <<  std::setprecision(2) << fps << " f/s)" << std::endl;
                 int frames_received = endpoint["received_frames_counter"].get_value_as_int();
                 fps = frames_received - last_frames_received;
                 fps /= uptime - last_uptime_value;
-                std::cout << "  Frames received: " << frames_received << " (" << std::setprecision(2) << fps << " f/s)" << std::endl;
+                std::cout << "  Frames received: " << frames_received << " (" << std::fixed << std::setprecision(2) << fps << " f/s)" << std::endl;
 
                 last_frames_sent = frames_sent;
                 last_frames_received = frames_received;
