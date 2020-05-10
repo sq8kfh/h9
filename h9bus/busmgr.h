@@ -22,34 +22,21 @@
 
 
 class Driver;
+class EventMgr;
 
 class BusMgr {
-public:
-    class EventCallback {
-    private:
-        BusMgr *const _bus_mgr;
-        const std::string _bus_id;
-    public:
-        EventCallback(BusMgr *const bus_mgr, std::string bus_id): _bus_mgr(bus_mgr), _bus_id(std::move(bus_id)) {};
-        void on_fame_recv(const H9frame& frame);
-        void on_fame_send(BusFrame *busframe);
-        void on_close();
-    };
 private:
     SocketMgr * const _socket_mgr;
-    std::queue<std::tuple<std::string, std::string, H9frame>> frame_queue; //origin, endpoint, frame
+    EventMgr* eventmgr_handler;
 
     std::map<std::string, Driver*> dev;
     FrameLogger *frame_log;
 
-    void recv_frame_callback(const H9frame& frame, const std::string& endpoint);
-    void send_frame_callback(BusFrame *busframe, const std::string& endpoint);
-    void driver_close_callback(const std::string& bus_id);
-    EventCallback create_event_callback(const std::string& bus_id);
+    void on_recv_frame(Driver *endpoint, const H9frame& frame);
+    void on_send_frame(Driver *endpoint, BusFrame *busframe);
+    void on_driver_close(const std::string& endpoint);
 
-    void send_turned_on_broadcast();
-
-    std::string frame_to_log_string(const std::string& bus_id, const H9frame& frame);
+    std::string frame_to_log_string(const std::string& endpoint, const H9frame& frame);
 
     static cfg_opt_t cfg_bus_sec[];
 public:
@@ -63,7 +50,8 @@ public:
     ~BusMgr();
 
     void load_config(BusCtx *ctx);
-    std::queue<std::tuple<std::string, std::string, H9frame>>& get_recv_queue();
+    void set_eventmgr_handler(EventMgr* handler);
+
     void send_frame(const H9frame& frame, const std::string& origin, const std::string& endpoint = "");
 
     std::vector<std::string> get_dev_list();

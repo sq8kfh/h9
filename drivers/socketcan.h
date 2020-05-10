@@ -22,7 +22,7 @@ class SocketCAN: public Driver {
 private:
     const std::string _interface;
 public:
-    explicit SocketCAN(BusMgr::EventCallback event_callback, const std::string& interface);
+    explicit SocketCAN(const std::string& name, TRecvFrameCallback recv_frame_callback, TSendFrameCallback send_frame_callback, const std::string& interface);
     void open();
 private:
     void recv_data();

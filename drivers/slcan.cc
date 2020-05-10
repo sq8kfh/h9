@@ -16,8 +16,8 @@
 #include <fcntl.h>
 #include <termios.h>
 
-Slcan::Slcan(BusMgr::EventCallback event_callback, const std::string& tty):
-        Driver(std::move(event_callback)),
+Slcan::Slcan(const std::string& name, TRecvFrameCallback recv_frame_callback, TSendFrameCallback send_frame_callback, const std::string& tty):
+        Driver(name, std::move(recv_frame_callback), std::move(send_frame_callback)),
         _tty(tty) {
     noblock = false;
     last_send = nullptr;

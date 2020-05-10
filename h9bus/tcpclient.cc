@@ -57,7 +57,8 @@ void TcpClient::recv_msg(const std::string& msg_str) {
 
 TcpClient::TcpClient(TNewMsgCallback new_msg_callback, int sockfd):
         recv_msg_callback(std::move(new_msg_callback)),
-        h9socket(sockfd) {
+        h9socket(sockfd),
+        active_subscription(0) {
 
     set_socket(sockfd, true);
     h9socket.connect();
@@ -77,7 +78,7 @@ void TcpClient::send(GenericMsg& msg) {
     int res = h9socket.send(raw_msg);
 
     if (res <= 0) {
-        if (res == 0 || errno == ECONNRESET || errno == EPIPE || errno == EBADF || errno == EPROTOTYPE) {
+        if (res == 0 || errno == ECONNRESET || errno == EPIPE || errno == EBADF /*|| errno == EPROTOTYPE*/) {
             // EPROTOTYPE - Protocol wrong type for socket - on mac os during high trafic - i don't know why
 
             close();

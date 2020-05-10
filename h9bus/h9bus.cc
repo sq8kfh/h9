@@ -60,7 +60,6 @@ int main(int argc, char **argv) {
     //servermgr.set_msg_recv_callback(std::bind(&EventMgr::on_msg_recv, &event_mgr, std::placeholders::_1, std::placeholders::_2));
 //std::bind(&EventMgr::flush_all, &event_mgr);
     socketmgr.select_loop([&event_mgr, &busmgr, &servermgr]() {
-        event_mgr.flush_all();
         busmgr.flush_dev();
         servermgr.flush_clients();
         }, std::bind(&EventMgr::cron, &event_mgr));

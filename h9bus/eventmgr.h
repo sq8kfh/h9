@@ -16,23 +16,21 @@
 #include "protocol/callmsg.h"
 #include "protocol/responsemsg.h"
 
+
 class EventMgr {
 private:
     BusMgr* const _bus_mgr;
     ServerMgr* const _server_mgr;
     DaemonCtx* const _ctx;
-    void exec_method_call(int client_socket, CallMsg call_msg);
-    ResponseMsg get_stat(int client_socket);
+    void exec_method_call(TcpClient* tcp_client, CallMsg call_msg);
+    ResponseMsg get_stat();
 public:
     EventMgr(DaemonCtx* ctx, BusMgr* bus_mgr, ServerMgr* server_mgr);
-    void flush_frame_queue();
-    void flush_msg_queue();
-    void flush_all();
-    void flush_frame(const std::string& origin, const std::string& endpoint, const H9frame& frame);
-    void flush_msg(int client_socket, GenericMsg& msg);
     void cron();
 
     void process_msg(TcpClient* origin_tcp_client, GenericMsg& msg);
+    void process_recv_frame(const std::string& endpoint, BusFrame* busframe);
+    void process_sent_frame(const std::string& endpoint, BusFrame* busframe);
 };
 
 

@@ -56,5 +56,7 @@ void DaemonCtx::load(int argc, char* argv[]) {
         override_pidfile = std::string(result["pidfile"].as<std::string>());
     }
 
+    h9_log_notice("Starting %s v%s (config: %s)", _app_name.c_str(), H9_VERSION, result["config"].as<std::string>().c_str());
+
     load_configuration(result["config"].as<std::string>(), override_daemonize, override_pidfile);
 }

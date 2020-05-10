@@ -13,24 +13,26 @@
 
 
 void Driver::on_frame_recv(const H9frame& frame) {
-    ++received_frames;
-    _event_callback.on_fame_recv(frame);
+    ++received_frames_counter;
+    recv_frame_callback(this, frame);
 }
 
 void Driver::on_frame_send() {
-    ++sent_frames;
+    ++sent_frames_counter;
     BusFrame *tmp = send_queue.top();
     send_queue.pop();
-    _event_callback.on_fame_send(tmp);
+    send_frame_callback(this, tmp);
     if (!send_queue.empty()) {
         send_data(send_queue.top()->get_frame());
     }
 }
 
-Driver::Driver(BusMgr::EventCallback event_callback):
-        _event_callback(std::move(event_callback)),
-        sent_frames(0),
-        received_frames(0) {
+Driver::Driver(const std::string& name, TRecvFrameCallback recv_frame_callback, TSendFrameCallback send_frame_callback):
+        name(name),
+        recv_frame_callback(std::move(recv_frame_callback)),
+        send_frame_callback(std::move(send_frame_callback)),
+        sent_frames_counter(0),
+        received_frames_counter(0) {
 
     retry_auto_connect = 10;
 }
@@ -38,16 +40,14 @@ Driver::Driver(BusMgr::EventCallback event_callback):
 void Driver::on_close() noexcept {
     ::close(get_socket());
     disconnected();
-    //_event_callback.on_close();
-    //set_socket(0);
 }
 
 std::uint32_t Driver::get_counter(BusMgr::CounterType counter) {
     switch (counter) {
         case BusMgr::CounterType::SEND_FRAMES:
-            return sent_frames;
+            return sent_frames_counter;
         case BusMgr::CounterType::RECEIVED_FRAMES:
-            return received_frames;
+            return received_frames_counter;
     }
     return 0;
 }

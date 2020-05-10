@@ -46,6 +46,10 @@ public:
     std::string serialize() const;
     bool validate_msg(std::string *error_msg = nullptr);
     virtual ~GenericMsg();
+
+    void* id() const {
+        return doc;
+    };
 };
 
 

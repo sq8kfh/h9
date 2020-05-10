@@ -16,19 +16,14 @@
 #include "eventmgr.h"
 
 
-void ServerMgr::recv_msg_callback(int client_socket, GenericMsg& msg) {
-    msg_log.log(msg.serialize());
-    recv_queue.push(std::make_pair(client_socket, std::move(msg)));
-}
-
-void ServerMgr::new_connection_callback(int client_socket, const std::string& remote_address, std::uint16_t remote_port) {
-    h9_log_notice("Server: new connection from %s:%d on socket %d",
-                  remote_address.c_str(),
-                  remote_port,
-                  client_socket);
-
+void ServerMgr::on_new_connection(int client_socket, const std::string& remote_address, std::uint16_t remote_port) {
+    //TODO:    msg_log.log(msg.serialize());
     TcpClient::TNewMsgCallback tmp_f = std::bind(&EventMgr::process_msg, eventmgr_handler, std::placeholders::_1, std::placeholders::_2);
     TcpClient *tmp = new TcpClient(tmp_f, client_socket);
+    h9_log_notice("Server: new connection from %s:%d client: %p",
+                  remote_address.c_str(),
+                  remote_port,
+                  tmp);
     tcp_clients[client_socket] = tmp;
     _socket_mgr->register_socket(tmp);
 }
@@ -40,7 +35,7 @@ ServerMgr::ServerMgr(SocketMgr* socket_mgr):
 }
 
 void ServerMgr::load_config(BusCtx *ctx) {
-    TcpServer::TNewConnectionCallback tmp_f = std::bind(&ServerMgr::new_connection_callback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+    TcpServer::TNewConnectionCallback tmp_f = std::bind(&ServerMgr::on_new_connection, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
     tcp_server = new TcpServer(tmp_f, ctx->cfg_server_port());
     _socket_mgr->register_socket(tcp_server);
 
@@ -49,10 +44,6 @@ void ServerMgr::load_config(BusCtx *ctx) {
 
 void ServerMgr::set_eventmgr_handler(EventMgr* handler) {
     eventmgr_handler = handler;
-}
-
-std::queue<std::pair<int, GenericMsg>>& ServerMgr::get_recv_queue() {
-    return recv_queue;
 }
 
 void ServerMgr::client_subscription(int client_socket, int active) {
@@ -77,7 +68,7 @@ void ServerMgr::send_msg_to_subscriber(GenericMsg& msg) {
                 it.second->send(msg);
             }
             catch (SocketMgr::Socket::CloseSocketException& e) {
-                h9_log_info("Close connection during send_msg_to_subscriber (socket: %d)", it.first);
+                h9_log_info("Close connection during send_msg_to_subscriber (client: %p)", it.second);
                 it.second->on_close();
             }
         }
@@ -92,10 +83,10 @@ void ServerMgr::flush_clients() {
     for (auto it = tcp_clients.cbegin(); it != tcp_clients.cend();) {
         if (!it->second->is_connected()) {
             TcpClient *tmp = it->second;
-            h9_log_notice("Server: flush connection from %s:%s on socket %d",
+            h9_log_notice("Server: flush connection from %s:%s on client: %p",
                           tmp->get_remote_address().c_str(),
                           tmp->get_remote_port().c_str(),
-                          tmp->get_socket());
+                          tmp);
 
             _socket_mgr->unregister_socket(tmp);
             it = tcp_clients.erase(it);

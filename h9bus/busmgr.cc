@@ -11,6 +11,7 @@
 #include <sstream>
 #include <iomanip>
 
+#include "eventmgr.h"
 #include "drivers/loop.h"
 #include "drivers/dummy.h"
 #include "drivers/slcan.h"
@@ -18,40 +19,35 @@
 #include "common/logger.h"
 
 
-void BusMgr::EventCallback::on_fame_recv(const H9frame& frame) {
-    _bus_mgr->recv_frame_callback(frame, _bus_id);
+void BusMgr::on_recv_frame(Driver *endpoint, const H9frame& frame) {
+    BusFrame busframe = BusFrame(frame, endpoint->name);
+
+    frame_log->log_recv(endpoint->name, busframe.get_frame());
+    h9_log_debug(std::string("recv frame: ") + frame_to_log_string(endpoint->name, busframe.get_frame()));
+    //TODO: internal routing between endpoint
+    eventmgr_handler->process_recv_frame(endpoint->name, &busframe);
 }
 
-void BusMgr::EventCallback::on_fame_send(BusFrame *busframe) {
-    _bus_mgr->send_frame_callback(busframe, _bus_id);
+void BusMgr::on_send_frame(Driver *endpoint, BusFrame *busframe) {
+    unsigned int tmp = busframe->int_completed_endpoint_count();
+    frame_log->log_send(endpoint->name, busframe->get_frame());
+    h9_log_debug(std::string("send frame: ") + frame_to_log_string(endpoint->name, busframe->get_frame()));
+
+    eventmgr_handler->process_sent_frame(endpoint->name, busframe);
+    if (tmp == busframe->get_total_endpoint_count()) {
+        delete busframe;
+    }
 }
 
-void BusMgr::EventCallback::on_close() {
-    _bus_mgr->driver_close_callback(_bus_id);
-}
-
-
-void BusMgr::send_turned_on_broadcast() {
-    H9frame cm;
-    cm.priority = H9frame::Priority::LOW;
-    cm.type = H9frame::Type::NODE_TURNED_ON;
-    //TODO: read source_id from config file
-    cm.source_id = 2;
-    cm.destination_id = H9frame::BROADCAST_ID;
-    cm.dlc = 0;
-
-    send_frame(cm, "h9bus");
-}
-
-void BusMgr::driver_close_callback(const std::string& bus_id) {
-    h9_log_warn("driver: %s closed", bus_id.c_str());
-    _socket_mgr->unregister_socket(dev[bus_id]);
+void BusMgr::on_driver_close(const std::string& endpoint) {
+    h9_log_warn("driver: %s closed", endpoint.c_str());
+    _socket_mgr->unregister_socket(dev[endpoint]);
     //dev.erase(bus_id);
 }
 
-std::string BusMgr::frame_to_log_string(const std::string& bus_id, const H9frame& frame) {
+std::string BusMgr::frame_to_log_string(const std::string& endpoint, const H9frame& frame) {
     std::ostringstream frame_string;
-    frame_string << bus_id
+    frame_string << endpoint
        << ": " << frame.source_id
        << "->" << frame.destination_id
        << "; priority: " << (frame.priority == H9frame::Priority::HIGH ? 'H' : 'L')
@@ -77,67 +73,48 @@ BusMgr::~BusMgr() {
 void BusMgr::load_config(BusCtx *ctx) {
     frame_log = new FrameLogger(ctx->cfg_log_send_logfile(),ctx->cfg_log_recv_logfile());
 
-    for(std::string bus_name: ctx->cfg_bus_list()) {
-        std::string driver = ctx->cfg_bus_driver(bus_name);
-        std::string cs = ctx->cfg_bus_connection_string(bus_name);
+    for(std::string& endpoint_name: ctx->cfg_bus_list()) {
+        std::string driver = ctx->cfg_bus_driver(endpoint_name);
+        std::string cs = ctx->cfg_bus_connection_string(endpoint_name);
+
+        Driver::TRecvFrameCallback recv_frame_callback = std::bind(&BusMgr::on_recv_frame, this, std::placeholders::_1, std::placeholders::_2);
+        Driver::TSendFrameCallback send_frame_callback = std::bind(&BusMgr::on_send_frame, this, std::placeholders::_1, std::placeholders::_2);
 
         if (driver == "dummy") {
-            Dummy *dummy = new Dummy(create_event_callback(bus_name));
-            dev[bus_name] = dummy;
+            Dummy *dummy = new Dummy(endpoint_name, recv_frame_callback, send_frame_callback);
+            dev[endpoint_name] = dummy;
             dummy->open();
             _socket_mgr->register_socket(dummy);
         }
         else if (driver == "loop") {
-            Loop *loop = new Loop(std::move(create_event_callback(bus_name)));
-            dev[bus_name] = loop;
+            Loop *loop = new Loop(endpoint_name, recv_frame_callback, send_frame_callback);
+            dev[endpoint_name] = loop;
             loop->open();
             _socket_mgr->register_socket(loop);
         }
         else if (driver == "slcan") {
-            Slcan *slcan = new Slcan(create_event_callback(bus_name), cs);
-            dev[bus_name] = slcan;
+            Slcan *slcan = new Slcan(endpoint_name, recv_frame_callback, send_frame_callback, cs);
+            dev[endpoint_name] = slcan;
             slcan->open();
             _socket_mgr->register_socket(slcan);
         }
 #if defined(__linux__)
         else if (driver == "socketcan") {
-            SocketCAN *socketcan = new SocketCAN(create_event_callback(bus_name), cs);
+            SocketCAN *socketcan = new SocketCAN(endpoint_name, recv_frame_callback, send_frame_callback, cs);
             dev[bus_name] = socketcan;
             socketcan->open();
             _socket_mgr->register_socket(socketcan);
         }
 #endif
         else {
-            h9_log_crit("Unsupported bus(%s) driver: %s", bus_name.c_str(), driver.c_str());
+            h9_log_crit("Unsupported bus(%s) driver: %s", endpoint_name.c_str(), driver.c_str());
             exit(EXIT_FAILURE);
         }
     }
-
-    send_turned_on_broadcast();
 }
 
-BusMgr::EventCallback BusMgr::create_event_callback(const std::string &bus_id) {
-    return BusMgr::EventCallback(this, bus_id);
-}
-
-void BusMgr::recv_frame_callback(const H9frame& frame, const std::string& endpoint) {
-    frame_log->log_recv(endpoint, frame);
-    h9_log_debug(std::string("recv frame: ") + frame_to_log_string(endpoint, frame));
-    frame_queue.push(std::make_tuple(endpoint, endpoint, frame));
-}
-
-void BusMgr::send_frame_callback(BusFrame *busframe, const std::string& endpoint) {
-    unsigned int tmp = busframe->int_completed_endpoint_count();
-    frame_log->log_send(endpoint, busframe->get_frame());
-    h9_log_debug(std::string("send frame: ") + frame_to_log_string(endpoint, busframe->get_frame()));
-    frame_queue.push(std::make_tuple(busframe->get_origin(), endpoint, busframe->get_frame()));
-    if (tmp == busframe->get_total_endpoint_count()) {
-        delete busframe;
-    }
-}
-
-std::queue<std::tuple<std::string, std::string, H9frame>>& BusMgr::get_recv_queue() {
-    return frame_queue;
+void BusMgr::set_eventmgr_handler(EventMgr* handler) {
+    eventmgr_handler = handler;
 }
 
 void BusMgr::send_frame(const H9frame& frame, const std::string& origin, const std::string& endpoint) {

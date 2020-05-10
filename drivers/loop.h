@@ -20,7 +20,7 @@ private:
 
     sockaddr_in loopback_addr;
 public:
-    explicit Loop(BusMgr::EventCallback event_callback);
+    explicit Loop(const std::string& name, TRecvFrameCallback recv_frame_callback, TSendFrameCallback send_frame_callback);
     void open();
 private:
     void recv_data();

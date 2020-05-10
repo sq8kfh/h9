@@ -23,7 +23,8 @@ public:
         WARN   = 3,
         NOTICE = 4,
         INFO   = 5,
-        DEBUG  = 6
+        DEBUG  = 6,
+        DEBUG2 = 7
     };
 
     constexpr static Level CRIT = Level::CRIT;
@@ -32,6 +33,7 @@ public:
     constexpr static Level NOTICE = Level::NOTICE;
     constexpr static Level INFO = Level::INFO;
     constexpr static Level DEBUG = Level::DEBUG;
+    constexpr static Level DEBUG2 = Level::DEBUG2;
 private:
     Level _verbose;
     bool _debug;
@@ -58,6 +60,8 @@ public:
     void info(const char *file_name, int line_number, const std::string &msg) const;
     void debug(const char *file_name, int line_number, const char* fmt, ...) const;
     void debug(const char *file_name, int line_number, const std::string &msg) const;
+    void debug2(const char *file_name, int line_number, const char* fmt, ...) const;
+    void debug2(const char *file_name, int line_number, const std::string &msg) const;
 
     void vlog(const Level& level, const char *file_name, int line_number, const char* fmt, va_list args) const;
 

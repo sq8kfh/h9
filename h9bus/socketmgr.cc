@@ -3,7 +3,7 @@
  *
  * Created by SQ8KFH on 2019-05-10.
  *
- * Copyright (C) 2019 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2019-2020 Kamil Palkowski. All rights reserved.
  */
 
 #include "socketmgr.h"
@@ -57,7 +57,7 @@ void SocketMgr::unregister_socket(Socket *socket) noexcept {
 
 void SocketMgr::select_loop(std::function<void(void)> after_select_callback, std::function<void(void)> cron_func) {
     while (!socket_set.empty()) {
-        //h9_log_debug("select loop (socket list size: %d)", socket_map.size());
+        h9_log_debug2("select next loop (size of socket set: %d)", socket_set.size());
         fd_set rfds;
         rfds = event_socket_set;
 

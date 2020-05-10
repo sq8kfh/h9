@@ -22,11 +22,11 @@ void Log::set_level(Log::Level level) {
 
 void Log::set_level(unsigned int level) {
     Log::Level tmp = static_cast<Log::Level>(level);
-    if (tmp <= Log::Level::DEBUG) {
+    if (tmp <= Log::Level::DEBUG2) {
         _verbose = tmp;
     }
     else {
-        _verbose = Log::Level::DEBUG;
+        _verbose = Log::Level::DEBUG2;
     }
 }
 
@@ -129,6 +129,19 @@ void Log::debug(const char *file_name, int line_number, const std::string &msg) 
     log(Level::DEBUG, file_name, line_number, msg);
 }
 
+void Log::debug2(const char *file_name, int line_number, const char* fmt, ...) const {
+    va_list args;
+    va_start(args, fmt);
+
+    vlog(Level::DEBUG2, file_name, line_number, fmt, args);
+
+    va_end(args);
+}
+
+void Log::debug2(const char *file_name, int line_number, const std::string &msg) const {
+    log(Level::DEBUG2, file_name, line_number, msg);
+}
+
 void Log::vlog(const Level& level, const char *file_name, int line_number, const char* fmt, va_list args) const {
     static size_t buf_len = 1024;
     static char* buf = new char[buf_len];
@@ -177,6 +190,7 @@ void Log::log(const Log::Level& level, const std::string& msg) const {
             case Level::NOTICE: level_name = "NOTICE"; break;
             case Level::INFO: level_name = "INFO"; break;
             case Level::DEBUG: level_name = "DEBUG"; break;
+            case Level::DEBUG2: level_name = "DEBUG2"; break;
             case Level::STDERR: level_name = "STDERR"; break;
         }
         std::cout << '[' << level_name << "] " << msg << std::endl;

@@ -3,7 +3,7 @@
  *
  * Created by SQ8KFH on 2019-04-28.
  *
- * Copyright (C) 2019 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2019-2020 Kamil Palkowski. All rights reserved.
  */
 
 #ifndef _H9_DUMMY_H_
@@ -19,7 +19,7 @@ class Dummy: public Driver {
 
     sockaddr_in loopback_addr;
 public:
-    explicit Dummy(BusMgr::EventCallback event_callback);
+    explicit Dummy(const std::string& name, TRecvFrameCallback recv_frame_callback, TSendFrameCallback send_frame_callback);
     void open();
 private:
     void recv_data();

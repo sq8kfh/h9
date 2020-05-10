@@ -14,8 +14,8 @@
 #include <unistd.h>
 #include <system_error>
 
-Dummy::Dummy(BusMgr::EventCallback event_callback):
-        Driver(std::move(event_callback)) {
+Dummy::Dummy(const std::string& name, TRecvFrameCallback recv_frame_callback, TSendFrameCallback send_frame_callback):
+        Driver(name, std::move(recv_frame_callback), std::move(send_frame_callback)) {
     bzero(&loopback_addr, sizeof(loopback_addr));
     loopback_addr.sin_family = AF_INET;
     loopback_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);

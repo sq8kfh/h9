@@ -17,8 +17,8 @@
 #include <linux/can.h>
 #include <linux/can/raw.h>
 
-SocketCAN::SocketCAN(BusMgr::EventCallback event_callback, const std::string& interface):
-        Driver(std::move(event_callback)), _interface(interface) {
+SocketCAN::SocketCAN(const std::string& name, TRecvFrameCallback recv_frame_callback, TSendFrameCallback send_frame_callback, const std::string& interface):
+        Driver(name, std::move(recv_frame_callback), std::move(send_frame_callback)), _interface(interface) {
 }
 
 void SocketCAN::open() {
