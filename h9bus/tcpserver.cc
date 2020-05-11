@@ -36,7 +36,7 @@ TcpServer::TcpServer(TNewConnectionCallback new_connection_callback, std::uint16
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_PASSIVE;
-    if ((rv = getaddrinfo(NULL, "7878", &hints, &ai)) != 0) {
+    if ((rv = getaddrinfo(NULL, std::to_string(port).c_str(), &hints, &ai)) != 0) {
         fprintf(stderr, "selectserver: %s\n", gai_strerror(rv));
         throw std::system_error(errno, std::generic_category(), std::string(__FILE__) + std::string(":") + std::to_string(__LINE__));
     }

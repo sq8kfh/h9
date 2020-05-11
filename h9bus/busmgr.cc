@@ -22,7 +22,7 @@
 void BusMgr::on_recv_frame(Driver *endpoint, const H9frame& frame) {
     BusFrame busframe = BusFrame(frame, endpoint->name);
 
-    frame_log->log_recv(endpoint->name, busframe.get_frame());
+    frame_log->log_recv(endpoint->name, &busframe);
     h9_log_debug(std::string("recv frame: ") + frame_to_log_string(endpoint->name, busframe.get_frame()));
     //TODO: internal routing between endpoint
     eventmgr_handler->process_recv_frame(endpoint->name, &busframe);
@@ -30,7 +30,7 @@ void BusMgr::on_recv_frame(Driver *endpoint, const H9frame& frame) {
 
 void BusMgr::on_send_frame(Driver *endpoint, BusFrame *busframe) {
     unsigned int tmp = busframe->int_completed_endpoint_count();
-    frame_log->log_send(endpoint->name, busframe->get_frame());
+    frame_log->log_send(endpoint->name, busframe);
     h9_log_debug(std::string("send frame: ") + frame_to_log_string(endpoint->name, busframe->get_frame()));
 
     eventmgr_handler->process_sent_frame(endpoint->name, busframe);
@@ -101,7 +101,7 @@ void BusMgr::load_config(BusCtx *ctx) {
 #if defined(__linux__)
         else if (driver == "socketcan") {
             SocketCAN *socketcan = new SocketCAN(endpoint_name, recv_frame_callback, send_frame_callback, cs);
-            dev[bus_name] = socketcan;
+            dev[endpoint_name] = socketcan;
             socketcan->open();
             _socket_mgr->register_socket(socketcan);
         }

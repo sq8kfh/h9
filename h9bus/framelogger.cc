@@ -30,8 +30,9 @@ FrameLogger::~FrameLogger() {
     delete send_fram_fs;
 }
 
-void FrameLogger::log_send(const std::string& bus_id, const H9frame& frame) {
-    *send_fram_fs << bus_id << ": " << frame.source_id << " -> " << frame.destination_id
+void FrameLogger::log_send(const std::string& endpoint, BusFrame *busframe) {
+    const H9frame& frame = busframe->get_frame();
+    *send_fram_fs << busframe << ' ' << endpoint << ": " << frame.source_id << " -> " << frame.destination_id
        << " priority: " << (frame.priority == H9frame::Priority::HIGH ? 'H' : 'L')
        << " type: " << std::setw(2) << static_cast<unsigned int>(H9frame::to_underlying(frame.type))
        << " seqnum: " << std::setw(2) << static_cast<unsigned int>(frame.seqnum)
@@ -50,8 +51,9 @@ void FrameLogger::log_send(const std::string& bus_id, const H9frame& frame) {
     *send_fram_fs << std::endl;
 }
 
-void FrameLogger::log_recv(const std::string& bus_id, const H9frame& frame) {
-    *recv_fram_fs << bus_id << ": " << frame.source_id << " -> " << frame.destination_id
+void FrameLogger::log_recv(const std::string& endpoint, BusFrame *busframe) {
+    const H9frame& frame = busframe->get_frame();
+    *recv_fram_fs << busframe << ' ' << endpoint << ": " << frame.source_id << " -> " << frame.destination_id
                  << " priority: " << (frame.priority == H9frame::Priority::HIGH ? 'H' : 'L')
                  << " type: " << std::setw(2) << static_cast<unsigned int>(H9frame::to_underlying(frame.type))
                  << " seqnum: " << std::setw(2) << static_cast<unsigned int>(frame.seqnum)

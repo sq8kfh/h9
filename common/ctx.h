@@ -26,7 +26,9 @@ protected:
     Ctx(std::string app_name, std::string app_desc);
     void enable_debug(bool debug);
 public:
-    inline bool cfg_debug();
+    bool cfg_debug() {
+        return _debug;
+    };
 
     Log& logger();
     //Log& log(const std::string& log_name);

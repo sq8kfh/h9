@@ -33,10 +33,6 @@ void Ctx::enable_debug(bool debug) {
     logger().set_debug(debug);
 }
 
-inline bool Ctx::cfg_debug() {
-    return _debug;
-}
-
 Log& Ctx::logger() {
     return Logger::default_log;
 }

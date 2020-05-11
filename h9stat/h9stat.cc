@@ -89,15 +89,18 @@ int main(int argc, char **argv)
                 last_frames_received = frames_received;
             }
 
-            std::cout << "\n\n" << msg.serialize() << std::endl;
+            if (ctx.cfg_debug())
+                std::cout << "\n\n" << msg.serialize() << std::endl;
 
             last_uptime_value = uptime;
         }
         else {
-            std::cout << "\n\n" << raw_msg.serialize() << std::endl;
+            if (ctx.cfg_debug())
+                std::cerr << raw_msg.serialize() << std::endl;
+            std::cerr << "Receive unexpected message (type: " << static_cast<int>(raw_msg.get_type()) << ")\n";
+            return EXIT_FAILURE;
         }
         sleep(interval);
     }
-
     return EXIT_SUCCESS;
 }

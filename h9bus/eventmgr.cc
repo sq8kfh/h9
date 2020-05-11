@@ -9,6 +9,7 @@
 #include "eventmgr.h"
 
 #include <ctime>
+#include <sstream>
 #include "tcpclient.h"
 #include "busmgr.h"
 #include "common/logger.h"
@@ -43,8 +44,9 @@ void EventMgr::process_msg(TcpClient* origin_tcp_client, GenericMsg& msg) {
             h9_log_info("Process SEND_FRAME msg from client: %p", origin_tcp_client);
             SendFrameMsg sf_msg = std::move(msg);
             H9frame tmp = sf_msg.get_frame();
-            h9_log_debug("EventMgr::process_msg2(%p, %p)", origin_tcp_client, sf_msg.id());
-            _bus_mgr->send_frame(tmp, std::string("tcp#") + std::to_string(client_socket));
+            std::ostringstream ss;
+            ss << "tcp#" << origin_tcp_client;
+            _bus_mgr->send_frame(tmp, ss.str());
             break;
         }
         case GenericMsg::Type::SUBSCRIBE: {

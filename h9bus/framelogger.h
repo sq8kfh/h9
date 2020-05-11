@@ -11,7 +11,7 @@
 
 #include "config.h"
 #include <fstream>
-#include "bus/h9frame.h"
+#include "busframe.h"
 
 class FrameLogger {
 private:
@@ -20,8 +20,8 @@ private:
 public:
     FrameLogger(const std::string &send_frame_log_file, const std::string &recv_frame_log_file);
     ~FrameLogger();
-    void log_send(const std::string& bus_id, const H9frame& frame);
-    void log_recv(const std::string& bus_id, const H9frame& frame);
+    void log_send(const std::string& endpoint, BusFrame *busframe);
+    void log_recv(const std::string& endpoint, BusFrame *busframe);
 };
 
 
