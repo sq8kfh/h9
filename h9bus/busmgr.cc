@@ -101,7 +101,7 @@ void BusMgr::load_config(BusCtx *ctx) {
 #if defined(__linux__)
         else if (driver == "socketcan") {
             SocketCAN *socketcan = new SocketCAN(endpoint_name, recv_frame_callback, send_frame_callback, cs);
-            dev[bus_name] = socketcan;
+            dev[endpoint_name] = socketcan;
             socketcan->open();
             _socket_mgr->register_socket(socketcan);
         }
