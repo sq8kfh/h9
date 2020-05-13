@@ -36,6 +36,7 @@
             <xs:choice>
                 <xs:element name="value" type="value_t"/>
                 <xs:element name="array" type="array_t"/>
+                <xs:element name="dict" type="array_t"/>
             </xs:choice>
         </xs:sequence>
 
@@ -47,6 +48,7 @@
             <xs:choice>
                 <xs:element name="value" type="value_t"/>
                 <xs:element name="array" type="array_t"/>
+                <xs:element name="dict" type="array_t"/>
             </xs:choice>
         </xs:sequence>
 
@@ -69,7 +71,7 @@
     </xs:complexType>
 
     <xs:complexType name="h9sendframe_t">
-        <xs:attribute name="endpont" type="xs:string" use="optional"/>
+        <xs:attribute name="endpoint" type="xs:string" use="optional"/>
         <xs:attribute name="priority" use="required">
             <xs:simpleType>
                 <xs:restriction base="xs:string">

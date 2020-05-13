@@ -91,12 +91,12 @@ void EventMgr::exec_method_call(TcpClient* tcp_client, CallMsg call_msg) {
 
 ResponseMsg EventMgr::get_stat() {
     ResponseMsg res = {"h9bus_stat"};
-    res.set_value("version", H9_VERSION);
-    res.set_value("uptime", std::time(nullptr) - _ctx->get_start_time());
-    res.set_value("connected_clients_count", _server_mgr->connected_clients_count());
-    auto devs = res.set_array("endpoint");
+    res.add_value("version", H9_VERSION);
+    res.add_value("uptime", std::time(nullptr) - _ctx->get_start_time());
+    res.add_value("connected_clients_count", _server_mgr->connected_clients_count());
+    auto devs = res.add_array("endpoint");
     for(std::string& dev_name: _bus_mgr->get_dev_list()) {
-        auto dev = devs.add_array(dev_name.c_str());
+        auto dev = devs.add_dict();
         dev.add_value("name", dev_name);
         dev.add_value("send_frames_counter", _bus_mgr->get_dev_counter(dev_name, BusMgr::CounterType::SEND_FRAMES));
         dev.add_value("received_frames_counter", _bus_mgr->get_dev_counter(dev_name, BusMgr::CounterType::RECEIVED_FRAMES));

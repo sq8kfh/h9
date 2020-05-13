@@ -22,17 +22,17 @@ std::string Value::get_name() const {
     return ret;
 }
 
-void Value::set_name(const std::string& name) {
-    xmlSetProp(_node, reinterpret_cast<xmlChar const *>("name"), reinterpret_cast<xmlChar const *>(name.c_str()));
-}
-
-void Value::set_value(const char* value) {
-    xmlNodeSetContent(_node, reinterpret_cast<xmlChar const *>(value));
-}
-
-void Value::set_value(const std::string& value) {
-
-}
+//void Value::set_name(const std::string& name) {
+//    xmlSetProp(_node, reinterpret_cast<xmlChar const *>("name"), reinterpret_cast<xmlChar const *>(name.c_str()));
+//}
+//
+//void Value::set_value(const char* value) {
+//    xmlNodeSetContent(_node, reinterpret_cast<xmlChar const *>(value));
+//}
+//
+//void Value::set_value(const std::string& value) {
+//    set_value(value.c_str());
+//}
 
 int Value::get_value_as_int() const {
     if (_node->children && _node->children->type == XML_TEXT_NODE) {
@@ -54,22 +54,22 @@ std::string Value::get_value_as_str() const {
     throw std::invalid_argument("_node->children-is not a XML_TEXT_NODE");
 }
 
-Value Value::add_array(const char* name) {
-    xmlNodePtr array = xmlNewNode(nullptr, reinterpret_cast<xmlChar const *>("array"));
-    xmlNewProp(array, reinterpret_cast<xmlChar const *>("name"), reinterpret_cast<xmlChar const *>(name));
-    xmlAddChild(_node, array);
-    return Value(array);
-}
-
-Value& Value::add_value(const std::string &name, const char* value) {
-    xmlNodePtr val = xmlNewTextChild(_node, nullptr, reinterpret_cast<xmlChar const *>("value"), reinterpret_cast<xmlChar const *>(value));
-    xmlNewProp(val, reinterpret_cast<xmlChar const *>("name"), reinterpret_cast<xmlChar const *>(name.c_str()));
-    return *this;
-}
-
-Value& Value::add_value(const std::string &name, const std::string& value) {
-    return add_value(name, value.c_str());
-}
+//Value Value::add_array(const char* name) {
+//    xmlNodePtr array = xmlNewNode(nullptr, reinterpret_cast<xmlChar const *>("array"));
+//    xmlNewProp(array, reinterpret_cast<xmlChar const *>("name"), reinterpret_cast<xmlChar const *>(name));
+//    xmlAddChild(_node, array);
+//    return Value(array);
+//}
+//
+//Value& Value::add_value(const std::string &name, const char* value) {
+//    xmlNodePtr val = xmlNewTextChild(_node, nullptr, reinterpret_cast<xmlChar const *>("value"), reinterpret_cast<xmlChar const *>(value));
+//    xmlNewProp(val, reinterpret_cast<xmlChar const *>("name"), reinterpret_cast<xmlChar const *>(name.c_str()));
+//    return *this;
+//}
+//
+//Value& Value::add_value(const std::string &name, const std::string& value) {
+//    return add_value(name, value.c_str());
+//}
 
 Value Value::operator[](const char* name) {
     for (xmlNode *node = _node->children; node; node = node->next) {
@@ -101,4 +101,55 @@ Value::iterator Value::begin() {
 
 Value::iterator Value::end() {
     return iterator(nullptr);
+}
+
+ArrayValue::ArrayValue(xmlNodePtr node): Value(node) {
+}
+
+ArrayValue ArrayValue::add_array() {
+    xmlNodePtr array = xmlNewNode(nullptr, reinterpret_cast<xmlChar const *>("array"));
+    xmlAddChild(_node, array);
+    return ArrayValue(array);
+}
+
+DictValue ArrayValue::add_dict() {
+    xmlNodePtr array = xmlNewNode(nullptr, reinterpret_cast<xmlChar const *>("dict"));
+    xmlAddChild(_node, array);
+    return DictValue(array);
+}
+
+Value& ArrayValue::add_value(const char* value) {
+    xmlNewTextChild(_node, nullptr, reinterpret_cast<xmlChar const *>("value"), reinterpret_cast<xmlChar const *>(value));
+    return *this;
+}
+
+Value& ArrayValue::add_value(const std::string& value) {
+    return add_value(value.c_str());
+}
+
+DictValue::DictValue(xmlNodePtr node): Value(node) {
+}
+
+ArrayValue DictValue::add_array(const char* name) {
+    xmlNodePtr array = xmlNewNode(nullptr, reinterpret_cast<xmlChar const *>("array"));
+    xmlNewProp(array, reinterpret_cast<xmlChar const *>("name"), reinterpret_cast<xmlChar const *>(name));
+    xmlAddChild(_node, array);
+    return ArrayValue(array);
+}
+
+DictValue DictValue::add_dict(const char* name) {
+    xmlNodePtr array = xmlNewNode(nullptr, reinterpret_cast<xmlChar const *>("dict"));
+    xmlNewProp(array, reinterpret_cast<xmlChar const *>("name"), reinterpret_cast<xmlChar const *>(name));
+    xmlAddChild(_node, array);
+    return DictValue(array);
+}
+
+Value& DictValue::add_value(const std::string &name, const char* value) {
+    xmlNodePtr val = xmlNewTextChild(_node, nullptr, reinterpret_cast<xmlChar const *>("value"), reinterpret_cast<xmlChar const *>(value));
+    xmlNewProp(val, reinterpret_cast<xmlChar const *>("name"), reinterpret_cast<xmlChar const *>(name.c_str()));
+    return *this;
+}
+
+Value& DictValue::add_value(const std::string &name, const std::string& value) {
+    return add_value(name, value.c_str());
 }

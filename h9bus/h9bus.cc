@@ -23,7 +23,10 @@ int main(int argc, char **argv) {
     ctx.load(argc, argv);
 
     if (ctx.cfg_daemonize()) {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated"
         if (daemon(1, 0) != 0) {
+#pragma GCC diagnostic pop
             h9_log_crit("Unable to daemonize: %s", strerror(errno));
             return EXIT_FAILURE;
         }

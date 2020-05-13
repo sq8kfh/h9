@@ -17,7 +17,7 @@
 
 
 class Value {
-private:
+protected:
     xmlNode* const _node;
 public:
     class iterator {
@@ -47,41 +47,69 @@ public:
         Value operator*() {
             return Value(_node);
         }
-
     };
 
     /*explicit*/ Value(xmlNodePtr node);
     Value& operator=(const Value& a) = delete;
 
     std::string get_name() const;
-    void set_name(const std::string& name);
-
-    void set_value(const char* value);
-    void set_value(const std::string& value);
-    template<typename value_t>
-    void set_value(value_t value);
+//    void set_name(const std::string& name);
+//
+//    void set_value(const char* value);
+//    void set_value(const std::string& value);
+//    template<typename value_t>
+//    void set_value(value_t value);
 
     int get_value_as_int() const;
     std::string get_value_as_str() const;
 
-    Value add_array(const char* name);
-    Value& add_value(const std::string &name, const char* value);
-    Value& add_value(const std::string &name, const std::string& value);
-    template<typename value_t>
-    Value& add_value(const std::string &name, value_t value);
+//    Value add_array(const char* name);
+//    Value& add_value(const std::string &name, const char* value);
+//    Value& add_value(const std::string &name, const std::string& value);
+//    template<typename value_t>
+//    Value& add_value(const std::string &name, value_t value);
 
     Value operator[](const char* name);
     iterator begin();
     iterator end();
 };
 
+class DictValue;
+
+class ArrayValue: public Value {
+public:
+    ArrayValue(xmlNodePtr node);
+    ArrayValue add_array();
+    DictValue add_dict();
+    Value& add_value(const char* value);
+    Value& add_value(const std::string& value);
+    template<typename value_t>
+    Value& add_value(value_t value);
+};
+
+class DictValue: public Value {
+public:
+    DictValue(xmlNodePtr node);
+    ArrayValue add_array(const char* name);
+    DictValue add_dict(const char* name);
+    Value& add_value(const std::string &name, const char* value);
+    Value& add_value(const std::string &name, const std::string& value);
+    template<typename value_t>
+    Value& add_value(const std::string &name, value_t value);
+};
+
+//template<typename value_t>
+//void Value::set_value(value_t value) {
+//    set_value(std::to_string(value));
+//}
+
 template<typename value_t>
-void Value::set_value(value_t value) {
-    set_value(std::to_string(value));
+Value& ArrayValue::add_value(value_t value) {
+    return add_value(std::to_string(value));
 }
 
 template<typename value_t>
-Value& Value::add_value(const std::string &name, value_t value) {
+Value& DictValue::add_value(const std::string &name, value_t value) {
     return add_value(name, std::to_string(value));
 }
 
