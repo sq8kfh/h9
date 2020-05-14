@@ -57,7 +57,7 @@ void SocketMgr::unregister_socket(Socket *socket) noexcept {
 
 void SocketMgr::select_loop(std::function<void(void)> after_select_callback, std::function<void(void)> cron_func) {
     while (!socket_set.empty()) {
-        h9_log_debug2("select next loop (size of socket set: %d)", socket_set.size());
+        h9_log_debug2("Select next loop (size of socket set: %d)", socket_set.size());
         fd_set rfds;
         rfds = event_socket_set;
 
@@ -73,6 +73,10 @@ void SocketMgr::select_loop(std::function<void(void)> after_select_callback, std
         int retval = select(socket_max+1, &rfds, nullptr, nullptr, &tv);
 
         if (retval == -1) {
+            if (errno == EINTR) { //received a signal (e.g. SIGHUP for log rotate)
+                h9_log_warn("Interrupted system call during a 'select'");
+                continue;
+            }
             throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
         }
         else if (retval) {

@@ -27,6 +27,7 @@ void DaemonCtx::load(int argc, char* argv[]) {
     options.add_options("daemon")
             ("c,config", "Config file", cxxopts::value<std::string>()->default_value(H9_CONFIG_PATH + _app_name + ".conf"))
             ("D,daemonize", "Run in the background")
+            ("l,logfile", "Log file", cxxopts::value<std::string>())
             ("p,pidfile", "PID file", cxxopts::value<std::string>())
             ;
 
@@ -50,13 +51,20 @@ void DaemonCtx::load(int argc, char* argv[]) {
     raise_verbose_level(result.count("verbose"));
 
     bool override_daemonize = result.count("daemonize") > 0;
+
+    std::string override_logfile;
+
+    if (result.count("logfile")) {
+        override_logfile = std::string(result["logfile"].as<std::string>());
+    }
+
     std::string override_pidfile;
 
     if (result.count("pidfile")) {
         override_pidfile = std::string(result["pidfile"].as<std::string>());
     }
 
-    h9_log_notice("Starting %s v%s (config: %s)", _app_name.c_str(), H9_VERSION, result["config"].as<std::string>().c_str());
+    load_configuration(result["config"].as<std::string>(), override_daemonize, override_logfile, override_pidfile);
 
-    load_configuration(result["config"].as<std::string>(), override_daemonize, override_pidfile);
+    h9_log_notice("Starting %s v%s (config: %s)", _app_name.c_str(), H9_VERSION, result["config"].as<std::string>().c_str());
 }

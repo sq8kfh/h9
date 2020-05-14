@@ -8,4 +8,4 @@
 
 #include "logger.h"
 
-Log Logger::default_log = Log();
+Log Logger::default_log = {};

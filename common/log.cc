@@ -7,9 +7,40 @@
  */
 
 #include "log.h"
+#include <ctime>
 #include <iostream>
+#include <signal.h>
+#include "logger.h"
 
-Log::Log(): _verbose(Log::NOTICE), _debug(false), _to_stderr(false) {
+
+static void handle_sighup(int signum) {
+    if (signum == SIGHUP) {
+        Logger::default_log.on_logrotate();
+    }
+}
+
+Log::Log(): _verbose(Log::NOTICE), _debug(false), _to_stderr(false), _print_date(false), logfile("") {
+}
+
+Log::~Log() {
+    ofs.close();
+}
+
+void Log::redirect_to_file(std::string filename) {
+    _print_date = true;
+    logfile = std::move(filename);
+    ofs.open (logfile, std::ofstream::out | std::ofstream::app);
+    std::clog.rdbuf(ofs.rdbuf());
+    signal(SIGHUP, handle_sighup);
+}
+
+void Log::on_logrotate() {
+    if (!logfile.empty()) {
+        warn(__FILE__, __LINE__, "Logrotate");
+        std::clog.flush();
+        ofs.close();
+        redirect_to_file(logfile);
+    }
 }
 
 unsigned int Log::get_level() {
@@ -193,25 +224,15 @@ void Log::log(const Log::Level& level, const std::string& msg) const {
             case Level::DEBUG2: level_name = "DEBUG2"; break;
             case Level::STDERR: level_name = "STDERR"; break;
         }
-        std::cout << '[' << level_name << "] " << msg << std::endl;
+        if (_print_date) {
+            time_t now;
+            time(&now);
+            char buf[sizeof "1987-01-20T01:07:09Z"];
+            strftime(buf, sizeof buf, "%FT%TZ", gmtime(&now));
+            std::clog << buf << " [" << level_name << "] " << msg << std::endl;
+        }
+        else {
+            std::clog << '[' << level_name << "] " << msg << std::endl;
+        }
     }
-
-    /*
-    FILE *out = stdout;
-    if (_all_to_stderr || level == H9_LOG_STDERR) {
-        out = stderr;
-    }
-
-    switch (level) {
-        case H9_LOG_STDERR:
-            break;
-        default:
-            fprintf(out, "%-6s ", level_name[level]);
-            break;
-    }
-    if (_debug) {
-        fprintf(out, "%s:%d: ", file, line_num);
-    }
-    FILE *out = stdout;
-    vfprintf(out, fmt, args);*/
 }

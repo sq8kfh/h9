@@ -56,8 +56,9 @@ void EventMgr::process_msg(TcpClient* origin_tcp_client, GenericMsg& msg) {
             break;
         }
         case GenericMsg::Type::CALL: {
-            h9_log_info("Process CALL msg from client %p", origin_tcp_client);
-            exec_method_call(origin_tcp_client, std::move(msg));
+            CallMsg call_msg = std::move(msg);
+            h9_log_info("Process CALL msg (method: %s) from client %p", call_msg.get_method_name().c_str(), origin_tcp_client);
+            exec_method_call(origin_tcp_client, std::move(call_msg));
             break;
         }
         default:

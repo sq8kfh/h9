@@ -18,7 +18,8 @@
 class BusCtx: public DaemonCtx {
 private:
     cfg_t *cfg;
-    void load_configuration(const std::string& conf_filename, bool override_daemonize, const std::string& override_pidfile);
+    void load_configuration(const std::string& conf_filename, bool override_daemonize,
+            const std::string& override_logfile, const std::string& override_pidfile);
 public:
     BusCtx();
     ~BusCtx();
@@ -29,6 +30,7 @@ public:
     int cfg_drop_privileges_uid();
     int cfg_drop_privileges_gid();
     uint16_t cfg_server_port();
+    std::string cfg_log_logfile();
     std::string cfg_log_send_logfile();
     std::string cfg_log_recv_logfile();
     std::vector<std::string> cfg_bus_list();

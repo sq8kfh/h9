@@ -15,7 +15,8 @@ static void cfg_err_func(cfg_t *cfg, const char* fmt, va_list args) {
     Logger::default_log.vlog(Log::Level::WARN, __FILE__, __LINE__, fmt, args);
 }
 
-void BusCtx::load_configuration(const std::string& conf_filename, bool override_daemonize, const std::string& override_pidfile) {
+void BusCtx::load_configuration(const std::string& conf_filename, bool override_daemonize,
+        const std::string& override_logfile, const std::string& override_pidfile) {
     cfg_opt_t cfg_process_sec[] = {
             CFG_BOOL("daemonize", cfg_false, CFGF_NONE),
             CFG_STR("pidfile", nullptr, CFGF_NONE),
@@ -30,6 +31,7 @@ void BusCtx::load_configuration(const std::string& conf_filename, bool override_
     };
 
     cfg_opt_t cfg_log_sec[] = {
+            CFG_STR("logfile", nullptr, CFGF_NONE),
             CFG_STR("send_frame_logfile", nullptr, CFGF_NONE),
             CFG_STR("recv_frame_logfile", nullptr, CFGF_NONE),
             CFG_END()
@@ -54,19 +56,25 @@ void BusCtx::load_configuration(const std::string& conf_filename, bool override_
     int ret = cfg_parse(cfg, conf_filename.c_str());
 
     if (ret == CFG_FILE_ERROR) {
-        h9_log_crit("config file error");
+        h9_log_stderr("config file error");
         cfg_free(cfg);
         exit(EXIT_FAILURE);
     } else if (ret == CFG_PARSE_ERROR) {
-        h9_log_crit("config file parse error");
+        h9_log_stderr("config file parse error");
         cfg_free(cfg);
         exit(EXIT_FAILURE);
     }
 
     if (override_daemonize)
         cfg_setbool(cfg, "process|daemonize", cfg_true);
+    if (!override_logfile.empty())
+        cfg_setstr(cfg, "log|logfile", override_logfile.c_str());
     if (!override_pidfile.empty())
         cfg_setstr(cfg, "process|pidfile", override_pidfile.c_str());
+
+    if (cfg_log_logfile() != "stdout") {
+        logger().redirect_to_file(cfg_log_logfile());
+    }
 }
 
 BusCtx::~BusCtx() {
@@ -122,6 +130,14 @@ uint16_t BusCtx::cfg_server_port() {
         return cfg_getint(cfg_process, "port");
     }
     return H9_BUS_DEFAULT_PORT;
+}
+
+std::string BusCtx::cfg_log_logfile() {
+    cfg_t *cfg_log = cfg_getsec(cfg, "log");
+    if (cfg_log && cfg_getstr(cfg_log, "logfile")) {
+        return std::string(cfg_getstr(cfg_log, "logfile"));
+    }
+    return "stdout";
 }
 
 std::string BusCtx::cfg_log_send_logfile() {

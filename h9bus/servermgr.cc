@@ -38,8 +38,6 @@ void ServerMgr::load_config(BusCtx *ctx) {
     TcpServer::TNewConnectionCallback tmp_f = std::bind(&ServerMgr::on_new_connection, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
     tcp_server = new TcpServer(tmp_f, ctx->cfg_server_port());
     _socket_mgr->register_socket(tcp_server);
-
-    msg_log = ctx->logger();
 }
 
 void ServerMgr::set_eventmgr_handler(EventMgr* handler) {

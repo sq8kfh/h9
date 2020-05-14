@@ -10,8 +10,10 @@
 #define _H9_LOG_H_
 
 #include "config.h"
-#include <string>
 #include <cstdarg>
+#include <fstream>
+#include <iostream>
+#include <string>
 
 
 class Log {
@@ -38,8 +40,14 @@ private:
     Level _verbose;
     bool _debug;
     bool _to_stderr;
+    bool _print_date;
+    std::ofstream ofs;
+    std::string logfile;
 public:
     Log();
+    ~Log();
+    void redirect_to_file(std::string filename);
+    void on_logrotate();
     unsigned int get_level();
     void set_level(Level level);
     void set_level(unsigned int  level);

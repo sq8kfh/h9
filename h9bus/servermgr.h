@@ -28,7 +28,6 @@ private:
 
     TcpServer *tcp_server;
     std::map<int, TcpClient*> tcp_clients;
-    Log msg_log;
 
     void on_new_connection(int client_socket, const std::string& remote_address, std::uint16_t remote_port);
     void server_close_callback();
