@@ -16,6 +16,13 @@
 #include "protocol/subscribemsg.h"
 #include "common/clientctx.h"
 
+char* mcu_map[] = {(char*)"UNKNOWN",       // 0
+                   (char*)"ATmega16M1",    // 1
+                   (char*)"ATmega32M1",    // 2
+                   (char*)"ATmega64M1",    // 3
+                   (char*)"AT90CAN128",    // 4
+                   (char*)"PIC18F46K80"};  // 5
+
 std::uint8_t hex2bin(const char *hex) {
     std::uint8_t val = 0;
     for (size_t n = 0; n < 2; n++) {
@@ -38,9 +45,12 @@ std::uint8_t hex2bin(const char *hex) {
 
 static size_t read_ihex(const std::string& ihex_file, std::uint8_t **fw_data) {
     *fw_data = static_cast<uint8_t *>(std::malloc(128 * 1024));
-    bzero(*fw_data, 128*1024);
+    memset(*fw_data, 0xff, 128*1024);
 
-    size_t ret = 0;
+    uint32_t extended_address = 0;
+    size_t data_length = 0;
+
+    //size_t ret = 0;
     FILE *fp = std::fopen(ihex_file.c_str(), "r");
     if (fp == nullptr) {
         h9_log_stderr("Failed to open file: %s", ihex_file.c_str());
@@ -49,6 +59,7 @@ static size_t read_ihex(const std::string& ihex_file, std::uint8_t **fw_data) {
 
     char *line = nullptr;
     size_t linecap = 0;
+
     while (getline(&line, &linecap, fp) > 0) {
         if (line[0] != ':')
             continue;
@@ -57,23 +68,55 @@ static size_t read_ihex(const std::string& ihex_file, std::uint8_t **fw_data) {
         std::uint8_t size = hex2bin(line + 1); //byte count
         tmp_crc += size;
         //TODO: fw_data size
-        tmp_crc += hex2bin(line + 3); //address MSB
-        tmp_crc += hex2bin(line + 5); //address LSB
+        std::uint32_t address = extended_address;
+        std::uint8_t tmp = hex2bin(line + 3); //address MSB
+        tmp_crc += tmp;
+        address += (tmp << 8);
+
+        tmp = hex2bin(line + 5); //address LSB
+        tmp_crc += tmp;
+        address += tmp;
+
         std::uint8_t rtype = hex2bin(line + 7); //record type
         tmp_crc += rtype;
         if (rtype == 0) {
+            if (data_length < address) data_length = address;
+
             size_t n = 0;
             for (; n < size; n++) {
                 std::uint8_t tmp = hex2bin(line + 9 + n*2);
-                (*fw_data)[ret++] = tmp;
+                (*fw_data)[data_length++] = tmp;
                 tmp_crc += tmp;
             }
             std::uint8_t crc = hex2bin(line + 9 + n*2);
 
             if (static_cast<std::uint8_t>(0x100 - tmp_crc) != crc) {
                 h9_log_stderr("Intel HEX file corrupted");
-                ret = 0;
+                data_length = 0;
                 break;
+            }
+        }
+        else if (rtype == 4) {
+            std::uint8_t tmp = hex2bin(line + 9 + 0*2);
+            tmp_crc += tmp;
+            extended_address = tmp;
+            extended_address <<= 8;
+
+            tmp = hex2bin(line + 9 + 1*2);
+            tmp_crc += tmp;
+            extended_address += tmp;
+            extended_address <<= 16;
+
+            std::uint8_t crc = hex2bin(line + 9 + 2*2);
+
+            if (static_cast<std::uint8_t>(0x100 - tmp_crc) != crc) {
+                h9_log_stderr("Intel HEX file corrupted");
+                data_length = 0;
+                break;
+            }
+
+            if (extended_address > (1<<16)) { //more then 128kB
+                break; //skip reading EEPROM, CONFIG e.t.c.
             }
         }
     }
@@ -81,7 +124,7 @@ static size_t read_ihex(const std::string& ihex_file, std::uint8_t **fw_data) {
     if (line) {
         free(line);
     }
-    return ret;
+    return data_length;
 }
 
 int main(int argc, char **argv)
@@ -114,7 +157,6 @@ int main(int argc, char **argv)
 
     if (res.count("dst_id")) {
         frame.destination_id = res["dst_id"].as<std::uint16_t>();
-        std::cout << "Target node id: " << frame.destination_id << std::endl;
     }
     else {
         h9_log_stderr("destination id must be set");
@@ -123,7 +165,7 @@ int main(int argc, char **argv)
 
     if (res.count("ihex")) {
         fw_size = read_ihex(res["ihex"].as<std::string>(), &fw);
-        std::cout << "Loaded: " << res["ihex"].as<std::string>() << " (data size: " << fw_size << ")\n";
+        std::cout << "Loaded firmware: " << res["ihex"].as<std::string>() << " (" << fw_size << " B)\n";
     }
     else {
         h9_log_stderr("missing a Intel HEX file");
@@ -140,31 +182,35 @@ int main(int argc, char **argv)
 
     h9_connector.send(SubscribeMsg(SubscribeMsg::Content::FRAME));
 
+    uint8_t seqnum = 0;
+    uint16_t page = 0;
 
     if (res.count("noupgrademsg") > 0) { //skip NODE_UPGRADE frame
         frame.type = H9frame::Type::PAGE_START;
         frame.dlc = 2;
-        frame.data[0] = 0;
-        frame.data[1] = 0;
+        frame.seqnum = seqnum++;
+        frame.data[0] = (uint8_t)((page >> 8) & 0xff);
+        frame.data[1] = (uint8_t)((page) & 0xff);
 
         h9_connector.send(SendFrameMsg(frame));
     }
-    else {
-        frame.type = H9frame::Type::NODE_UPGRADE;
-        frame.dlc = 0;
-
-        h9_connector.send(SendFrameMsg(frame));
-    }
+//    else {
+//        frame.type = H9frame::Type::NODE_UPGRADE;
+//        frame.dlc = 0;
+//        frame.seqnum = seqnum++;
+//
+//        h9_connector.send(SendFrameMsg(frame));
+//    }
 
     size_t fw_idx = 0;
-    uint16_t page = 0;
+
+    std::cout << "Waiting for node...\n";
 
     while (true) {
         GenericMsg raw_msg = h9_connector.recv();
         if (raw_msg.get_type() == GenericMsg::Type::FRAME) {
             FrameMsg msg = std::move(raw_msg);
             H9frame recv_frame = msg.get_frame();
-            //std::cout << recv_frame <<std::endl;
 
             if (recv_frame.source_id != frame.destination_id) {
                 continue;
@@ -172,18 +218,44 @@ int main(int argc, char **argv)
 
             if (recv_frame.type == H9frame::Type::BOOTLOADER_TURNED_ON || recv_frame.type == H9frame::Type::PAGE_WRITED) {
                 if (recv_frame.type == H9frame::Type::PAGE_WRITED) {
-                    h9_log_stderr("Writted page %hu, byte %u", page, fw_idx);
+                    constexpr int PBWIDTH = 60;
+                    constexpr char* PBSTR = (char*)"============================================================";
+
+                    unsigned int val = fw_idx * 100 / fw_size;
+                    unsigned int lpad = fw_idx * PBWIDTH / fw_size;
+                    unsigned int rpad = PBWIDTH - lpad;
+                    printf("%3u%% [%.*s>%*s]\r", val, lpad, PBSTR, rpad, "");
+                    fflush(stdout);
+
                     if (fw_idx >= fw_size) {
                         frame.type = H9frame::Type::QUIT_BOOTLOADER;
                         frame.dlc = 0;
+                        frame.seqnum = seqnum++;
 
                         h9_connector.send(SendFrameMsg(frame));
+                        printf("\nDone.\n");
                         exit(EXIT_SUCCESS);
                     }
                     page++;
                 }
+                else if (recv_frame.type == H9frame::Type::BOOTLOADER_TURNED_ON && recv_frame.dlc == 4) {
+                    std::uint16_t bootloader_version = recv_frame.data[0];
+                    std::uint16_t node_cpu = recv_frame.data[1];
+                    std::uint16_t node_type = recv_frame.data[2];
+                    node_type <<= 8;
+                    node_type += recv_frame.data[3];
+                    std::cout << "Bootloader version: " << bootloader_version << std::endl;
+
+                    char *mcu = mcu_map[ node_cpu < (sizeof(mcu_map)/sizeof(char*)) ? node_cpu : 0 ];
+
+                    std::cout << "Target node id: " << recv_frame.source_id << std::endl;
+                    std::cout << "Target node MCU: " << mcu << " (" << node_cpu << ")" << std::endl;
+                    std::cout << "Target node type: " << node_type << std::endl;
+                }
+
                 frame.type = H9frame::Type::PAGE_START;
                 frame.dlc = 2;
+                frame.seqnum = seqnum++;
                 frame.data[0] = (uint8_t)((page >> 8) & 0xff);
                 frame.data[1] = (uint8_t)((page) & 0xff);
 
@@ -192,6 +264,7 @@ int main(int argc, char **argv)
             else if (recv_frame.type == H9frame::Type::PAGE_FILL_NEXT) {
                 frame.type = H9frame::Type::PAGE_FILL;
                 frame.dlc = 8;
+                frame.seqnum = seqnum++;
                 frame.data[0] = fw[fw_idx++];
                 frame.data[1] = fw[fw_idx++];
                 frame.data[2] = fw[fw_idx++];
