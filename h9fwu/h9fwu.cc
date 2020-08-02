@@ -238,19 +238,19 @@ int main(int argc, char **argv)
                     }
                     page++;
                 }
-                else if (recv_frame.type == H9frame::Type::BOOTLOADER_TURNED_ON && recv_frame.dlc == 4) {
-                    std::uint16_t bootloader_version = recv_frame.data[0];
-                    std::uint16_t node_cpu = recv_frame.data[1];
-                    std::uint16_t node_type = recv_frame.data[2];
+                else if (recv_frame.type == H9frame::Type::BOOTLOADER_TURNED_ON && recv_frame.dlc == 5) {
+                    std::uint8_t bootloader_version_major = recv_frame.data[0];
+                    std::uint8_t bootloader_version_minor = recv_frame.data[1];
+                    std::uint8_t node_cpu = recv_frame.data[2];
+                    std::uint16_t node_type = recv_frame.data[3];
                     node_type <<= 8;
-                    node_type += recv_frame.data[3];
-                    std::cout << "Bootloader version: " << bootloader_version << std::endl;
-
+                    node_type += recv_frame.data[4];
                     char *mcu = mcu_map[ node_cpu < (sizeof(mcu_map)/sizeof(char*)) ? node_cpu : 0 ];
 
-                    std::cout << "Target node id: " << recv_frame.source_id << std::endl;
-                    std::cout << "Target node MCU: " << mcu << " (" << node_cpu << ")" << std::endl;
-                    std::cout << "Target node type: " << node_type << std::endl;
+                    printf("Bootloader version: %hhu.%hhu\n", bootloader_version_major, bootloader_version_minor);
+                    printf("Target node id: %hu\n", recv_frame.source_id);
+                    printf("Target node MCU: %s (%hhu)\n", mcu, node_cpu);
+                    printf("Target node type: %hu\n", node_type);
                 }
 
                 frame.type = H9frame::Type::PAGE_START;

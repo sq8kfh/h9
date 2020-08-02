@@ -14,9 +14,9 @@
 #ifndef _CONFIG_H_
 #define _CONFIG_H_
 
-#cmakedefine H9_CONFIG_PATH "@H9_CONFIG_PATH@"
-#cmakedefine H9_USER_CONFIG_FILE "@H9_USER_CONFIG_FILE@"
-#cmakedefine H9_VERSION "@H9_VERSION@"
+#define H9_CONFIG_PATH "@H9_CONFIG_PATH@"
+#define H9_USER_CONFIG_FILE "@H9_USER_CONFIG_FILE@"
+#define H9_VERSION "@H9_VERSION@"
 #cmakedefine H9_DEBUG
 
 #define H9_BUS_DEFAULT_PORT 7878
