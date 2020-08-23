@@ -31,6 +31,9 @@
 %token T_NODE      "node"
 %token T_RESTART   "restart"
 %token T_REG       "reg"
+%token T_SETBIT    "setbit"
+%token T_CLEARBIT  "clearbit"
+%token T_TOGGLEBIT "togglebit"
 %token T_SET1      "set1"
 %token T_SET2      "set2"
 %token T_SET3      "set3"
@@ -80,11 +83,14 @@ node_reg_exp:
 	//| node_exp error                  { printf("error\n"); }
 
 node_reg_command:
-	node_reg_exp "get"      	{ $$ = new NodeGetReg($1); cli_parser.last_match = $$; }
-	| node_reg_exp "set1" num_exp	{ $$ = new NodeSet1Reg($1, $3); cli_parser.last_match = $$; }
-	| node_reg_exp "set2" num_exp	{ $$ = new NodeSet2Reg($1, $3); cli_parser.last_match = $$; }
-	| node_reg_exp "set3" num_exp	{ $$ = new NodeSet3Reg($1, $3); cli_parser.last_match = $$; }
-	| node_reg_exp "set4" num_exp	{ $$ = new NodeSet4Reg($1, $3); cli_parser.last_match = $$; }
+	node_reg_exp "get"      	        { $$ = new NodeGetReg($1); cli_parser.last_match = $$; }
+	| node_reg_exp "setbit" num_exp	    { $$ = new NodeSetBit($1, $3); cli_parser.last_match = $$; }
+	| node_reg_exp "clearbit" num_exp	{ $$ = new NodeClearBit($1, $3); cli_parser.last_match = $$; }
+	| node_reg_exp "togglebit" num_exp	{ $$ = new NodeToggleBit($1, $3); cli_parser.last_match = $$; }
+	| node_reg_exp "set1" num_exp	    { $$ = new NodeSet1Reg($1, $3); cli_parser.last_match = $$; }
+	| node_reg_exp "set2" num_exp	    { $$ = new NodeSet2Reg($1, $3); cli_parser.last_match = $$; }
+	| node_reg_exp "set3" num_exp	    { $$ = new NodeSet3Reg($1, $3); cli_parser.last_match = $$; }
+	| node_reg_exp "set4" num_exp	    { $$ = new NodeSet4Reg($1, $3); cli_parser.last_match = $$; }
 
 %left "+" "-";
 %left "*" "/";

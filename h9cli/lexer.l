@@ -27,6 +27,9 @@
 node                    return yy::parser::make_T_NODE();
 restart                 return yy::parser::make_T_RESTART();
 reg                     return yy::parser::make_T_REG();
+setbit                  return yy::parser::make_T_SETBIT();
+clearbit                return yy::parser::make_T_CLEARBIT();
+togglebit               return yy::parser::make_T_TOGGLEBIT();
 set1                    return yy::parser::make_T_SET1();
 set2                    return yy::parser::make_T_SET2();
 set3                    return yy::parser::make_T_SET3();

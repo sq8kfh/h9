@@ -96,6 +96,33 @@ public:
     void print_response(CommandCtx* ctx);
 };
 
+class NodeSetBit: public NodeSetReg {
+public:
+    const int bit_num;
+    NodeSetBit(NodeRegExp* reg, int bit_num): NodeSetReg(reg, 0), bit_num(bit_num) {
+    }
+
+    void operator()(CommandCtx* ctx);
+};
+
+class NodeClearBit: public NodeSetReg {
+public:
+    const int bit_num;
+    NodeClearBit(NodeRegExp* reg, int bit_num): NodeSetReg(reg, 0), bit_num(bit_num) {
+    }
+
+    void operator()(CommandCtx* ctx);
+};
+
+class NodeToggleBit: public NodeSetReg {
+public:
+    const int bit_num;
+    NodeToggleBit(NodeRegExp* reg, int bit_num): NodeSetReg(reg, 0), bit_num(bit_num) {
+    }
+
+    void operator()(CommandCtx* ctx);
+};
+
 class NodeSet1Reg: public NodeSetReg {
 public:
     NodeSet1Reg(NodeRegExp* reg, int value): NodeSetReg(reg, value) {

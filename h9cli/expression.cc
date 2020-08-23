@@ -20,6 +20,9 @@ const char* NodeExp::completion_list[] = {
 
 const char* NodeRegExp::completion_list[] = {
         "get",
+        "setbit",
+        "clearbit",
+        "togglebit",
         "set1",
         "set2",
         "set3",
@@ -117,6 +120,63 @@ void NodeSetReg::print_response(CommandCtx* ctx) {
             }
         }
     }
+}
+
+void NodeSetBit::operator()(CommandCtx* ctx) {
+    H9frame frame;
+
+    frame.priority = H9frame::Priority::LOW;
+    frame.source_id = ctx->get_source_id();
+    frame.destination_id = reg->node->node_id;
+    frame.type = H9frame::Type::SET_BIT;
+    frame.dlc = 2;
+    frame.data[0] = reg->reg_number;
+    frame.data[1] = bit_num;
+
+    ctx->get_connector()->send(SubscribeMsg(SubscribeMsg::Content::FRAME));
+    ctx->get_connector()->send(SendFrameMsg(frame));
+
+    print_response(ctx);
+
+    ctx->get_connector()->send(SubscribeMsg(SubscribeMsg::Content::NONE));
+}
+
+void NodeClearBit::operator()(CommandCtx* ctx) {
+    H9frame frame;
+
+    frame.priority = H9frame::Priority::LOW;
+    frame.source_id = ctx->get_source_id();
+    frame.destination_id = reg->node->node_id;
+    frame.type = H9frame::Type::CLEAR_BIT;
+    frame.dlc = 2;
+    frame.data[0] = reg->reg_number;
+    frame.data[1] = bit_num;
+
+    ctx->get_connector()->send(SubscribeMsg(SubscribeMsg::Content::FRAME));
+    ctx->get_connector()->send(SendFrameMsg(frame));
+
+    print_response(ctx);
+
+    ctx->get_connector()->send(SubscribeMsg(SubscribeMsg::Content::NONE));
+}
+
+void NodeToggleBit::operator()(CommandCtx* ctx) {
+    H9frame frame;
+
+    frame.priority = H9frame::Priority::LOW;
+    frame.source_id = ctx->get_source_id();
+    frame.destination_id = reg->node->node_id;
+    frame.type = H9frame::Type::TOGGLE_BIT;
+    frame.dlc = 2;
+    frame.data[0] = reg->reg_number;
+    frame.data[1] = bit_num;
+
+    ctx->get_connector()->send(SubscribeMsg(SubscribeMsg::Content::FRAME));
+    ctx->get_connector()->send(SendFrameMsg(frame));
+
+    print_response(ctx);
+
+    ctx->get_connector()->send(SubscribeMsg(SubscribeMsg::Content::NONE));
 }
 
 void NodeSet1Reg::operator()(CommandCtx* ctx) {
