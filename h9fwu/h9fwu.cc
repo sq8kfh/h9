@@ -194,13 +194,13 @@ int main(int argc, char **argv)
 
         h9_connector.send(SendFrameMsg(frame));
     }
-//    else {
-//        frame.type = H9frame::Type::NODE_UPGRADE;
-//        frame.dlc = 0;
-//        frame.seqnum = seqnum++;
-//
-//        h9_connector.send(SendFrameMsg(frame));
-//    }
+    else {
+        frame.type = H9frame::Type::NODE_UPGRADE;
+        frame.dlc = 0;
+        frame.seqnum = seqnum++;
+
+        h9_connector.send(SendFrameMsg(frame));
+    }
 
     size_t fw_idx = 0;
 

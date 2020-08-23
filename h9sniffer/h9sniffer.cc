@@ -56,8 +56,29 @@ void print_frame(const H9frame& frame) {
         std::cout << "    reg: " << static_cast<unsigned int>(frame.data[0]) << std::endl;
         print_reg_value(frame);
     }
+    else if (frame.type == H9frame::Type::BULK_DATA || frame.type == H9frame::Type::GET_BULK_DATA) {
+        std::cout << "    bulk msg type: " << static_cast<unsigned int>(frame.data[0]) << std::endl;
+    }
+    else if (frame.type == H9frame::Type::SET_BIT) {
+        std::cout << "    reg: " << static_cast<unsigned int>(frame.data[0]) << std::endl;
+        std::cout << "    set bit: " << static_cast<unsigned int>(frame.data[1]) << std::endl;
+    }
+    else if (frame.type == H9frame::Type::CLEAR_BIT) {
+        std::cout << "    reg: " << static_cast<unsigned int>(frame.data[0]) << std::endl;
+        std::cout << "    clear bit: " << static_cast<unsigned int>(frame.data[1]) << std::endl;
+    }
+    else if (frame.type == H9frame::Type::TOGGLE_BIT) {
+        std::cout << "    reg: " << static_cast<unsigned int>(frame.data[0]) << std::endl;
+        std::cout << "    toggle bit: " << static_cast<unsigned int>(frame.data[1]) << std::endl;
+    }
     else if (frame.type == H9frame::Type::NODE_TURNED_ON) {
         std::cout << "    node type: " << static_cast<unsigned int>(frame.data[0] << 8 | frame.data[1]) << std::endl;
+        std::cout << "    node firmware: " << static_cast<unsigned int>(frame.data[2]) << '.' << static_cast<unsigned int>(frame.data[3]) << std::endl;
+    }
+    else if (frame.type == H9frame::Type::BOOTLOADER_TURNED_ON) {
+        std::cout << "    bootloader version: " << static_cast<unsigned int>(frame.data[0]) << '.' << static_cast<unsigned int>(frame.data[1]) << std::endl;
+        std::cout << "    node MCU type: " << static_cast<unsigned int>(frame.data[2]) << std::endl;
+        std::cout << "    node type: " << static_cast<unsigned int>(frame.data[3] << 8 | frame.data[4]) << std::endl;
     }
     else if (frame.type == H9frame::Type::ERROR) {
         int err_num = static_cast<int>(frame.data[0]);

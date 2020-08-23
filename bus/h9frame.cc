@@ -3,7 +3,7 @@
  *
  * Created by SQ8KFH on 2019-04-28.
  *
- * Copyright (C) 2019 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2019-2020 Kamil Palkowski. All rights reserved.
  */
 
 #include "h9frame.h"
@@ -53,22 +53,22 @@ const char* H9frame::type_to_string(H9frame::Type type) {
         case Type::NODE_HEARTBEAT: return "NODE_HEARTBEAT";
         case Type::ERROR: return "ERROR";
         case Type::NODE_TURNED_ON: return "NODE_TURNED_ON";
-        case Type::U15: return "U15";
+        case Type::BULK_DATA: return "BULK_DATA";
         case Type::SET_REG: return "SET_REG";
         case Type::GET_REG: return "GET_REG";
         case Type::NODE_INFO: return "NODE_INFO";
-        case Type::U19: return "U19";
+        case Type::GET_BULK_DATA: return "GET_BULK_DATA";
         case Type::NODE_UPGRADE: return "NODE_UPGRADE";
-        case Type::U21: return "U21";
-        case Type::U22: return "U22";
-        case Type::U23: return "U23";
-        case Type::DISCOVERY: return "DISCOVERY";
-        case Type::NODE_RESET: return "NODE_RESET";
+        case Type::SET_BIT: return "SET_BIT";
+        case Type::CLEAR_BIT: return "CLEAR_BIT";
+        case Type::TOGGLE_BIT: return "TOGGLE_BIT";
+        case Type::U24: return "U24";
+        case Type::U25: return "U25";
         case Type::U26: return "U26";
         case Type::U27: return "U27";
-        case Type::U29: return "U29";
+        case Type::DISCOVERY: return "DISCOVERY";
+        case Type::NODE_RESET: return "NODE_RESET";
         case Type::U30: return "U30";
-        case Type::U28: return "U28";
         case Type::U31: return "U31";
     }
     return nullptr;
