@@ -43,6 +43,10 @@ public:
     GenericMsg(GenericMsg&& k) noexcept;
 
     virtual GenericMsg::Type get_type();
+    std::uint64_t get_id(void) const;
+    void set_id(std::uint64_t id);
+    std::uint64_t get_request_id(void) const;
+    void set_request_id(std::uint64_t id);
     std::string serialize() const;
     bool validate_msg(std::string *error_msg = nullptr);
     virtual ~GenericMsg();

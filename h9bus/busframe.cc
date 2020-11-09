@@ -9,7 +9,8 @@
 #include "busframe.h"
 
 
-BusFrame::BusFrame(const H9frame& frame, const std::string& origin): frame(frame), origin(origin) {
+BusFrame::BusFrame(const H9frame& frame, const std::string& origin, std::uint64_t orgin_client_id, std::uint64_t orgin_msg_id):
+frame(frame), origin(origin), orgin_client_id(orgin_client_id), orgin_msg_id(orgin_msg_id) {
     total_endpoint_count = 0;
     completed_endpoint_count = 0;
 }
@@ -20,6 +21,14 @@ const H9frame& BusFrame::get_frame() const {
 
 const std::string& BusFrame::get_origin() const {
     return origin;
+}
+
+std::uint64_t BusFrame::get_orgin_client_id(void) const {
+    return orgin_client_id;
+}
+
+std::uint64_t BusFrame::get_orgin_msg_id(void) const {
+    return orgin_msg_id;
 }
 
 unsigned int BusFrame::inc_total_endpoint_count() {

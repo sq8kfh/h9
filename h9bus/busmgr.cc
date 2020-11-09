@@ -20,7 +20,7 @@
 
 
 void BusMgr::on_recv_frame(Driver *endpoint, const H9frame& frame) {
-    BusFrame busframe = BusFrame(frame, endpoint->name);
+    BusFrame busframe = BusFrame(frame, endpoint->name, 0, 0);
 
     frame_log->log_recv(endpoint->name, &busframe);
     h9_log_debug(std::string("recv frame: ") + frame_to_log_string(endpoint->name, busframe.get_frame()));
@@ -117,8 +117,8 @@ void BusMgr::set_eventmgr_handler(EventMgr* handler) {
     eventmgr_handler = handler;
 }
 
-void BusMgr::send_frame(const H9frame& frame, const std::string& origin, const std::string& endpoint) {
-    BusFrame* bus_frame = new BusFrame(frame, origin);
+void BusMgr::send_frame(const H9frame& frame, const std::string& origin, std::uint64_t orgin_client_id, std::uint64_t orgin_msg_id, const std::string& endpoint) {
+    BusFrame* bus_frame = new BusFrame(frame, origin, orgin_client_id, orgin_msg_id);
     if (endpoint.empty()) {
         for (auto& it: dev) {
             bus_frame->inc_total_endpoint_count();

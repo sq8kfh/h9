@@ -27,6 +27,8 @@ private:
 
     void recv();
     void recv_msg(const std::string& msg_str);
+
+    std::uint64_t get_next_id(void);
 public:
     TcpClient(TNewMsgCallback new_msg_callback, int sockfd);
     bool is_subscriber();

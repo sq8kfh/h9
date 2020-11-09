@@ -55,6 +55,14 @@ void TcpClient::recv_msg(const std::string& msg_str) {
     recv_msg_callback(this, msg);
 }
 
+std::uint64_t TcpClient::get_next_id(void) {
+    //TODO: randomize id
+    static std::uint64_t next = 0;
+    if (next == 0) next = 1;
+    else ++next;
+    return next;
+}
+
 TcpClient::TcpClient(TNewMsgCallback new_msg_callback, int sockfd):
         recv_msg_callback(std::move(new_msg_callback)),
         h9socket(sockfd),
@@ -73,6 +81,7 @@ void TcpClient::subscriber(int active) {
 }
 
 void TcpClient::send(GenericMsg& msg) {
+    msg.set_id(get_next_id());
     std::string raw_msg = msg.serialize();
 
     int res = h9socket.send(raw_msg);

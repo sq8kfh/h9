@@ -23,6 +23,8 @@ GenericMsg::GenericMsg(GenericMsg::Type msg_type) {
     doc = xmlNewDoc(reinterpret_cast<xmlChar const *>("1.0"));
     xmlNodePtr root = xmlNewNode(nullptr, reinterpret_cast<xmlChar const *>("h9"));
     xmlNewProp(root, reinterpret_cast<xmlChar const *>("version"), reinterpret_cast<xmlChar const *>("0.0"));
+    xmlNewProp(root, reinterpret_cast<xmlChar const *>("id"), reinterpret_cast<xmlChar const *>("0"));
+
     xmlNodePtr node = nullptr;
     switch (msg_type) {
         case Type::GENERIC:
@@ -104,6 +106,45 @@ GenericMsg::Type GenericMsg::get_type() {
             return Type::RESPONSE;
     }
     return Type::GENERIC;
+}
+
+std::uint64_t GenericMsg::get_id(void) const {
+    xmlChar *tmp;
+    if ((tmp = xmlGetProp(xmlDocGetRootElement(doc), (const xmlChar *) "id")) == nullptr) {
+        h9_log_err("H9: missing 'id' property");
+        throw GenericMsg::InvalidMsg("missing 'id' property");
+    }
+    std::uint64_t ret = strtoull((char *)tmp, (char **)nullptr, 10);
+    xmlFree(tmp);
+    return ret;
+}
+
+void GenericMsg::set_id(std::uint64_t id) {
+    xmlNodePtr root = xmlDocGetRootElement(doc);
+
+    constexpr int str_sizie = 24;
+    char str[str_sizie];
+    std::snprintf(str, str_sizie, "%llu", id);
+    xmlSetProp(root, reinterpret_cast<xmlChar const *>("id"), reinterpret_cast<xmlChar const *>(str));
+}
+
+std::uint64_t GenericMsg::get_request_id(void) const {
+    xmlChar *tmp;
+    if ((tmp = xmlGetProp(xmlDocGetRootElement(doc), (const xmlChar *) "request_id")) == nullptr) {
+        return 0;
+    }
+    std::uint64_t ret = strtoull((char *)tmp, (char **)nullptr, 10);
+    xmlFree(tmp);
+    return ret;
+}
+
+void GenericMsg::set_request_id(std::uint64_t id) {
+    xmlNodePtr root = xmlDocGetRootElement(doc);
+
+    constexpr int str_sizie = 24;
+    char str[str_sizie];
+    std::snprintf(str, str_sizie, "%llu", id);
+    xmlSetProp(root, reinterpret_cast<xmlChar const *>("request_id"), reinterpret_cast<xmlChar const *>(str));
 }
 
 std::string GenericMsg::serialize() const {

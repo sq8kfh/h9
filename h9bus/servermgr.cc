@@ -59,9 +59,20 @@ void ServerMgr::send_msg(int client_socket, GenericMsg& msg) {
     }
 }
 
-void ServerMgr::send_msg_to_subscriber(GenericMsg& msg) {
+void ServerMgr::send_msg_to_subscriber(GenericMsg& msg, std::uint64_t orgin_client_id, std::uint64_t orgin_msg_id) {
     for (auto& it: tcp_clients) {
-        if (it.second->is_subscriber()) {
+        if (it.first == orgin_client_id) {
+            try {
+                auto tmp_msg = msg;
+                tmp_msg.set_request_id(orgin_msg_id);
+                it.second->send(tmp_msg);
+            }
+            catch (SocketMgr::Socket::CloseSocketException& e) {
+                h9_log_info("Close connection during send_msg_to_subscriber (client: %p)", it.second);
+                it.second->on_close();
+            }
+        }
+        else if (it.second->is_subscriber()) {
             try {
                 it.second->send(msg);
             }

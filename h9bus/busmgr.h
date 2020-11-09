@@ -52,7 +52,7 @@ public:
     void load_config(BusCtx *ctx);
     void set_eventmgr_handler(EventMgr* handler);
 
-    void send_frame(const H9frame& frame, const std::string& origin, const std::string& endpoint = "");
+    void send_frame(const H9frame& frame, const std::string& origin, std::uint64_t orgin_client_id, std::uint64_t orgin_msg_id, const std::string& endpoint = "");
 
     std::vector<std::string> get_dev_list();
     std::uint32_t get_dev_counter(const std::string& dev_name, CounterType counter);

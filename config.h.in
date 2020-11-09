@@ -20,5 +20,6 @@
 #cmakedefine H9_DEBUG
 
 #define H9_BUS_DEFAULT_PORT 7878
+#define H9D_DEFAULT_PORT 7979
 
 #endif

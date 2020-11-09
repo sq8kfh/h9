@@ -38,7 +38,7 @@ void EventMgr::cron() {
 
 void EventMgr::process_msg(TcpClient* origin_tcp_client, GenericMsg& msg) {
     int client_socket = origin_tcp_client->get_socket();
-    h9_log_debug("EventMgr::process_msg(%p, %p)", origin_tcp_client, msg.id());
+    h9_log_debug("EventMgr::process_msg(%p, %llu)", origin_tcp_client, msg.id());
     switch (msg.get_type()) {
         case GenericMsg::Type::SEND_FRAME: {
             h9_log_info("Process SEND_FRAME msg from client: %p", origin_tcp_client);
@@ -46,7 +46,7 @@ void EventMgr::process_msg(TcpClient* origin_tcp_client, GenericMsg& msg) {
             H9frame tmp = sf_msg.get_frame();
             std::ostringstream ss;
             ss << "tcp#" << origin_tcp_client;
-            _bus_mgr->send_frame(tmp, ss.str());
+            _bus_mgr->send_frame(tmp, ss.str(), client_socket, sf_msg.get_id());
             break;
         }
         case GenericMsg::Type::SUBSCRIBE: {
@@ -72,13 +72,13 @@ void EventMgr::process_msg(TcpClient* origin_tcp_client, GenericMsg& msg) {
 void EventMgr::process_recv_frame(const std::string& endpoint, BusFrame* busframe) {
     h9_log_debug("EventMgr::process_recv_frame(%s, %p)", endpoint.c_str(), busframe);
     FrameMsg msg(busframe->get_frame(), busframe->get_origin(), endpoint);
-    _server_mgr->send_msg_to_subscriber(msg);
+    _server_mgr->send_msg_to_subscriber(msg, 0, 0);
 }
 
 void EventMgr::process_sent_frame(const std::string& endpoint, BusFrame* busframe) {
     h9_log_debug("EventMgr::process_sent_frame(%s, %p)", endpoint.c_str(), busframe);
     FrameMsg msg(busframe->get_frame(), busframe->get_origin(), endpoint);
-    _server_mgr->send_msg_to_subscriber(msg);
+    _server_mgr->send_msg_to_subscriber(msg, busframe->get_orgin_client_id(), busframe->get_orgin_msg_id());
 }
 
 void EventMgr::exec_method_call(TcpClient* tcp_client, CallMsg call_msg) {
