@@ -13,7 +13,7 @@
 #include "common/logger.h"
 #include "dctx.h"
 #include "bus.h"
-
+#include "node.h"
 
 int main(int argc, char **argv) {
     DCtx ctx;
@@ -36,12 +36,25 @@ int main(int argc, char **argv) {
         pid_file.close();
     }
 
-    h9_log_info("main %d", std::this_thread::get_id() );
     Bus bus = {};
     bus.load_config(&ctx);
+
+    Node n = {&bus, 2};
+
+    n.reset();
+
+    int nt = n.get_node_type();
+    h9_log_info("Node type: %d", nt);
+
+    uint8_t major;
+    uint8_t minor;
+    nt = n.get_node_version(&major, &minor);
+    h9_log_info("Node version: %hhu.%hhu %d", major, minor, nt);
+
+
     //std::thread t = std::thread(bus);
-    int ret = bus.set_reg(H9frame::Priority::LOW, 2, 3, 12, 0, nullptr);
-    h9_log_info("ret %d", ret);
+    //int ret = bus.set_reg(H9frame::Priority::LOW, 2, 2, 12, 0, nullptr);
+    //h9_log_info("ret %d", ret);
     //t.join();
 
 

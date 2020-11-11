@@ -8,6 +8,8 @@
 
 #include "bus.h"
 #include <thread>
+#include <netinet/in.h>
+#include "protocol/errormsg.h"
 #include "protocol/framemsg.h"
 #include "protocol/sendframemsg.h"
 #include "protocol/subscribemsg.h"
@@ -20,18 +22,33 @@ std::uint8_t Bus::get_next_seqnum(std::uint16_t source_id) {
     return ret;
 }
 
-void Bus::recv_thread(void) {
+void Bus::recv_thread() {
     while (true) {
         GenericMsg raw_msg = h9bus_connector->recv();
         if (raw_msg.get_type() == GenericMsg::Type::FRAME) {
             FrameMsg msg = std::move(raw_msg);
             H9frame frame = msg.get_frame();
-            h9_log_info("frame %llu %llu", msg.get_id(), msg.get_request_id());
+            h9_log_info(">>frame %llu %llu", msg.get_id(), msg.get_request_id());
+
+            notify_observer(frame);
+
             if (msg.get_request_id() != 0) {
                 send_promise_map_mtx.lock();
                 if (send_promise_map.count(msg.get_request_id())) {
                     send_promise_map[msg.get_request_id()].set_value(int(Bus::OK));
-                    send_promise_map.erase(0);
+                    send_promise_map.erase(msg.get_request_id());
+                }
+                send_promise_map_mtx.unlock();
+            }
+        }
+        else if (raw_msg.get_type() == GenericMsg::Type::ERROR) {
+            ErrorMsg msg = std::move(raw_msg);
+            h9_log_info("error frame %llu %llu", msg.get_id(), msg.get_request_id());
+            if (msg.get_request_id() != 0) {
+                send_promise_map_mtx.lock();
+                if (send_promise_map.count(msg.get_request_id())) {
+                    send_promise_map[msg.get_request_id()].set_value(int(Bus::H9BUS_ERROR));
+                    send_promise_map.erase(msg.get_request_id());
                 }
                 send_promise_map_mtx.unlock();
             }
@@ -57,11 +74,11 @@ int Bus::send_frame_sync(H9frame frame) {
     return send_future.get();
 }
 
-Bus::Bus(void): h9bus_connector(nullptr) {
+Bus::Bus(): h9bus_connector(nullptr) {
     h9_log_info("cons %d", std::this_thread::get_id() );
 }
 
-Bus::~Bus(void) {
+Bus::~Bus() {
     h9_log_info("des %d", std::this_thread::get_id() );
     if (recv_thread_desc.joinable())
         recv_thread_desc.join();
@@ -80,7 +97,39 @@ void Bus::load_config(DCtx *ctx) {
     });
 }
 
-int Bus::set_reg(H9frame::Priority priority, std::uint16_t source, std::uint16_t destination, std::uint8_t reg, std::size_t nbyte, void *data) {
+void Bus::attach_frame_observer(BusObserver *observer, H9FrameComparator comparator) {
+    frame_observers_mtx.lock();
+    frame_observers[comparator].push_back(observer);
+    frame_observers_mtx.unlock();
+}
+
+void Bus::detach_frame_observer(BusObserver *observer) {
+    frame_observers_mtx.lock();
+    for (auto it = frame_observers.begin(); it != frame_observers.end();) {
+        it->second.remove(observer);
+        if (it->second.empty()) {
+            it = frame_observers.erase(it);
+        }
+        else {
+            ++it;
+        }
+    }
+    frame_observers_mtx.unlock();
+}
+
+void Bus::notify_observer(const H9frame& frame) {
+    frame_observers_mtx.lock();
+    for (auto const& o : frame_observers) {
+        if (o.first == frame) {
+            for (auto const& observer : o.second) {
+                observer->on_frame_recv(frame);
+            }
+        }
+    }
+    frame_observers_mtx.unlock();
+}
+
+int Bus::send_set_reg(H9frame::Priority priority, std::uint16_t source, std::uint16_t destination, std::uint8_t reg, std::size_t nbyte, void *data) {
     H9frame frame;
     frame.priority = priority;
     frame.type = H9frame::Type::SET_REG;
@@ -102,10 +151,25 @@ int Bus::set_reg(H9frame::Priority priority, std::uint16_t source, std::uint16_t
         frame.data[i+1] = static_cast<uint8_t*>(data)[i];
     }
 
-    return send_frame_sync(frame);
+    int ret = send_frame_sync(frame);
+    return ret == Bus::OK ? frame.seqnum : ret;
 }
 
-int Bus::get_reg(H9frame::Priority priority, std::uint16_t source, std::uint16_t destination, std::uint8_t reg) {
+int Bus::send_set_reg(H9frame::Priority priority, std::uint16_t source, std::uint16_t destination, std::uint8_t reg, std::uint8_t reg_value) {
+    return send_set_reg(priority, source, destination, reg, 1, &reg_value);
+}
+
+int Bus::send_set_reg(H9frame::Priority priority, std::uint16_t source, std::uint16_t destination, std::uint8_t reg, std::uint16_t reg_value) {
+    std::uint16_t bigendian_value = htons(reg_value);
+    return send_set_reg(priority, source, destination, reg, 2, &bigendian_value);
+}
+
+int Bus::send_set_reg(H9frame::Priority priority, std::uint16_t source, std::uint16_t destination, std::uint8_t reg, std::uint32_t reg_value) {
+    std::uint32_t bigendian_value = htonl(reg_value);
+    return send_set_reg(priority, source, destination, reg, 4, &bigendian_value);
+}
+
+int Bus::send_get_reg(H9frame::Priority priority, std::uint16_t source, std::uint16_t destination, std::uint8_t reg) {
     H9frame frame;
     frame.priority = priority;
     frame.type = H9frame::Type::GET_REG;
@@ -122,10 +186,11 @@ int Bus::get_reg(H9frame::Priority priority, std::uint16_t source, std::uint16_t
 
     frame.dlc = 1;
 
-    return send_frame_sync(frame);
+    int ret = send_frame_sync(frame);
+    return ret == Bus::OK ? frame.seqnum : ret;
 }
 
-int Bus::set_bit(H9frame::Priority priority, std::uint16_t source, std::uint16_t destination, std::uint8_t reg, int bit) {
+int Bus::send_set_bit(H9frame::Priority priority, std::uint16_t source, std::uint16_t destination, std::uint8_t reg, int bit) {
     H9frame frame;
     frame.priority = priority;
     frame.type = H9frame::Type::SET_BIT;
@@ -142,10 +207,11 @@ int Bus::set_bit(H9frame::Priority priority, std::uint16_t source, std::uint16_t
     frame.data[1] = bit;
     frame.dlc = 2;
 
-    return send_frame_sync(frame);
+    int ret = send_frame_sync(frame);
+    return ret == Bus::OK ? frame.seqnum : ret;
 }
 
-int Bus::clear_bit(H9frame::Priority priority, std::uint16_t source, std::uint16_t destination, std::uint8_t reg, int bit) {
+int Bus::send_clear_bit(H9frame::Priority priority, std::uint16_t source, std::uint16_t destination, std::uint8_t reg, int bit) {
     H9frame frame;
     frame.priority = priority;
     frame.type = H9frame::Type::CLEAR_BIT;
@@ -162,10 +228,11 @@ int Bus::clear_bit(H9frame::Priority priority, std::uint16_t source, std::uint16
     frame.data[1] = bit;
     frame.dlc = 2;
 
-    return send_frame_sync(frame);
+    int ret = send_frame_sync(frame);
+    return ret == Bus::OK ? frame.seqnum : ret;
 }
 
-int Bus::toggle_bit(H9frame::Priority priority, std::uint16_t source, std::uint16_t destination, std::uint8_t reg, int bit) {
+int Bus::send_toggle_bit(H9frame::Priority priority, std::uint16_t source, std::uint16_t destination, std::uint8_t reg, int bit) {
     H9frame frame;
     frame.priority = priority;
     frame.type = H9frame::Type::TOGGLE_BIT;
@@ -182,10 +249,11 @@ int Bus::toggle_bit(H9frame::Priority priority, std::uint16_t source, std::uint1
     frame.data[1] = bit;
     frame.dlc = 2;
 
-    return send_frame_sync(frame);
+    int ret = send_frame_sync(frame);
+    return ret == Bus::OK ? frame.seqnum : ret;
 }
 
-int Bus::node_upgrade(H9frame::Priority priority, std::uint16_t source, std::uint16_t destination) {
+int Bus::send_node_upgrade(H9frame::Priority priority, std::uint16_t source, std::uint16_t destination) {
     H9frame frame;
     frame.priority = priority;
     frame.type = H9frame::Type::NODE_UPGRADE;
@@ -200,10 +268,11 @@ int Bus::node_upgrade(H9frame::Priority priority, std::uint16_t source, std::uin
 
     frame.dlc = 0;
 
-    return send_frame_sync(frame);
+    int ret = send_frame_sync(frame);
+    return ret == Bus::OK ? frame.seqnum : ret;
 }
 
-int Bus::node_reset(H9frame::Priority priority, std::uint16_t source, std::uint16_t destination) {
+int Bus::send_node_reset(H9frame::Priority priority, std::uint16_t source, std::uint16_t destination) {
     H9frame frame;
     frame.priority = priority;
     frame.type = H9frame::Type::NODE_RESET;
@@ -218,10 +287,11 @@ int Bus::node_reset(H9frame::Priority priority, std::uint16_t source, std::uint1
 
     frame.dlc = 0;
 
-    return send_frame_sync(frame);
+    int ret = send_frame_sync(frame);
+    return ret == Bus::OK ? frame.seqnum : ret;
 }
 
-int Bus::node_discovery(H9frame::Priority priority, std::uint16_t source) {
+int Bus::send_node_discovery(H9frame::Priority priority, std::uint16_t source) {
     H9frame frame;
     frame.priority = priority;
     frame.type = H9frame::Type::DISCOVERY;
@@ -235,5 +305,6 @@ int Bus::node_discovery(H9frame::Priority priority, std::uint16_t source) {
 
     frame.dlc = 0;
 
-    return send_frame_sync(frame);
+    int ret = send_frame_sync(frame);
+    return ret == Bus::OK ? frame.seqnum : ret;
 }

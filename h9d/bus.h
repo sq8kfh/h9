@@ -12,25 +12,16 @@
 #include "config.h"
 #include <thread>
 #include <future>
+#include <list>
 #include <map>
 #include "bus/h9frame.h"
+#include "bus/h9framecomparator.h"
 #include "protocol/h9connector.h"
+#include "busobserver.h"
 #include "connectionctx.h"
 #include "dctx.h"
 
 class Bus {
-private:
-    H9Connector *h9bus_connector;
-    std::thread recv_thread_desc;
-    std::uint8_t get_next_seqnum(std::uint16_t source_id);
-    void recv_thread(void);
-
-    std::mutex send_promise_map_mtx;
-    std::map<std::uint64_t, std::promise<int>> send_promise_map;
-
-    int send_frame_sync(H9frame frame);
-
-    int send_timeout = 5;
 public:
     constexpr static int OK = 0;
     constexpr static int NOT_CONNECTED_TO_H9BUS = -1;
@@ -38,9 +29,30 @@ public:
     constexpr static int INVALID_DESTINATION_ID = -3;
     constexpr static int INVALID_DATA_SIZE = -4;
     constexpr static int SEND_TIMEOUT = -5;
+    constexpr static int H9BUS_ERROR = -6;
+private:
+    H9Connector *h9bus_connector;
+    std::thread recv_thread_desc;
+    std::uint8_t get_next_seqnum(std::uint16_t source_id);
 
-    Bus(void);
-    ~Bus(void);
+    std::mutex send_promise_map_mtx;
+    std::map<std::uint64_t, std::promise<int>> send_promise_map;
+
+    std::mutex frame_observers_mtx;
+    std::map<H9FrameComparator, std::list<BusObserver*>> frame_observers;
+    void attach_frame_observer(BusObserver *observer, H9FrameComparator comparator);
+    void detach_frame_observer(BusObserver *observer);
+    void notify_observer(const H9frame &frame);
+    friend BusObserver::BusObserver(Bus *bus, H9FrameComparator comparator);
+    friend BusObserver::~BusObserver();
+
+    void recv_thread();
+    int send_frame_sync(H9frame frame);
+
+    int send_timeout = 5;
+public:
+    Bus();
+    ~Bus();
     void load_config(DCtx *ctx);
 
     //PAGE_START = 1,
@@ -50,14 +62,17 @@ public:
     //PAGE_FILL_NEXT = 5,
     //PAGE_WRITED = 6,
     //PAGE_FILL_BREAK = 7,
-    int set_reg(H9frame::Priority priority, std::uint16_t source, std::uint16_t destination, std::uint8_t reg, std::size_t nbyte, void *data);
-    int get_reg(H9frame::Priority priority, std::uint16_t source, std::uint16_t destination, std::uint8_t reg);
-    int set_bit(H9frame::Priority priority, std::uint16_t source, std::uint16_t destination, std::uint8_t reg, int bit);
-    int clear_bit(H9frame::Priority priority, std::uint16_t source, std::uint16_t destination, std::uint8_t reg, int bit);
-    int toggle_bit(H9frame::Priority priority, std::uint16_t source, std::uint16_t destination, std::uint8_t reg, int bit);
-    int node_upgrade(H9frame::Priority priority, std::uint16_t source, std::uint16_t destination);
-    int node_reset(H9frame::Priority priority, std::uint16_t source, std::uint16_t destination);
-    int node_discovery(H9frame::Priority priority, std::uint16_t source);
+    int send_set_reg(H9frame::Priority priority, std::uint16_t source, std::uint16_t destination, std::uint8_t reg, std::size_t nbyte, void *data);
+    int send_set_reg(H9frame::Priority priority, std::uint16_t source, std::uint16_t destination, std::uint8_t reg, std::uint8_t reg_value);
+    int send_set_reg(H9frame::Priority priority, std::uint16_t source, std::uint16_t destination, std::uint8_t reg, std::uint16_t reg_value);
+    int send_set_reg(H9frame::Priority priority, std::uint16_t source, std::uint16_t destination, std::uint8_t reg, std::uint32_t reg_value);
+    int send_get_reg(H9frame::Priority priority, std::uint16_t source, std::uint16_t destination, std::uint8_t reg);
+    int send_set_bit(H9frame::Priority priority, std::uint16_t source, std::uint16_t destination, std::uint8_t reg, int bit);
+    int send_clear_bit(H9frame::Priority priority, std::uint16_t source, std::uint16_t destination, std::uint8_t reg, int bit);
+    int send_toggle_bit(H9frame::Priority priority, std::uint16_t source, std::uint16_t destination, std::uint8_t reg, int bit);
+    int send_node_upgrade(H9frame::Priority priority, std::uint16_t source, std::uint16_t destination);
+    int send_node_reset(H9frame::Priority priority, std::uint16_t source, std::uint16_t destination);
+    int send_node_discovery(H9frame::Priority priority, std::uint16_t source);
     //REG_EXTERNALLY_CHANGED = 16,
     //REG_INTERNALLY_CHANGED = 17,
     //REG_VALUE_BROADCAST = 18,

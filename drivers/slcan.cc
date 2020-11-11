@@ -109,7 +109,7 @@ H9frame Slcan::parse_slcan_msg(const std::string& slcan_data) {
 		                    & ((1<<H9frame::H9FRAME_TYPE_BIT_LENGTH) - 1));
 
     res.seqnum = static_cast<std::uint8_t >((id >> (H9frame::H9FRAME_DESTINATION_ID_BIT_LENGTH + H9frame::H9FRAME_SOURCE_ID_BIT_LENGTH)) \
-		                    & ((1<<H9frame::H9FRAME_TYPE_BIT_LENGTH) - 1));
+		                    & ((1<<H9frame::H9FRAME_SEQNUM_BIT_LENGTH) - 1));
 
     res.destination_id = static_cast<std::uint16_t >((id >> (H9frame::H9FRAME_SOURCE_ID_BIT_LENGTH)) & ((1<<H9frame::H9FRAME_DESTINATION_ID_BIT_LENGTH) - 1));
 
