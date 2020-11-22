@@ -20,7 +20,7 @@
 #include "protocol/sendframemsg.h"
 #include "protocol/subscribemsg.h"
 
-
+#include "socketmgr.h"
 EventMgr::EventMgr(DaemonCtx* ctx, BusMgr* bus_mgr, ServerMgr* server_mgr):
         _ctx(ctx),
         _bus_mgr(bus_mgr),
@@ -31,40 +31,39 @@ EventMgr::EventMgr(DaemonCtx* ctx, BusMgr* bus_mgr, ServerMgr* server_mgr):
 }
 
 void EventMgr::cron() {
-    //h9_log_debug("EventMgr::cron");
     _bus_mgr->cron();
     _server_mgr->cron();
 }
 
 void EventMgr::process_msg(TcpClient* origin_tcp_client, GenericMsg& msg) {
-    int client_socket = origin_tcp_client->get_socket();
-    h9_log_debug("EventMgr::process_msg(%p, %llu)", origin_tcp_client, msg.id());
     switch (msg.get_type()) {
         case GenericMsg::Type::SEND_FRAME: {
-            h9_log_info("Process SEND_FRAME msg from client: %p", origin_tcp_client);
+            h9_log_info("Process SEND_FRAME msg (id: %llu) from client: %s:%s", msg.get_id(), origin_tcp_client->get_remote_address().c_str(), origin_tcp_client->get_remote_port().c_str());
             SendFrameMsg sf_msg = std::move(msg);
             H9frame tmp = sf_msg.get_frame();
             std::ostringstream ss;
-            ss << "tcp#" << origin_tcp_client;
-            _bus_mgr->send_frame(tmp, ss.str(), client_socket, sf_msg.get_id());
+            ss << "h9?@" << origin_tcp_client->get_remote_address() << ":" << origin_tcp_client->get_remote_port();
+            _bus_mgr->send_frame(tmp, ss.str(), origin_tcp_client->get_socket(), sf_msg.get_id());
             break;
         }
         case GenericMsg::Type::SUBSCRIBE: {
-            h9_log_info("Process SUBSCRIBE msg from client: %p", origin_tcp_client);
+            h9_log_info("Process SUBSCRIBE msg (id: %llu) from client: %s:%s", msg.get_id(), origin_tcp_client->get_remote_address().c_str(), origin_tcp_client->get_remote_port().c_str());
             SubscribeMsg sc_msg = std::move(msg);
-            _server_mgr->client_subscription(client_socket, 1);
+            origin_tcp_client->subscriber(1);
             break;
         }
         case GenericMsg::Type::CALL: {
             CallMsg call_msg = std::move(msg);
-            h9_log_info("Process CALL msg (method: %s) from client %p", call_msg.get_method_name().c_str(), origin_tcp_client);
+            h9_log_info("Process CALL msg (id: %llu method: %s) from client %s:%s", call_msg.get_id(), call_msg.get_method_name().c_str(), origin_tcp_client->get_remote_address().c_str(), origin_tcp_client->get_remote_port().c_str());
             exec_method_call(origin_tcp_client, std::move(call_msg));
             break;
         }
         default:
-            h9_log_err("Recv unknown (type: %d) msg from client: %p", msg.get_type(), origin_tcp_client);
+            h9_log_warn("Recv unknown (id: %llu type: %d) msg from client: %s:%s", msg.get_id(), msg.get_type(), origin_tcp_client, origin_tcp_client->get_remote_address().c_str(), origin_tcp_client->get_remote_port().c_str());
             ErrorMsg err_msg = {ErrorMsg::ErrorNumber::UNSUPPORTED_MESSAGE_TYPE, "EventMgr::flush_msg"};
-            _server_mgr->send_msg(client_socket, err_msg);
+            err_msg.set_request_id(msg.get_id());
+            origin_tcp_client->send(err_msg);
+            //_server_mgr->send_msg(client_socket, err_msg);
             break;
     }
 }
@@ -85,8 +84,8 @@ void EventMgr::exec_method_call(TcpClient* tcp_client, CallMsg call_msg) {
     std::string mnethod_name = call_msg.get_method_name();
     if (mnethod_name == "h9bus_stat") {
         ResponseMsg res = get_stat();
+        res.set_request_id(call_msg.get_id());
         tcp_client->send(res);
-        //_server_mgr->send_msg(client_socket, res);
     }
 }
 

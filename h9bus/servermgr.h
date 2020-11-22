@@ -36,8 +36,8 @@ public:
     void load_config(BusCtx *ctx);
     void set_eventmgr_handler(EventMgr* handler);
 
-    void client_subscription(int client_socket, int active);
-    void send_msg(int client_socket, GenericMsg& msg);
+    //void client_subscription(int client_socket, int active);
+    //void send_msg(int client_socket, GenericMsg& msg);
     void send_msg_to_subscriber(GenericMsg& msg, std::uint64_t orgin_client_id, std::uint64_t orgin_msg_id);
 
     int connected_clients_count();

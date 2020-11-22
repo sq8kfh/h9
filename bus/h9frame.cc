@@ -53,7 +53,7 @@ const char* H9frame::type_to_string(H9frame::Type type) {
         case Type::TOGGLE_BIT: return "TOGGLE_BIT";
         case Type::NODE_UPGRADE: return "NODE_UPGRADE";
         case Type::NODE_RESET: return "NODE_RESET";
-        case Type::DISCOVERY: return "DISCOVERY";
+        case Type::DISCOVER: return "DISCOVER";
         case Type::REG_EXTERNALLY_CHANGED: return "REG_EXTERNALLY_CHANGED";
         case Type::REG_INTERNALLY_CHANGED: return "REG_INTERNALLY_CHANGED";
         case Type::REG_VALUE_BROADCAST: return "REG_VALUE_BROADCAST";

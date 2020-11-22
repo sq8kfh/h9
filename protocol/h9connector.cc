@@ -21,52 +21,45 @@
 #include "common/logger.h"
 
 
-H9Connector::H9Connector(std::string hostname, std::string port) noexcept:
-    H9Socket(std::move(hostname), std::move(port)) {
+H9Connector::H9Connector(std::string hostname, std::string port):
+    h9socket(std::move(hostname), std::move(port)) {
 }
 
 H9Connector::~H9Connector() noexcept {
+    h9socket.close();
 }
 
-int H9Connector::connect() noexcept {
-    return H9Socket::connect();
+void H9Connector::close() noexcept {
+    h9socket.close();
 }
 
-std::uint64_t H9Connector::get_next_id(void) {
-    //TODO: randomize id
-    static std::uint64_t next = 0;
-    if (next == 0) next = 1;
-    else ++next;
-    return next;
+void H9Connector::shutdown_read() noexcept {
+    h9socket.shutdown_read();
 }
 
-GenericMsg H9Connector::recv(int timeout_in_seconds) {
-    std::string data;
-
-    while (true) {
-        if (H9Socket::recv(data, timeout_in_seconds) <= 0) {
-            if (errno == EAGAIN || errno == EWOULDBLOCK) { //incomplete message
-                if (timeout_in_seconds) {
-                    break;
-                }
-                continue;
-            }
-            throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
-        }
-        else {
-            break;
-        }
-    }
-    return GenericMsg(data);
-}
-
-void H9Connector::send(GenericMsg msg, std::uint64_t msg_id) {
-    if (msg_id == 0)
-        msg.set_id(get_next_id());
-    else
-        msg.set_id(msg_id);
-    std::string raw_msg = msg.serialize();
-    if (H9Socket::send(raw_msg) <=0) {
+GenericMsg H9Connector::recv() {
+    GenericMsg msg;
+    int res = h9socket.recv_complete_msg(msg);
+    if (res <= 0) {
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
+    return std::move(msg);
+}
+
+std::uint64_t H9Connector::send(GenericMsg msg) {
+    if (h9socket.send(msg) <=0) {
+        throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
+    }
+    return msg.get_id();
+}
+
+std::uint64_t H9Connector::send(GenericMsg msg, std::uint64_t id) {
+    if (h9socket.send(msg, id) <=0) {
+        throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
+    }
+    return id;
+}
+
+std::uint64_t H9Connector::get_next_id() noexcept {
+    return h9socket.get_next_id();
 }

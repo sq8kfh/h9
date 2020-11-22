@@ -3,7 +3,7 @@
  *
  * Created by SQ8KFH on 2019-07-01.
  *
- * Copyright (C) 2019 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2019-2020 Kamil Palkowski. All rights reserved.
  */
 
 #ifndef H9_H9SOCKET_H
@@ -25,11 +25,12 @@ protected:
     std::string _hostname;
     std::string _port;
 public:
-    H9Socket(int socket) noexcept;
+    explicit H9Socket(int socket) noexcept;
     H9Socket(std::string hostname, std::string port) noexcept;
+    H9Socket(const H9Socket &a) = delete;
     ~H9Socket() noexcept;
     int connect() noexcept;
-    void close();
+    void close() noexcept;
     int recv(std::string& buf, int timeout_in_seconds = 0) noexcept;
     int send(const std::string& buf) noexcept;
     std::string get_remote_address() noexcept;

@@ -17,7 +17,8 @@ class ErrorMsg: public ConcretizeMsg<GenericMsg::Type::ERROR> {
 public:
     enum class ErrorNumber {
         INVALID_MESSAGE_SCHEMA,
-        UNSUPPORTED_MESSAGE_TYPE
+        UNSUPPORTED_MESSAGE_TYPE,
+        UNSUPPORTED_METHOD
     };
     ErrorMsg(GenericMsg&& k);
     ErrorMsg(ErrorNumber errnum, const std::string& msg = "");

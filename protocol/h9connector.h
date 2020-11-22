@@ -11,17 +11,21 @@
 
 #include "config.h"
 #include "genericmsg.h"
-#include "h9socket.h"
+#include "h9msgsocket.h"
 
-class H9Connector: protected H9Socket {
+class H9Connector {
+private:
+    H9MsgSocket h9socket;
 public:
-    H9Connector(std::string hostname, std::string port) noexcept;
+    H9Connector(std::string hostname, std::string port);
     ~H9Connector() noexcept;
-    int connect() noexcept;
+    void close() noexcept;
+    void shutdown_read() noexcept;
 
-    std::uint64_t get_next_id(void);
-    GenericMsg recv(int timeout_in_seconds = 0);
-    void send(GenericMsg msg, std::uint64_t msg_id = 0);
+    GenericMsg recv();
+    std::uint64_t send(GenericMsg msg);
+    std::uint64_t send(GenericMsg msg, std::uint64_t id);
+    std::uint64_t get_next_id() noexcept;
 };
 
 

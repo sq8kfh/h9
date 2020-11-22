@@ -3,7 +3,7 @@
  *
  * Created by SQ8KFH on 2019-07-01.
  *
- * Copyright (C) 2019 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2019-2020 Kamil Palkowski. All rights reserved.
  */
 
 #include "h9socket.h"
@@ -23,6 +23,7 @@
 
 
 H9Socket::H9Socket() noexcept {
+    _socket = -1;
     bytes_to_recv = sizeof(header_buf);
     recv_bytes = 0;
 
@@ -37,7 +38,6 @@ H9Socket::H9Socket(int socket) noexcept: H9Socket() {
 }
 
 H9Socket::H9Socket(std::string hostname, std::string port) noexcept: H9Socket() {
-    _socket = 0;
     _hostname = std::move(hostname);
     _port = std::move(port);
 }
@@ -48,7 +48,7 @@ H9Socket::~H9Socket() noexcept {
 
 int H9Socket::connect() noexcept {
     int ret = 0;
-    if(_socket) {
+    if(_socket > -1) {
         struct sockaddr_storage addr;
         char ipstr[INET6_ADDRSTRLEN];
         int port;
@@ -114,8 +114,8 @@ int H9Socket::connect() noexcept {
     return 0;
 }
 
-void H9Socket::close() {
-    ::close(_socket);
+void H9Socket::close() noexcept {
+    if (_socket > -1) ::close(_socket);
     _socket = -1;
 }
 

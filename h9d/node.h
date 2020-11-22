@@ -16,7 +16,6 @@
 #include <map>
 #include <tuple>
 #include "busobserver.h"
-#include "busobserver.h"
 
 
 class Node: public BusObserver {
@@ -26,21 +25,21 @@ private:
     std::mutex frame_promise_list_mtx;
     std::list<std::tuple<H9FrameComparator, std::promise<H9frame>, std::chrono::time_point<std::chrono::steady_clock>>> frame_promise_list;
 
-    void on_frame_recv(H9frame frame);
+    void on_frame_recv(H9frame frame) override;
     std::future<H9frame> create_frame_future(H9FrameComparator comparator);
 
     std::uint16_t source_id = 1;
     int timeout = 5;
 public:
     Node(Bus *bus, std::uint16_t node_id);
-    ~Node(void);
+    ~Node();
 
-    int reset(void);
-    int get_node_type(void);
+    int reset();
+    int get_node_type();
     int get_node_version(std::uint8_t *major = nullptr, std::uint8_t *minor = nullptr);
     int set_node_id(std::uint16_t id);
 
-    //int set_reg(std::uint8_t reg, );
+    int set_reg(std::uint8_t reg, std::uint8_t value);
     //int get_reg(std::uint8_t reg, );
 };
 

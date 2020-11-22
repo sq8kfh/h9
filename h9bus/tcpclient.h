@@ -11,7 +11,7 @@
 
 #include "config.h"
 #include <functional>
-#include "protocol/h9socket.h"
+#include "protocol/h9msgsocket.h"
 #include "socketmgr.h"
 #include "servermgr.h"
 
@@ -21,14 +21,11 @@ public:
     using TNewMsgCallback = std::function<void(TcpClient*, GenericMsg&)>;
 private:
     TNewMsgCallback recv_msg_callback;
-    H9Socket h9socket;
+    H9MsgSocket h9socket;
 
     int active_subscription;
 
-    void recv();
-    void recv_msg(const std::string& msg_str);
-
-    std::uint64_t get_next_id(void);
+    void recv_msg();
 public:
     TcpClient(TNewMsgCallback new_msg_callback, int sockfd);
     bool is_subscriber();

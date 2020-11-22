@@ -3,7 +3,7 @@
  *
  * Created by SQ8KFH on 2019-04-09.
  *
- * Copyright (C) 2019 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2019-2020 Kamil Palkowski. All rights reserved.
  */
 
 #include "config.h"
@@ -66,9 +66,9 @@ int main(int argc, char* argv[]) {
 
     H9Connector h9_connector = {ctx.get_h9bus_host(), ctx.get_h9bus_port()};
 
-    if (h9_connector.connect() == -1) {
+    /*if (h9_connector.connect() == -1) {
         return EXIT_FAILURE;
-    }
+    }*/
 
     std::cout << SendFrameMsg(frame).serialize() << std::endl;
 

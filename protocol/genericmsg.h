@@ -38,9 +38,12 @@ protected:
     explicit GenericMsg(GenericMsg::Type msg_type);
     xmlNodePtr get_msg_root();
 public:
+    GenericMsg() noexcept;
     explicit GenericMsg(const std::string& xml);
     GenericMsg(const GenericMsg& k);
     GenericMsg(GenericMsg&& k) noexcept;
+    GenericMsg& operator=(const GenericMsg& k) noexcept;
+    GenericMsg& operator=(GenericMsg&& k) noexcept;
 
     virtual GenericMsg::Type get_type();
     std::uint64_t get_id(void) const;

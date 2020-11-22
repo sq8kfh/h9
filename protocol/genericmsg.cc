@@ -64,8 +64,6 @@ xmlNodePtr GenericMsg::get_msg_root() {
 
 GenericMsg::GenericMsg(const GenericMsg& k) {
 #ifdef H9_DEBUG
-    h9_log_warn("GenericMsg: exec copy constructor");
-#else
     h9_log_debug("GenericMsg: exec copy constructor");
 #endif
     if (k.doc) {
@@ -74,16 +72,40 @@ GenericMsg::GenericMsg(const GenericMsg& k) {
 }
 
 GenericMsg::GenericMsg(GenericMsg&& k) noexcept {
-    //h9_log_debug("GenericMsg: exec move constructor");
     doc = k.doc;
     k.doc = nullptr;
+}
+
+GenericMsg& GenericMsg::operator=(const GenericMsg& k) noexcept {
+#ifdef H9_DEBUG
+    h9_log_debug("GenericMsg: exec copy operator=");
+#endif
+    if (doc) {
+        xmlFreeDoc(doc);
+    }
+    doc = nullptr;
+    if (k.doc) {
+        doc = xmlCopyDoc(k.doc, 1);
+    }
+    return *this;
+}
+
+GenericMsg& GenericMsg::operator=(GenericMsg&& k) noexcept {
+    if (doc) {
+        xmlFreeDoc(doc);
+    }
+    doc = k.doc;
+    k.doc = nullptr;
+    return *this;
+}
+
+GenericMsg::GenericMsg() noexcept: doc(nullptr) {
 }
 
 GenericMsg::GenericMsg(const std::string& xml) {
     doc = xmlReadMemory(xml.c_str(), xml.length(), "noname.xml", nullptr, 0);
     if (doc == nullptr) {
-        fprintf(stderr, "Failed to parse document\n");
-        return;
+        throw GenericMsg::InvalidMsg("Failed to parse XML");
     }
 }
 

@@ -19,9 +19,10 @@
 #include "protocol/errormsg.h"
 #include "protocol/genericmsg.h"
 
-void TcpClient::recv() {
-    std::string raw_msg;
-    int res = h9socket.recv(raw_msg);
+
+void TcpClient::recv_msg() {
+    GenericMsg msg;
+    int res = h9socket.recv(msg);
     if (res <=0) {
         if (res == 0 || errno == ECONNRESET) {  /*Connection reset by peer*/
             close();
@@ -33,12 +34,7 @@ void TcpClient::recv() {
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
 
-    recv_msg(raw_msg);
-}
-
-void TcpClient::recv_msg(const std::string& msg_str) {
     //TODO: proces parser error
-    GenericMsg msg = GenericMsg(msg_str);
     std::string error_msg;
     if (msg.validate_msg(&error_msg)) {
         h9_log_warn("tcp client (socket: %d) recv invalid msg: [%s]", get_socket(), error_msg.c_str());
@@ -55,21 +51,13 @@ void TcpClient::recv_msg(const std::string& msg_str) {
     recv_msg_callback(this, msg);
 }
 
-std::uint64_t TcpClient::get_next_id(void) {
-    //TODO: randomize id
-    static std::uint64_t next = 0;
-    if (next == 0) next = 1;
-    else ++next;
-    return next;
-}
-
 TcpClient::TcpClient(TNewMsgCallback new_msg_callback, int sockfd):
         recv_msg_callback(std::move(new_msg_callback)),
         h9socket(sockfd),
         active_subscription(0) {
 
     set_socket(sockfd, true);
-    h9socket.connect();
+    //h9socket.connect();
 }
 
 bool TcpClient::is_subscriber() {
@@ -81,10 +69,7 @@ void TcpClient::subscriber(int active) {
 }
 
 void TcpClient::send(GenericMsg& msg) {
-    msg.set_id(get_next_id());
-    std::string raw_msg = msg.serialize();
-
-    int res = h9socket.send(raw_msg);
+    int res = h9socket.send(msg);
 
     if (res <= 0) {
         if (res == 0 || errno == ECONNRESET || errno == EPIPE || errno == EBADF /*|| errno == EPROTOTYPE*/) {
@@ -114,5 +99,5 @@ std::string TcpClient::get_remote_port() noexcept {
 }
 
 void TcpClient::on_select() {
-    recv();
+    recv_msg();
 }

@@ -11,9 +11,13 @@
 #include <thread>
 #include <unistd.h>
 #include "common/logger.h"
-#include "dctx.h"
 #include "bus.h"
+#include "dctx.h"
+#include "devmgr.h"
+#include "executor.h"
 #include "node.h"
+#include "tcpserver.h"
+
 
 int main(int argc, char **argv) {
     DCtx ctx;
@@ -39,9 +43,17 @@ int main(int argc, char **argv) {
     Bus bus = {};
     bus.load_config(&ctx);
 
+    DevMgr devmgr(&bus);
+    devmgr.load_config(&ctx);
+
+    Executor executor(&ctx, &bus, &devmgr);
+
+    TCPServer server(&executor);
+    server.load_config(&ctx);
+
     Node n = {&bus, 2};
 
-    n.reset();
+    //n.reset();
 
     int nt = n.get_node_type();
     h9_log_info("Node type: %d", nt);
@@ -68,5 +80,9 @@ int main(int argc, char **argv) {
             return EXIT_FAILURE;
         }
     }
+
+    devmgr.discover();
+    server.run();
+
     return EXIT_SUCCESS;
 }

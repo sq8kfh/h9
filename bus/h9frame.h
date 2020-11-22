@@ -33,7 +33,7 @@ public:
         TOGGLE_BIT = 12,
         NODE_UPGRADE = 13,
         NODE_RESET = 14,
-        DISCOVERY = 15,
+        DISCOVER = 15,
         REG_EXTERNALLY_CHANGED = 16,
         REG_INTERNALLY_CHANGED = 17,
         REG_VALUE_BROADCAST = 18,

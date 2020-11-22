@@ -132,6 +132,7 @@ void BusMgr::send_frame(const H9frame& frame, const std::string& origin, std::ui
 }
 
 void BusMgr::cron() {
+    h9_log_debug2("BusMgr::cron");
     for (auto it=dev.begin(); it!=dev.end(); ++it) {
         if (!it->second->is_connected()) {
             if (it->second->retry_auto_connect) {

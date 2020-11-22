@@ -47,9 +47,9 @@ int main(int argc, char **argv)
 
     H9Connector h9_connector = {ctx.get_h9bus_host(), ctx.get_h9bus_port()};
 
-    if (h9_connector.connect() == -1) {
+    /*if (h9_connector.connect() == -1) {
         return EXIT_FAILURE;
-    }
+    }*/
 
     int last_uptime_value = 0;
     int last_frames_sent = 0;

@@ -20,10 +20,9 @@ void ServerMgr::on_new_connection(int client_socket, const std::string& remote_a
     //TODO:    msg_log.log(msg.serialize());
     TcpClient::TNewMsgCallback tmp_f = std::bind(&EventMgr::process_msg, eventmgr_handler, std::placeholders::_1, std::placeholders::_2);
     TcpClient *tmp = new TcpClient(tmp_f, client_socket);
-    h9_log_notice("Server: new connection from %s:%d client: %p",
+    h9_log_notice("Server: new connection from %s:%d",
                   remote_address.c_str(),
-                  remote_port,
-                  tmp);
+                  remote_port);
     tcp_clients[client_socket] = tmp;
     _socket_mgr->register_socket(tmp);
 }
@@ -44,7 +43,7 @@ void ServerMgr::set_eventmgr_handler(EventMgr* handler) {
     eventmgr_handler = handler;
 }
 
-void ServerMgr::client_subscription(int client_socket, int active) {
+/*void ServerMgr::client_subscription(int client_socket, int active) {
     tcp_clients[client_socket]->subscriber(active);
 }
 
@@ -57,7 +56,7 @@ void ServerMgr::send_msg(int client_socket, GenericMsg& msg) {
             tcp_clients[client_socket]->on_close();
         }
     }
-}
+}*/
 
 void ServerMgr::send_msg_to_subscriber(GenericMsg& msg, std::uint64_t orgin_client_id, std::uint64_t orgin_msg_id) {
     for (auto& it: tcp_clients) {
@@ -68,7 +67,7 @@ void ServerMgr::send_msg_to_subscriber(GenericMsg& msg, std::uint64_t orgin_clie
                 it.second->send(tmp_msg);
             }
             catch (SocketMgr::Socket::CloseSocketException& e) {
-                h9_log_info("Close connection during send_msg_to_subscriber (client: %p)", it.second);
+                h9_log_info("Close connection during send_msg_to_subscriber (%s:%s)", it.second->get_remote_address().c_str(), it.second->get_remote_port().c_str());
                 it.second->on_close();
             }
         }
@@ -77,7 +76,7 @@ void ServerMgr::send_msg_to_subscriber(GenericMsg& msg, std::uint64_t orgin_clie
                 it.second->send(msg);
             }
             catch (SocketMgr::Socket::CloseSocketException& e) {
-                h9_log_info("Close connection during send_msg_to_subscriber (client: %p)", it.second);
+                h9_log_info("Close connection during send_msg_to_subscriber (%s:%s)", it.second->get_remote_address().c_str(), it.second->get_remote_port().c_str());
                 it.second->on_close();
             }
         }
@@ -85,17 +84,16 @@ void ServerMgr::send_msg_to_subscriber(GenericMsg& msg, std::uint64_t orgin_clie
 }
 
 void ServerMgr::cron() {
-
+    //h9_log_debug2("ServerMgr::cron");
 }
 
 void ServerMgr::flush_clients() {
     for (auto it = tcp_clients.cbegin(); it != tcp_clients.cend();) {
         if (!it->second->is_connected()) {
             TcpClient *tmp = it->second;
-            h9_log_notice("Server: flush connection from %s:%s on client: %p",
+            h9_log_notice("Server: flush connection from %s:%s",
                           tmp->get_remote_address().c_str(),
-                          tmp->get_remote_port().c_str(),
-                          tmp);
+                          tmp->get_remote_port().c_str());
 
             _socket_mgr->unregister_socket(tmp);
             it = tcp_clients.erase(it);
