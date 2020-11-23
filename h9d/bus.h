@@ -18,11 +18,12 @@
 #include "bus/h9frame.h"
 #include "bus/h9framecomparator.h"
 #include "protocol/h9connector.h"
-#include "busobserver.h"
+#include "framesubject.h"
 #include "connectionctx.h"
 #include "dctx.h"
 
-class Bus {
+class Bus: public FrameSubject {
+    //TODO: add multithread support
 public:
     constexpr static int OK = 0;
     constexpr static int NOT_CONNECTED_TO_H9BUS = -1;
@@ -37,14 +38,6 @@ private:
 
     std::mutex send_promise_map_mtx;
     std::map<std::uint64_t, std::promise<int>> send_promise_map;
-
-    std::mutex frame_observers_mtx;
-    std::map<H9FrameComparator, std::list<BusObserver*>> frame_observers;
-    void attach_frame_observer(BusObserver *observer, H9FrameComparator comparator);
-    void detach_frame_observer(BusObserver *observer);
-    void notify_observer(const H9frame &frame);
-    friend BusObserver::BusObserver(Bus *bus, H9FrameComparator comparator);
-    friend BusObserver::~BusObserver();
 
     void recv_thread();
     int send_frame_sync(H9frame frame);
@@ -75,7 +68,7 @@ public:
     int send_toggle_bit(H9frame::Priority priority, std::uint8_t seqnum, std::uint16_t source, std::uint16_t destination, std::uint8_t reg, int bit);
     int send_node_upgrade(H9frame::Priority priority, std::uint8_t seqnum, std::uint16_t source, std::uint16_t destination);
     int send_node_reset(H9frame::Priority priority, std::uint8_t seqnum, std::uint16_t source, std::uint16_t destination);
-    int send_node_discover(H9frame::Priority priority, std::uint8_t seqnum, std::uint16_t source);
+    int send_node_discover(H9frame::Priority priority, std::uint8_t seqnum, std::uint16_t source, std::uint16_t destination = H9frame::BROADCAST_ID);
     //REG_EXTERNALLY_CHANGED = 16,
     //REG_INTERNALLY_CHANGED = 17,
     //REG_VALUE_BROADCAST = 18,

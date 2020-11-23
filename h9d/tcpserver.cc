@@ -80,15 +80,24 @@ in_port_t TCPServer::get_in_port(struct sockaddr *sa) {
     return ((struct sockaddr_in6*)sa)->sin6_port;
 }
 
+void TCPServer::cleanup_tcpclientthread(TCPClientThread* client) {
+    event.trigger_async_event();
+}
+
 TCPServer::TCPServer(Executor *executor) noexcept: executor(executor) {
 
 }
 
 TCPServer::~TCPServer() {
-    for (TCPClientThread *it : tcpclientthread_list) {
-        delete it;
+    tcpclientthread_list_mtx.lock();
+    for (auto it = tcpclientthread_list.begin(); it != tcpclientthread_list.end();) {
+        std::string host = (*it)->get_remote_address();
+        std::string port = (*it)->get_remote_port();
+        delete *it;
+        h9_log_info("Connection closed %s:%s", host.c_str(), port.c_str());
+        it = tcpclientthread_list.erase(it);
     }
-    tcpclientthread_list.clear();
+    tcpclientthread_list_mtx.unlock();
 }
 
 void TCPServer::load_config(DCtx *ctx) {
@@ -98,21 +107,47 @@ void TCPServer::load_config(DCtx *ctx) {
 void TCPServer::run() {
     listen();
 
+    event.attach_socket(sockfd);
+
     while(true) {
-        int newfd;
-        struct sockaddr_storage remoteaddr;
-        socklen_t addrlen;
-        char remoteIP[INET6_ADDRSTRLEN];
+        int n = event.wait();
+        for (int i = 0; i < n; ++i) {
+            if (event.is_socket_event(i, sockfd)) {
+                int newfd;
+                struct sockaddr_storage remoteaddr;
+                socklen_t addrlen;
+                char remoteIP[INET6_ADDRSTRLEN];
 
-        addrlen = sizeof(remoteaddr);
-        newfd = accept(sockfd, (struct sockaddr *)&remoteaddr, &addrlen);
+                addrlen = sizeof(remoteaddr);
+                newfd = accept(sockfd, (struct sockaddr *)&remoteaddr, &addrlen);
 
-        if (newfd == -1) {
-            throw std::system_error(errno, std::generic_category(), std::string(__FILE__) + std::string(":") + std::to_string(__LINE__));
-        } else {
-            h9_log_info("New connection %s:%d", std::string(inet_ntop(remoteaddr.ss_family, get_in_addr((struct sockaddr *) &remoteaddr), remoteIP, INET6_ADDRSTRLEN)).c_str(), ntohs(get_in_port((struct sockaddr *) &remoteaddr)));
+                if (newfd == -1) {
+                    throw std::system_error(errno, std::generic_category(), std::string(__FILE__) + std::string(":") + std::to_string(__LINE__));
+                } else {
+                    h9_log_info("New connection %s:%d", std::string(inet_ntop(remoteaddr.ss_family, get_in_addr((struct sockaddr *) &remoteaddr), remoteIP, INET6_ADDRSTRLEN)).c_str(), ntohs(get_in_port((struct sockaddr *) &remoteaddr)));
 
-            tcpclientthread_list.push_back(new TCPClientThread(newfd, ExecutorAdapter(executor)));
+                    tcpclientthread_list_mtx.lock();
+                    tcpclientthread_list.push_back(new TCPClientThread(newfd, ExecutorAdapter(executor, this)));
+                    tcpclientthread_list_mtx.unlock();
+                }
+            }
+            else if (event.is_async_event(i)) {
+                h9_log_debug2("TCPServer process async event");
+                tcpclientthread_list_mtx.lock();
+                for (auto it = tcpclientthread_list.begin(); it != tcpclientthread_list.end();) {
+                    if (!(*it)->is_running()) {
+                        std::string host = (*it)->get_remote_address();
+                        std::string port = (*it)->get_remote_port();
+                        delete *it;
+                        h9_log_info("Connection closed %s:%s", host.c_str(), port.c_str());
+                        it = tcpclientthread_list.erase(it);
+                    }
+                    else {
+                        ++it;
+                    }
+                }
+                tcpclientthread_list_mtx.unlock();
+            }
         }
     }
 }

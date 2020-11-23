@@ -44,14 +44,18 @@ std::future<H9frame> Node::create_frame_future(H9FrameComparator comparator) {
     return frame_future;
 }
 
-Node::Node(Bus *bus, std::uint16_t node_id): BusObserver(bus, H9FrameComparator(node_id)), node_id(node_id) {
+Node::Node(Bus* bus, std::uint16_t node_id): FrameObserver(bus, H9FrameComparator(node_id)), node_id(node_id), h9bus(bus) {
 }
 
-Node::~Node(void) {
+Node::~Node() {
     h9_log_debug2("~Node");
 }
 
-int Node::reset(void) {
+std::uint16_t Node::get_node_id() noexcept {
+    return node_id;
+}
+
+int Node::reset() {
     H9FrameComparator comparator;
     comparator.set_source_id(node_id);
     comparator.set_type(H9frame::Type::NODE_TURNED_ON);
@@ -69,7 +73,7 @@ int Node::reset(void) {
     return 0;
 }
 
-int Node::get_node_type(void) {
+int Node::get_node_type() {
     H9FrameComparator comparator;
     comparator.set_source_id(node_id);
     comparator.set_type(H9frame::Type::REG_VALUE);

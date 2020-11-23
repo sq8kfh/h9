@@ -26,6 +26,7 @@ public:
     explicit Executor(DCtx *ctx, Bus *bus, DevMgr *devmgr) noexcept;
 
     void get_stat(std::string &version, std::time_t &uptime);
+    void cleanup_connection(TCPClientThread *client);
     int execute_object_method(int a, TCPClientThread *client);
 };
 

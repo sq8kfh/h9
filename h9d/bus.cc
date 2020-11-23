@@ -24,7 +24,7 @@ void Bus::recv_thread() {
                 H9frame frame = msg.get_frame();
                 h9_log_info(">>frame %llu %llu", msg.get_id(), msg.get_request_id());
 
-                notify_observer(frame);
+                notify_frame_observer(frame);
 
                 if (msg.get_request_id() != 0) {
                     send_promise_map_mtx.lock();
@@ -101,38 +101,6 @@ std::uint8_t Bus::get_next_seqnum(std::uint16_t source_id) {
     std::uint8_t ret = next_seqnum[source_id];
     next_seqnum[source_id] = (next_seqnum[source_id] + 1) & ((1 << H9frame::H9FRAME_SEQNUM_BIT_LENGTH) - 1);
     return ret;
-}
-
-void Bus::attach_frame_observer(BusObserver *observer, H9FrameComparator comparator) {
-    frame_observers_mtx.lock();
-    frame_observers[comparator].push_back(observer);
-    frame_observers_mtx.unlock();
-}
-
-void Bus::detach_frame_observer(BusObserver *observer) {
-    frame_observers_mtx.lock();
-    for (auto it = frame_observers.begin(); it != frame_observers.end();) {
-        it->second.remove(observer);
-        if (it->second.empty()) {
-            it = frame_observers.erase(it);
-        }
-        else {
-            ++it;
-        }
-    }
-    frame_observers_mtx.unlock();
-}
-
-void Bus::notify_observer(const H9frame& frame) {
-    frame_observers_mtx.lock();
-    for (auto const& o : frame_observers) {
-        if (o.first == frame) {
-            for (auto const& observer : o.second) {
-                observer->on_frame_recv(frame);
-            }
-        }
-    }
-    frame_observers_mtx.unlock();
 }
 
 int Bus::send_set_reg(H9frame::Priority priority, std::uint8_t seqnum, std::uint16_t source, std::uint16_t destination, std::uint8_t reg, std::size_t nbyte, void *data) {
@@ -297,7 +265,7 @@ int Bus::send_node_reset(H9frame::Priority priority, std::uint8_t seqnum, std::u
     return ret == Bus::OK ? frame.seqnum : ret;
 }
 
-int Bus::send_node_discover(H9frame::Priority priority, std::uint8_t seqnum, std::uint16_t source) {
+int Bus::send_node_discover(H9frame::Priority priority, std::uint8_t seqnum, std::uint16_t source, std::uint16_t destination) {
     H9frame frame;
     frame.priority = priority;
     frame.type = H9frame::Type::DISCOVER;
@@ -307,7 +275,7 @@ int Bus::send_node_discover(H9frame::Priority priority, std::uint8_t seqnum, std
     if (source < 1 || source >= H9frame::BROADCAST_ID) return INVALID_SOURCE_ID;
     frame.source_id = source;
 
-    frame.destination_id = H9frame::BROADCAST_ID;
+    frame.destination_id = destination;
 
     frame.dlc = 0;
 

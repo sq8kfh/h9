@@ -7,11 +7,13 @@
  */
 
 #include "executoradapter.h"
+#include "common/logger.h"
 #include "protocol/errormsg.h"
 #include "tcpclientthread.h"
+#include "tcpserver.h"
 
 
-ExecutorAdapter::ExecutorAdapter(Executor *executor) noexcept: executor(executor) {
+ExecutorAdapter::ExecutorAdapter(Executor *executor, TCPServer *tcpserver) noexcept: executor(executor), tcpserver(tcpserver) {
 }
 
 GenericMsg ExecutorAdapter::execute_method(CallMsg callmsg, TCPClientThread *client) {
@@ -45,4 +47,11 @@ GenericMsg ExecutorAdapter::execute_method(CallMsg callmsg, TCPClientThread *cli
     ErrorMsg err_msg(ErrorMsg::ErrorNumber::UNSUPPORTED_METHOD, "Unsupported method: " + callmsg.get_method_name());
     err_msg.set_request_id(callmsg.get_id());
     return std::move(err_msg);
+}
+
+void ExecutorAdapter::cleanup_connection(TCPClientThread *client) {
+    h9_log_debug("Closing connection %s:%s", client->get_remote_address().c_str(), client->get_remote_port().c_str());
+    executor->cleanup_connection(client);
+
+    tcpserver->cleanup_tcpclientthread(client); //MUST BE LAST!
 }

@@ -17,17 +17,27 @@
 #include "protocol/callmsg.h"
 #include "protocol/genericmsg.h"
 #include "protocol/h9msgsocket.h"
+#if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
 #include "kqueue.h"
+#elif defined(__linux__)
+#include "epoll.h"
+#endif
+
 
 class TCPClientThread {
 private:
     H9MsgSocket h9socket;
     ExecutorAdapter execadapter;
 
+#if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
     KQueue event;
+#elif defined(__linux__)
+    Epoll event;
+#endif
 
-    std::thread client_thread_desc;
-    std::atomic_bool runing;
+std::thread client_thread_desc;
+    std::atomic_bool running;
+    std::atomic_bool thread_running;
 
     std::mutex async_msg_queue_mtx;
     std::queue<GenericMsg> async_msg_queue;
@@ -36,10 +46,15 @@ private:
     void thread_recv_msg();
     void thread_send_async_msg();
     void send(GenericMsg msg);
+    void close_connection();
 public:
     TCPClientThread(int sockfd, ExecutorAdapter execadapter);
     TCPClientThread(const TCPClientThread &a) = delete;
     ~TCPClientThread();
+
+    std::string get_remote_address() noexcept;
+    std::string get_remote_port() noexcept;
+
     bool is_running();
     void send_msg(GenericMsg msg);
 };

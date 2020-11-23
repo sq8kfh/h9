@@ -19,6 +19,10 @@ void Executor::get_stat(std::string &version, std::time_t &uptime) {
     uptime = std::time(nullptr) - ctx->get_start_time();
 }
 
+void Executor::cleanup_connection(TCPClientThread *client) {
+    devmgr->add_dev_observer(nullptr);
+}
+
 int Executor::execute_object_method(int a, TCPClientThread *client) {
     devmgr->add_dev_observer(client);
 

@@ -38,7 +38,7 @@ KQueue::~KQueue() {
     }
 }
 
-void KQueue::attach_read_event(int fd) {
+void KQueue::attach_socket(int fd) {
     struct kevent event;
     EV_SET(&event, fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
     int ret = kevent(kq, &event, 1, NULL, 0, NULL);
@@ -75,7 +75,7 @@ void KQueue::trigger_async_event() {
     }
 }
 
-bool KQueue::is_socket_ready(int event_num, int fd) {
+bool KQueue::is_socket_event(int event_num, int fd) {
     if (fd == (int)tevent[event_num].ident) return true;
     return false;
 }

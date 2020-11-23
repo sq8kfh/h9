@@ -16,14 +16,17 @@
 
 
 class TCPClientThread;
+class TCPServer;
 
 class ExecutorAdapter {
 private:
     Executor * const executor;
+    TCPServer * const tcpserver;
 public:
-    explicit ExecutorAdapter(Executor *executor) noexcept;
+    ExecutorAdapter(Executor *executor, TCPServer *tcpserver) noexcept;
 
     GenericMsg execute_method(CallMsg callmsg, TCPClientThread *client);
+    void cleanup_connection(TCPClientThread *client);
 };
 
 

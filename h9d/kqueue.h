@@ -22,12 +22,12 @@ public:
     KQueue();
     ~KQueue();
 
-    void attach_read_event(int fd);
+    void attach_socket(int fd);
     int wait();
 
     void trigger_async_event();
 
-    bool is_socket_ready(int event_num, int fd);
+    bool is_socket_event(int event_num, int fd);
     bool is_async_event(int event_num);
 };
 
