@@ -43,7 +43,7 @@ private:
     void *get_in_addr(struct sockaddr *sa);
     in_port_t get_in_port(struct sockaddr *sa);
 
-    friend void ExecutorAdapter::cleanup_connection(TCPClientThread *client);
+    friend void ExecutorAdapter::cleanup_connection();
     void cleanup_tcpclientthread(TCPClientThread* client);
 public:
     explicit TCPServer(Executor *executor) noexcept;
@@ -51,6 +51,8 @@ public:
     ~TCPServer();
     void load_config(DCtx *ctx);
     void run();
+
+    int connected_clients_count();
 };
 
 

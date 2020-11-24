@@ -26,7 +26,15 @@ public:
     explicit Executor(DCtx *ctx, Bus *bus, DevMgr *devmgr) noexcept;
 
     void get_stat(std::string &version, std::time_t &uptime);
-    void cleanup_connection(TCPClientThread *client);
+    //void cleanup_connection(TCPClientThread *client);
+
+    //DevMgr
+    int active_devices_count();
+
+    //Device
+    int attach_device_event_observer(TCPClientThread *client, std::uint16_t dev_id, std::string event_name);
+    int detach_device_event_observer(TCPClientThread *client, std::uint16_t dev_id, std::string event_name);
+    int execute_device_method(TCPClientThread *client, std::uint16_t device_id, std::string method_name);
     int execute_object_method(int a, TCPClientThread *client);
 };
 

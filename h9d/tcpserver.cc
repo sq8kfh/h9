@@ -124,7 +124,7 @@ void TCPServer::run() {
                 if (newfd == -1) {
                     throw std::system_error(errno, std::generic_category(), std::string(__FILE__) + std::string(":") + std::to_string(__LINE__));
                 } else {
-                    h9_log_info("New connection %s:%d", std::string(inet_ntop(remoteaddr.ss_family, get_in_addr((struct sockaddr *) &remoteaddr), remoteIP, INET6_ADDRSTRLEN)).c_str(), ntohs(get_in_port((struct sockaddr *) &remoteaddr)));
+                    h9_log_notice("New connection %s:%d", std::string(inet_ntop(remoteaddr.ss_family, get_in_addr((struct sockaddr *) &remoteaddr), remoteIP, INET6_ADDRSTRLEN)).c_str(), ntohs(get_in_port((struct sockaddr *) &remoteaddr)));
 
                     tcpclientthread_list_mtx.lock();
                     tcpclientthread_list.push_back(new TCPClientThread(newfd, ExecutorAdapter(executor, this)));
@@ -139,7 +139,7 @@ void TCPServer::run() {
                         std::string host = (*it)->get_remote_address();
                         std::string port = (*it)->get_remote_port();
                         delete *it;
-                        h9_log_info("Connection closed %s:%s", host.c_str(), port.c_str());
+                        h9_log_notice("Connection closed %s:%s", host.c_str(), port.c_str());
                         it = tcpclientthread_list.erase(it);
                     }
                     else {
@@ -150,4 +150,11 @@ void TCPServer::run() {
             }
         }
     }
+}
+
+int TCPServer::connected_clients_count() {
+    tcpclientthread_list_mtx.lock();
+    int ret = tcpclientthread_list.size();
+    tcpclientthread_list_mtx.unlock();
+    return ret;
 }

@@ -28,11 +28,11 @@ void TCPClientThread::thread() {
         }
     }
     catch (...) {
-        execadapter.cleanup_connection(this);
+        execadapter.cleanup_connection();
         thread_running = false;
         throw;
     }
-    execadapter.cleanup_connection(this);
+    execadapter.cleanup_connection();
     thread_running = false;
 }
 
@@ -52,7 +52,7 @@ void TCPClientThread::thread_recv_msg() {
         CallMsg call_msg = std::move(msg);
         h9_log_info("Process CALL msg (id: %llu method: %s) from client %s:%s", call_msg.get_id(), call_msg.get_method_name().c_str(), h9socket.get_remote_address().c_str(), h9socket.get_remote_port().c_str());
 
-        GenericMsg ret = execadapter.execute_method(std::move(call_msg), this);
+        GenericMsg ret = execadapter.execute_method(std::move(call_msg));
         send(ret);
     }
     else {
@@ -93,6 +93,8 @@ void TCPClientThread::send(GenericMsg msg) {
 }
 
 TCPClientThread::TCPClientThread(int sockfd, ExecutorAdapter execadapter): h9socket(sockfd), execadapter(execadapter) {
+    this->execadapter.set_client(this);
+
     running = true;
     client_thread_desc = std::thread([this]() {
         this->thread();

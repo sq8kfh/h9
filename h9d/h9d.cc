@@ -51,25 +51,6 @@ int main(int argc, char **argv) {
     TCPServer server(&executor);
     server.load_config(&ctx);
 
-    Node n = {&bus, 2};
-
-    //n.reset();
-
-    int nt = n.get_node_type();
-    h9_log_info("Node type: %d", nt);
-
-    uint8_t major;
-    uint8_t minor;
-    nt = n.get_node_version(&major, &minor);
-    h9_log_info("Node version: %hhu.%hhu %d", major, minor, nt);
-
-
-    //std::thread t = std::thread(bus);
-    //int ret = bus.set_reg(H9frame::Priority::LOW, 2, 2, 12, 0, nullptr);
-    //h9_log_info("ret %d", ret);
-    //t.join();
-
-
     if (ctx.cfg_drop_privileges() && getuid() == 0) {
         if (setgid(ctx.cfg_drop_privileges_gid()) != 0) {
             h9_log_crit("Unable to drop group privileges: %s", strerror(errno));
@@ -79,6 +60,21 @@ int main(int argc, char **argv) {
             h9_log_crit("Unable to drop user privileges: %s", strerror(errno));
             return EXIT_FAILURE;
         }
+    }
+
+
+    {
+        Node n = {&bus, 2};
+
+        //n.reset();
+
+        int nt = n.get_node_type();
+        h9_log_info("Node type: %d", nt);
+
+        uint8_t major;
+        uint8_t minor;
+        nt = n.get_node_version(&major, &minor);
+        h9_log_info("Node version: %hhu.%hhu %d", major, minor, nt);
     }
 
     devmgr.discover();

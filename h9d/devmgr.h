@@ -14,6 +14,7 @@
 #include <thread>
 #include <map>
 #include <queue>
+#include <shared_mutex>
 #include "bus.h"
 #include "bus/h9frame.h"
 #include "dctx.h"
@@ -28,9 +29,10 @@ private:
     Bus* const h9bus;
     void on_frame_recv(H9frame frame) override;
 
-    std::map<std::uint16_t, Device*> devices_map;
+    //std::shared_mutex devices_map_mtx;
+    std::mutex devices_map_mtx;             //TODO: shared_mutex (C++17)
 
-    TCPClientThread *_client; //POC
+    std::map<std::uint16_t, Device*> devices_map;
 
     std::mutex frame_queue_mtx;
     std::condition_variable frame_queue_cv; //TODO: counting_semaphore (C++20)?
@@ -48,7 +50,10 @@ public:
     void load_config(DCtx *ctx);
     void discover();
 
-    void add_dev_observer(TCPClientThread *client);
+    void attach_event_observer(TCPClientThread *observer, std::string event_name, std::uint16_t dev_id);
+    void detach_event_observer(TCPClientThread *observer, std::string event_name, std::uint16_t dev_id);
+
+    int active_devices_count();
 };
 
 
