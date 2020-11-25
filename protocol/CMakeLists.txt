@@ -14,12 +14,12 @@ add_library(PROTOCOL OBJECT
         subscribemsg.h
         errormsg.cc
         errormsg.h
-        callmsg.cc
-        callmsg.h
-        responsemsg.cc
-        responsemsg.h
+        executemethodmsg.cc
+        executemethodmsg.h
+        methodresponsemsg.cc
+        methodresponsemsg.h
         genericmethod.h
-        value.cc value.h h9socket.cc h9socket.h h9msgsocket.cc h9msgsocket.h)
+        value.cc value.h h9socket.cc h9socket.h h9msgsocket.cc h9msgsocket.h identificationmsg.cc identificationmsg.h executedevicemethodmsg.cc executedevicemethodmsg.h devicemethodresponsemsg.cc devicemethodresponsemsg.h)
 
 target_include_directories(PROTOCOL PUBLIC ${LIBXML2_INCLUDE_DIRS})
 target_compile_options(PROTOCOL PUBLIC ${LIBXML2_CFLAGS_OTHER})

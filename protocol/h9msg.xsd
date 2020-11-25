@@ -3,11 +3,7 @@
     <xs:element name="h9">
         <xs:complexType>
             <xs:choice minOccurs="1" maxOccurs="1">
-                <xs:element name="subscribe">
-                    <xs:complexType>
-                        <xs:attribute name="content" type="xs:string" use="required"/>
-                    </xs:complexType>
-                </xs:element>
+                <xs:element name="identification" type="identification_t"/>
                 <xs:element name="send_frame" type="h9sendframe_t"/>
                 <xs:element name="frame" type="h9frame_t"/>
                 <xs:element name="error">
@@ -17,7 +13,7 @@
                         <xs:attribute name="msg" type="xs:string"/>
                     </xs:complexType>
                 </xs:element>
-                <xs:element name="call" type="methodcall_t"/>
+                <xs:element name="execute" type="executemethod_t"/>
                 <xs:element name="response" type="methodresponse_t"/>
             </xs:choice>
 
@@ -47,7 +43,12 @@
         </xs:complexType>
     </xs:element>
 
-    <xs:complexType name="methodcall_t">
+    <xs:complexType name="identification_t">
+        <xs:attribute name="entity" type="xs:string" use="required"/>
+        <!--<xs:attribute name="user" use="optional"/>-->
+    </xs:complexType>
+
+    <xs:complexType name="executemethod_t">
         <xs:sequence minOccurs="0" maxOccurs="unbounded">
             <xs:choice>
                 <xs:element name="value" type="value_t"/>
@@ -57,6 +58,15 @@
         </xs:sequence>
 
         <xs:attribute name="method" type="xs:string" use="required"/>
+        <xs:attribute name="device" type="xs:string" use="optional"/>
+        <xs:attribute name="id" use="optional">
+            <xs:simpleType>
+                <xs:restriction base="xs:nonNegativeInteger">
+                    <xs:minInclusive value="0"/>
+                    <xs:maxInclusive value="511"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:complexType name="methodresponse_t">
@@ -69,6 +79,15 @@
         </xs:sequence>
 
         <xs:attribute name="method" type="xs:string" use="required"/>
+        <xs:attribute name="device" type="xs:string" use="optional"/>
+        <xs:attribute name="id" use="optional">
+            <xs:simpleType>
+                <xs:restriction base="xs:nonNegativeInteger">
+                    <xs:minInclusive value="0"/>
+                    <xs:maxInclusive value="511"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:complexType name="value_t">

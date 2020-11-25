@@ -23,6 +23,8 @@ private:
     TNewMsgCallback recv_msg_callback;
     H9MsgSocket h9socket;
 
+    std::string entity;
+
     int active_subscription;
 
     void recv_msg();
@@ -37,6 +39,8 @@ public:
 
     std::string get_remote_address() noexcept;
     std::string get_remote_port() noexcept;
+    std::string get_entity() noexcept;
+    std::string get_client_idstring() noexcept;
 };
 
 

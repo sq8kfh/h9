@@ -44,3 +44,7 @@ Log& Ctx::logger() {
 time_t Ctx::get_start_time() {
     return start_time;
 }
+
+std::string Ctx::get_app_name() {
+    return _app_name;
+}

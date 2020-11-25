@@ -21,12 +21,18 @@
 #include "common/logger.h"
 
 
-H9Connector::H9Connector(std::string hostname, std::string port):
+H9Connector::H9Connector(std::string hostname, std::string port) noexcept:
     h9socket(std::move(hostname), std::move(port)) {
 }
 
 H9Connector::~H9Connector() noexcept {
     h9socket.close();
+}
+
+int H9Connector::connect(std::string entity) noexcept {
+    h9socket.connect();
+    h9socket.authentication(entity);
+    return 0;
 }
 
 void H9Connector::close() noexcept {

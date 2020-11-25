@@ -99,9 +99,9 @@ int main(int argc, char **argv) {
 
     H9Connector h9_connector = {ctx.get_h9bus_host(), ctx.get_h9bus_port()};
 
-    /*if (h9_connector.connect() == -1) {
+    if (h9_connector.connect(ctx.get_app_name()) == -1) {
         return EXIT_FAILURE;
-    }*/
+    }
 
     CommandCtx cmd_ctx = {&h9_connector, source_id};
     CLIParser cli_parser;

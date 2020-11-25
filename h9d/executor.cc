@@ -31,6 +31,17 @@ int Executor::detach_device_event_observer(TCPClientThread *client, std::uint16_
     devmgr->detach_event_observer(client, event_name, dev_id);
 }
 
+std::vector<DevMgr::DeviceDsc> Executor::get_devices_list() {
+    return std::move(devmgr->get_devices_list());
+}
+
+bool Executor::is_device_exist(std::uint16_t dev_id) {
+    if (dev_id < H9frame::BROADCAST_ID)
+        return devmgr->is_device_exist(dev_id);
+    else
+        return false;
+}
+
 int Executor::execute_device_method(TCPClientThread *client, std::uint16_t device_id, std::string method_name) {
 
 }

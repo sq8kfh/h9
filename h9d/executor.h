@@ -34,6 +34,9 @@ public:
     //Device
     int attach_device_event_observer(TCPClientThread *client, std::uint16_t dev_id, std::string event_name);
     int detach_device_event_observer(TCPClientThread *client, std::uint16_t dev_id, std::string event_name);
+    std::vector<DevMgr::DeviceDsc> get_devices_list();
+    bool is_device_exist(std::uint16_t dev_id);
+
     int execute_device_method(TCPClientThread *client, std::uint16_t device_id, std::string method_name);
     int execute_object_method(int a, TCPClientThread *client);
 };

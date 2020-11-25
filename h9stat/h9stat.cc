@@ -13,8 +13,8 @@
 
 #include "common/clientctx.h"
 #include "protocol/h9connector.h"
-#include "protocol/callmsg.h"
-#include "protocol/responsemsg.h"
+#include "protocol/executemethodmsg.h"
+#include "protocol/methodresponsemsg.h"
 
 void print_uptime(int n) {
     int day = n / (24 * 3600);
@@ -47,20 +47,20 @@ int main(int argc, char **argv)
 
     H9Connector h9_connector = {ctx.get_h9bus_host(), ctx.get_h9bus_port()};
 
-    /*if (h9_connector.connect() == -1) {
+    if (h9_connector.connect(ctx.get_app_name()) == -1) {
         return EXIT_FAILURE;
-    }*/
+    }
 
     int last_uptime_value = 0;
     int last_frames_sent = 0;
     int last_frames_received = 0;
 
     while (true) {
-        h9_connector.send(CallMsg("h9bus_stat"));
+        h9_connector.send(ExecuteMethodMsg("h9bus_stat"));
 
         GenericMsg raw_msg = h9_connector.recv();
-        if (raw_msg.get_type() == GenericMsg::Type::RESPONSE) {
-            ResponseMsg msg = std::move(raw_msg);
+        if (raw_msg.get_type() == GenericMsg::Type::METHODRESPONSE) {
+            MethodResponseMsg msg = std::move(raw_msg);
 
             Value result = msg.result();
 

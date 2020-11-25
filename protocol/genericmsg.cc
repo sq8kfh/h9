@@ -30,6 +30,9 @@ GenericMsg::GenericMsg(GenericMsg::Type msg_type) {
         case Type::GENERIC:
             throw std::invalid_argument("Trying create a GENERIC message");
             break;
+        case Type::IDENTIFICATION:
+            node = xmlNewNode(nullptr, reinterpret_cast<xmlChar const *>("identification"));
+            break;
         case Type::FRAME:
             node = xmlNewNode(nullptr, reinterpret_cast<xmlChar const *>("frame"));
             break;
@@ -42,11 +45,19 @@ GenericMsg::GenericMsg(GenericMsg::Type msg_type) {
         case Type::ERROR:
             node = xmlNewNode(nullptr, reinterpret_cast<xmlChar const *>("error"));
             break;
-        case Type::CALL:
-            node = xmlNewNode(nullptr, reinterpret_cast<xmlChar const *>("call"));
+        case Type::EXECUTEMETHOD:
+            node = xmlNewNode(nullptr, reinterpret_cast<xmlChar const *>("execute"));
             break;
-        case Type::RESPONSE:
+        case Type::METHODRESPONSE:
             node = xmlNewNode(nullptr, reinterpret_cast<xmlChar const *>("response"));
+            break;
+        case Type::EXECUTEDEVICEMETHOD:
+            node = xmlNewNode(nullptr, reinterpret_cast<xmlChar const *>("execute"));
+            xmlNewProp(node, reinterpret_cast<xmlChar const *>("id"), reinterpret_cast<xmlChar const *>("0"));
+            break;
+        case Type::DEVICEMETHODRESPONSE:
+            node = xmlNewNode(nullptr, reinterpret_cast<xmlChar const *>("response"));
+            xmlNewProp(node, reinterpret_cast<xmlChar const *>("id"), reinterpret_cast<xmlChar const *>("0"));
             break;
     }
     xmlAddChild(root, node);
@@ -114,7 +125,9 @@ GenericMsg::Type GenericMsg::get_type() {
     assert(node);
 
     if (node) {
-        if (xmlStrcmp(node->name,reinterpret_cast<xmlChar const *>("frame")) == 0)
+        if (xmlStrcmp(node->name,reinterpret_cast<xmlChar const *>("identification")) == 0)
+            return Type::IDENTIFICATION;
+        else if (xmlStrcmp(node->name,reinterpret_cast<xmlChar const *>("frame")) == 0)
             return Type::FRAME;
         else if (xmlStrcmp(node->name,reinterpret_cast<xmlChar const *>("send_frame")) == 0)
             return Type::SEND_FRAME;
@@ -122,10 +135,23 @@ GenericMsg::Type GenericMsg::get_type() {
             return Type::SUBSCRIBE;
         else if (xmlStrcmp(node->name,reinterpret_cast<xmlChar const *>("error")) == 0)
             return Type::ERROR;
-        else if (xmlStrcmp(node->name,reinterpret_cast<xmlChar const *>("call")) == 0)
-            return Type::CALL;
-        else if (xmlStrcmp(node->name,reinterpret_cast<xmlChar const *>("response")) == 0)
-            return Type::RESPONSE;
+        else if (xmlStrcmp(node->name,reinterpret_cast<xmlChar const *>("execute")) == 0) {
+            if (xmlHasProp(node, (const xmlChar *) "id")) {
+                return Type::EXECUTEDEVICEMETHOD;
+            }
+            else {
+                return Type::EXECUTEMETHOD;
+            }
+        }
+        else if (xmlStrcmp(node->name,reinterpret_cast<xmlChar const *>("response")) == 0) {
+            if (xmlHasProp(node, (const xmlChar *) "id")) {
+                return Type::DEVICEMETHODRESPONSE;
+            }
+            else {
+                return Type::METHODRESPONSE;
+            }
+        }
+
     }
     return Type::GENERIC;
 }

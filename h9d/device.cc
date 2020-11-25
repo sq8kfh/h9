@@ -17,7 +17,7 @@ void Device::update_device_state(H9frame frame) {
     //// POC
     ////
     if (frame.type == H9frame::Type::REG_EXTERNALLY_CHANGED && frame.source_id == 32 && frame.data[0] == 10) {
-        ResponseMsg res("dev");
+        MethodResponseMsg res("dev");
         res.add_value("object", "antenna-switch");
         res.add_value("id", 8);
         res.add_value("method", "switch");
@@ -57,5 +57,13 @@ std::uint16_t Device::get_node_type() noexcept {
 }
 
 std::uint16_t Device::get_node_version() noexcept {
+    return node_version;
+}
+
+std::uint8_t Device::get_node_version_major() noexcept {
+    return node_version >> 8;
+}
+
+std::uint8_t Device::get_node_version_minor() noexcept {
     return node_version;
 }

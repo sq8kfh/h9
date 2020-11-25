@@ -132,6 +132,29 @@ void DevMgr::detach_event_observer(TCPClientThread *observer, std::string event_
     devices_map_mtx.unlock();
 }
 
+std::vector<DevMgr::DeviceDsc> DevMgr::get_devices_list() {
+    //devices_map_mtx.lock_shared();
+    devices_map_mtx.lock();
+    std::vector<DevMgr::DeviceDsc> ret(devices_map.size());
+
+    for (auto it: devices_map) {
+        ret.push_back({it.first, it.second->get_node_type(), it.second->get_node_version_major(), it.second->get_node_version_minor()});
+    }
+
+    //devices_map_mtx.unlock_shared()
+    devices_map_mtx.unlock();
+    return std::move(ret);
+}
+
+bool DevMgr::is_device_exist(std::uint16_t dev_id) {
+    //devices_map_mtx.lock_shared();
+    devices_map_mtx.lock();
+    bool ret = devices_map.count(dev_id);
+    //devices_map_mtx.unlock_shared()
+    devices_map_mtx.unlock();
+    return ret;
+}
+
 int DevMgr::active_devices_count() {
     //devices_map_mtx.lock_shared();
     devices_map_mtx.lock();

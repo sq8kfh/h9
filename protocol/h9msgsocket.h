@@ -13,14 +13,19 @@
 #include <string>
 #include "h9socket.h"
 #include "genericmsg.h"
+#include "protocol/identificationmsg.h"
 
 
 class H9MsgSocket: protected H9Socket {
+    std::uint64_t next_msg_id;
 public:
-    explicit H9MsgSocket(int socket);
-    H9MsgSocket(std::string hostname, std::string port);
+    explicit H9MsgSocket(int socket) noexcept;
+    H9MsgSocket(std::string hostname, std::string port) noexcept;
 
-    int get_socket();
+    int get_socket() noexcept;
+
+    using H9Socket::connect;
+    int authentication(std::string entity) noexcept ;
 
     int send(GenericMsg &msg) noexcept;
     int send(GenericMsg &msg, std::uint64_t id) noexcept;

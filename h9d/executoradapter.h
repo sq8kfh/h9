@@ -13,8 +13,9 @@
 #include <list>
 #include <tuple>
 #include "executor.h"
-#include "protocol/callmsg.h"
-#include "protocol/responsemsg.h"
+#include "protocol/devicemethodresponsemsg.h"
+#include "protocol/executemethodmsg.h"
+#include "protocol/methodresponsemsg.h"
 
 
 class TCPClientThread;
@@ -28,12 +29,13 @@ private:
 
     std::list<std::tuple<std::uint16_t, std::string>> attach_device_event_observer_memento;
     int attach_device_event_observer(std::uint16_t dev_id, std::string event_name);
+    int detach_device_event_observer(std::uint16_t dev_id, std::string event_name);
 public:
     ExecutorAdapter(Executor *executor, TCPServer *tcpserver) noexcept;
     void set_client(TCPClientThread *client);
 
-    GenericMsg execute_method(CallMsg callmsg);
-    //GenericMsg execute_device_method(CallMsg callmsg, TCPClientThread *client);
+    GenericMsg execute_method(ExecuteMethodMsg execmsg);
+    GenericMsg execute_device_method(DeviceMethodResponseMsg execmsg);
 
     void cleanup_connection();
 };

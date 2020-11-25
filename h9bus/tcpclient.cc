@@ -48,7 +48,13 @@ void TcpClient::recv_msg() {
         }
         return;
     }
-    recv_msg_callback(this, msg);
+    if (msg.get_type() == GenericMsg::Type::IDENTIFICATION) {
+        IdentificationMsg ident_msg = std::move(msg);
+        entity = ident_msg.get_entity();
+    }
+    else {
+        recv_msg_callback(this, msg);
+    }
 }
 
 TcpClient::TcpClient(TNewMsgCallback new_msg_callback, int sockfd):
@@ -96,6 +102,14 @@ std::string TcpClient::get_remote_address() noexcept {
 
 std::string TcpClient::get_remote_port() noexcept {
     return std::move(h9socket.get_remote_port());
+}
+
+std::string TcpClient::get_entity() noexcept {
+    return entity;
+}
+
+std::string TcpClient::get_client_idstring() noexcept {
+    return get_entity() + "@" + get_remote_address() + ":" + get_remote_port();
 }
 
 void TcpClient::on_select() {

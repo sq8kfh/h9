@@ -12,6 +12,7 @@
 #include "protocol/errormsg.h"
 #include "protocol/framemsg.h"
 #include "protocol/sendframemsg.h"
+#include "protocol/executemethodmsg.h"
 #include "protocol/subscribemsg.h"
 
 
@@ -89,7 +90,9 @@ Bus::~Bus() {
 void Bus::load_config(DCtx *ctx) {
     h9bus_connector = new H9Connector(ctx->cfg_h9bus_hostname(), std::to_string(ctx->cfg_h9bus_port()));
 
-    h9bus_connector->send(SubscribeMsg(SubscribeMsg::Content::FRAME));
+    h9bus_connector->connect("h9d");
+    h9bus_connector->send(ExecuteMethodMsg("subscribe").add_value("event", "frame"));
+    //h9bus_connector->send(SubscribeMsg(SubscribeMsg::Content::FRAME));
 
     recv_thread_desc = std::thread([this]() {
        this->recv_thread();

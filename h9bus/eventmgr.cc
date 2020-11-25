@@ -15,8 +15,8 @@
 #include "common/logger.h"
 #include "protocol/errormsg.h"
 #include "protocol/framemsg.h"
-#include "protocol/callmsg.h"
-#include "protocol/responsemsg.h"
+#include "protocol/executemethodmsg.h"
+#include "protocol/methodresponsemsg.h"
 #include "protocol/sendframemsg.h"
 #include "protocol/subscribemsg.h"
 
@@ -38,32 +38,29 @@ void EventMgr::cron() {
 void EventMgr::process_msg(TcpClient* origin_tcp_client, GenericMsg& msg) {
     switch (msg.get_type()) {
         case GenericMsg::Type::SEND_FRAME: {
-            h9_log_info("Process SEND_FRAME msg (id: %llu) from client: %s:%s", msg.get_id(), origin_tcp_client->get_remote_address().c_str(), origin_tcp_client->get_remote_port().c_str());
+            h9_log_info("Process SEND_FRAME msg (id: %llu) from client: %s", msg.get_id(), origin_tcp_client->get_client_idstring().c_str());
             SendFrameMsg sf_msg = std::move(msg);
             H9frame tmp = sf_msg.get_frame();
-            std::ostringstream ss;
-            ss << "h9?@" << origin_tcp_client->get_remote_address() << ":" << origin_tcp_client->get_remote_port();
-            _bus_mgr->send_frame(tmp, ss.str(), origin_tcp_client->get_socket(), sf_msg.get_id());
+            _bus_mgr->send_frame(tmp, origin_tcp_client->get_client_idstring(), origin_tcp_client->get_socket(), sf_msg.get_id());
             break;
         }
         case GenericMsg::Type::SUBSCRIBE: {
-            h9_log_info("Process SUBSCRIBE msg (id: %llu) from client: %s:%s", msg.get_id(), origin_tcp_client->get_remote_address().c_str(), origin_tcp_client->get_remote_port().c_str());
+            h9_log_info("Process SUBSCRIBE msg (id: %llu) from client: %s", msg.get_id(), origin_tcp_client->get_client_idstring().c_str());
             SubscribeMsg sc_msg = std::move(msg);
             origin_tcp_client->subscriber(1);
             break;
         }
-        case GenericMsg::Type::CALL: {
-            CallMsg call_msg = std::move(msg);
-            h9_log_info("Process CALL msg (id: %llu method: %s) from client %s:%s", call_msg.get_id(), call_msg.get_method_name().c_str(), origin_tcp_client->get_remote_address().c_str(), origin_tcp_client->get_remote_port().c_str());
-            exec_method_call(origin_tcp_client, std::move(call_msg));
+        case GenericMsg::Type::EXECUTEMETHOD: {
+            ExecuteMethodMsg call_msg = std::move(msg);
+            h9_log_info("Process EXECUTEMETHOD msg (id: %llu method: %s) from client %s", call_msg.get_id(), call_msg.get_method_name().c_str(), origin_tcp_client->get_client_idstring().c_str());
+            execute_method(origin_tcp_client, std::move(call_msg));
             break;
         }
         default:
-            h9_log_warn("Recv unknown (id: %llu type: %d) msg from client: %s:%s", msg.get_id(), msg.get_type(), origin_tcp_client, origin_tcp_client->get_remote_address().c_str(), origin_tcp_client->get_remote_port().c_str());
+            h9_log_warn("Recv unknown (id: %llu type: %d) msg from client: %s", msg.get_id(), msg.get_type(), origin_tcp_client, origin_tcp_client->get_client_idstring().c_str());
             ErrorMsg err_msg = {ErrorMsg::ErrorNumber::UNSUPPORTED_MESSAGE_TYPE, "EventMgr::flush_msg"};
             err_msg.set_request_id(msg.get_id());
             origin_tcp_client->send(err_msg);
-            //_server_mgr->send_msg(client_socket, err_msg);
             break;
     }
 }
@@ -80,17 +77,99 @@ void EventMgr::process_sent_frame(const std::string& endpoint, BusFrame* busfram
     _server_mgr->send_msg_to_subscriber(msg, busframe->get_orgin_client_id(), busframe->get_orgin_msg_id());
 }
 
-void EventMgr::exec_method_call(TcpClient* tcp_client, CallMsg call_msg) {
-    std::string mnethod_name = call_msg.get_method_name();
-    if (mnethod_name == "h9bus_stat") {
-        ResponseMsg res = get_stat();
+void EventMgr::execute_method(TcpClient* tcp_client, ExecuteMethodMsg call_msg) {
+    std::string method_name = call_msg.get_method_name();
+    if (method_name == "methods_list") {
+        MethodResponseMsg res(method_name);
+        res.set_request_id(call_msg.get_id());
+
+        auto methods = res.add_array("methods");
+        methods.add_value("methods_list");
+        methods.add_value("h9bus_stat");
+        methods.add_value("events_list");
+        methods.add_value("subscribe");
+        methods.add_value("unsubscribe");
+
+        tcp_client->send(res);
+    }
+    else if (method_name == "h9bus_stat") {
+        MethodResponseMsg res = get_stat();
         res.set_request_id(call_msg.get_id());
         tcp_client->send(res);
     }
+    else if (method_name == "events_list") {
+        MethodResponseMsg res(method_name);
+        res.set_request_id(call_msg.get_id());
+
+        auto events = res.add_array("events");
+        events.add_value("frame");
+
+        tcp_client->send(res);
+    }
+    else if (method_name == "subscribe") {
+        try {
+            std::string event = call_msg["event"].get_value_as_str();
+            if (event == "frame") {
+                tcp_client->subscriber(1);
+
+                MethodResponseMsg res("subscribe", false);
+                res.set_request_id(call_msg.get_id());
+
+                tcp_client->send(res);
+            }
+            else {
+                h9_log_warn("Execute method 'subscribe' with unsupported event: %s (from %s)", event.c_str(), tcp_client->get_client_idstring().c_str());
+                //TODO: return MethodResponseMsg with error
+                //MethodResponseMsg res("subscribe", true);
+                ErrorMsg err_msg(ErrorMsg::ErrorNumber::UNSUPPORTED_EVENT, "Unsupported event: " + event);
+                err_msg.set_request_id(call_msg.get_id());
+                tcp_client->send(err_msg);
+            }
+        }
+        catch (std::out_of_range &e) {
+            h9_log_warn("Execute method 'subscribe' with missing 'event' attribute (from: %s)", tcp_client->get_client_idstring().c_str());
+            ErrorMsg err_msg(ErrorMsg::ErrorNumber::INVALID_PARAMETERS, "Missing 'event' attribute");
+            err_msg.set_request_id(call_msg.get_id());
+            tcp_client->send(err_msg);
+        }
+    }
+    else if (method_name == "unsubscribe") {
+        try {
+            std::string event = call_msg["event"].get_value_as_str();
+            if (event == "frame") {
+                tcp_client->subscriber(0);
+
+                MethodResponseMsg res("unsubscribe", false);
+                res.set_request_id(call_msg.get_id());
+
+                tcp_client->send(res);
+            }
+            else {
+                h9_log_warn("Execute method 'unsubscribe' with unsupported event: %s (from %s)", event.c_str(), tcp_client->get_client_idstring().c_str());
+                //TODO: return MethodResponseMsg with error
+                //MethodResponseMsg res("unsubscribe", true);
+                ErrorMsg err_msg(ErrorMsg::ErrorNumber::UNSUPPORTED_EVENT, "Unsupported event: " + event);
+                err_msg.set_request_id(call_msg.get_id());
+                tcp_client->send(err_msg);
+            }
+        }
+        catch (std::out_of_range &e) {
+            h9_log_warn("Execute method 'unsubscribe' with missing 'event' attribute (from: %s)", tcp_client->get_client_idstring().c_str());
+            ErrorMsg err_msg(ErrorMsg::ErrorNumber::INVALID_PARAMETERS, "Missing 'event' attribute");
+            err_msg.set_request_id(call_msg.get_id());
+            tcp_client->send(err_msg);
+        }
+    }
+    else {
+        h9_log_warn("Execute unsupported method '%s' (from: %s)", method_name.c_str(),tcp_client->get_client_idstring().c_str());
+        ErrorMsg err_msg(ErrorMsg::ErrorNumber::UNSUPPORTED_METHOD, "Unsupported method: " + method_name);
+        err_msg.set_request_id(call_msg.get_id());
+        tcp_client->send(err_msg);
+    }
 }
 
-ResponseMsg EventMgr::get_stat() {
-    ResponseMsg res = {"h9bus_stat"};
+MethodResponseMsg EventMgr::get_stat() {
+    MethodResponseMsg res = {"h9bus_stat"};
     res.add_value("version", H9_VERSION);
     res.add_value("uptime", std::time(nullptr) - _ctx->get_start_time());
     res.add_value("connected_clients_count", _server_mgr->connected_clients_count());

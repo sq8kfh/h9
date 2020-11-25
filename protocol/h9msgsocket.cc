@@ -7,24 +7,26 @@
  */
 
 #include "h9msgsocket.h"
-#include <functional>
 #include <system_error>
 #include <sys/errno.h>
 #include <sys/socket.h>
 
 
-H9MsgSocket::H9MsgSocket(int socket): H9Socket(socket)  {
+H9MsgSocket::H9MsgSocket(int socket) noexcept: H9Socket(socket), next_msg_id(0)  {
     if (connect() < 0)
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
 }
 
-H9MsgSocket::H9MsgSocket(std::string hostname, std::string port): H9Socket(std::move(hostname), std::move(port))  {
-    if (connect() < 0)
-        throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
+H9MsgSocket::H9MsgSocket(std::string hostname, std::string port) noexcept: H9Socket(std::move(hostname), std::move(port)), next_msg_id(0)  {
 }
 
-int H9MsgSocket::get_socket() {
+int H9MsgSocket::get_socket() noexcept {
     return _socket;
+}
+
+int H9MsgSocket::authentication(std::string entity) noexcept {
+    IdentificationMsg ident_msg(entity);
+    return send(ident_msg);
 }
 
 int H9MsgSocket::send(GenericMsg &msg) noexcept {
@@ -67,13 +69,12 @@ void H9MsgSocket::shutdown_read() noexcept {
 }
 
 std::uint64_t H9MsgSocket::get_next_id() noexcept {
-    static std::uint64_t next = 0;
-    if (next == 0) next = 1;
-    else ++next;
+    if (next_msg_id == 0) next_msg_id = 1;
+    else ++next_msg_id;
     //TODO: randomize id ??
     //std::hash<std::uint64_t> hasher;
     //return hasher(next);
-    return next;
+    return next_msg_id;
 }
 
 std::string H9MsgSocket::get_remote_address() noexcept {

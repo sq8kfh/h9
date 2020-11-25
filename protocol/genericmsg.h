@@ -19,12 +19,15 @@ class GenericMsg {
 public:
     enum class Type {
         GENERIC = 0,
+        IDENTIFICATION,
         FRAME,
         SEND_FRAME,
         SUBSCRIBE,
         ERROR,
-        CALL,
-        RESPONSE,
+        EXECUTEMETHOD,
+        METHODRESPONSE,
+        EXECUTEDEVICEMETHOD,
+        DEVICEMETHODRESPONSE
     };
     class InvalidMsg: public std::runtime_error {
     public:

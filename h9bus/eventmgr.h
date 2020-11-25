@@ -13,8 +13,8 @@
 #include "busmgr.h"
 #include "servermgr.h"
 #include "common/daemonctx.h"
-#include "protocol/callmsg.h"
-#include "protocol/responsemsg.h"
+#include "protocol/executemethodmsg.h"
+#include "protocol/methodresponsemsg.h"
 
 
 class EventMgr {
@@ -22,8 +22,8 @@ private:
     BusMgr* const _bus_mgr;
     ServerMgr* const _server_mgr;
     DaemonCtx* const _ctx;
-    void exec_method_call(TcpClient* tcp_client, CallMsg call_msg);
-    ResponseMsg get_stat();
+    void execute_method(TcpClient* tcp_client, ExecuteMethodMsg call_msg);
+    MethodResponseMsg get_stat();
 public:
     EventMgr(DaemonCtx* ctx, BusMgr* bus_mgr, ServerMgr* server_mgr);
     void cron();

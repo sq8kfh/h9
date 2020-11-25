@@ -12,6 +12,7 @@
 
 #include "protocol/h9connector.h"
 #include "protocol/subscribemsg.h"
+#include "protocol/executemethodmsg.h"
 #include "protocol/framemsg.h"
 #include "common/clientctx.h"
 
@@ -95,11 +96,12 @@ int main(int argc, char **argv)
 
     H9Connector h9_connector = {ctx.get_h9bus_host(), ctx.get_h9bus_port()};
 
-    /*if (h9_connector.connect() == -1) {
+    if (h9_connector.connect(ctx.get_app_name()) == -1) {
         return EXIT_FAILURE;
-    }*/
+    }
 
-    h9_connector.send(SubscribeMsg(SubscribeMsg::Content::FRAME));
+    h9_connector.send(ExecuteMethodMsg("subscribe").add_value("event", "frame"));
+    //h9_connector.send(SubscribeMsg(SubscribeMsg::Content::FRAME));
 
     int output = 1;
     if (res.count("simple") == 1 && res.count("extended") ==0) {

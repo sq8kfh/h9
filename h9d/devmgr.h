@@ -44,6 +44,13 @@ private:
 
     void add_device(std::uint16_t node_id, std::uint16_t node_type, std::uint16_t node_version);
 public:
+    typedef struct {
+        std::uint16_t id;
+        std::uint16_t type;
+        std::uint8_t version_major;
+        std::uint8_t version_minor;
+    } DeviceDsc;
+
     explicit DevMgr(Bus *bus);
     DevMgr(const DevMgr &a) = delete;
     ~DevMgr();
@@ -52,6 +59,8 @@ public:
 
     void attach_event_observer(TCPClientThread *observer, std::string event_name, std::uint16_t dev_id);
     void detach_event_observer(TCPClientThread *observer, std::string event_name, std::uint16_t dev_id);
+    std::vector<DevMgr::DeviceDsc> get_devices_list();
+    bool is_device_exist(std::uint16_t dev_id);
 
     int active_devices_count();
 };

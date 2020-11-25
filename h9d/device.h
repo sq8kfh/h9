@@ -40,6 +40,8 @@ public:
     using Node::get_node_id;
     std::uint16_t get_node_type() noexcept;
     std::uint16_t get_node_version() noexcept;
+    std::uint8_t get_node_version_major() noexcept;
+    std::uint8_t get_node_version_minor() noexcept;
 };
 
 

@@ -9,7 +9,9 @@
 #include "tcpclientthread.h"
 #include <cassert>
 #include <sys/errno.h>
-#include "protocol/callmsg.h"
+#include "protocol/devicemethodresponsemsg.h"
+#include "protocol/executemethodmsg.h"
+#include "protocol/identificationmsg.h"
 #include "protocol/errormsg.h"
 
 
@@ -47,19 +49,29 @@ void TCPClientThread::thread_recv_msg() {
         }
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
+    if (msg.get_type() == GenericMsg::Type::IDENTIFICATION) {
+        IdentificationMsg ident_msg = std::move(msg);
+        entity = ident_msg.get_entity();
+    }
+    else if (msg.get_type() == GenericMsg::Type::EXECUTEMETHOD) {
+        ExecuteMethodMsg exec_msg = std::move(msg);
+        h9_log_info("Msg id %llu: execute method '%s' from client %s", exec_msg.get_id(), exec_msg.get_method_name().c_str(), get_client_idstring().c_str());
 
-    if (msg.get_type() == GenericMsg::Type::CALL) {
-        CallMsg call_msg = std::move(msg);
-        h9_log_info("Process CALL msg (id: %llu method: %s) from client %s:%s", call_msg.get_id(), call_msg.get_method_name().c_str(), h9socket.get_remote_address().c_str(), h9socket.get_remote_port().c_str());
+        GenericMsg ret = execadapter.execute_method(std::move(exec_msg));
+        send(std::move(ret));
+    }
+    else if (msg.get_type() == GenericMsg::Type::EXECUTEDEVICEMETHOD) {
+        DeviceMethodResponseMsg devexec_msg = std::move(msg);
+        h9_log_info("Msg id %llu: execute device (%hu) method '%s' from client %s", devexec_msg.get_id(), devexec_msg.get_id(), devexec_msg.get_method_name().c_str(), get_client_idstring().c_str());
 
-        GenericMsg ret = execadapter.execute_method(std::move(call_msg));
-        send(ret);
+        GenericMsg ret = execadapter.execute_device_method(std::move(devexec_msg));
+        send(std::move(ret));
     }
     else {
-        h9_log_err("Recv unknown (type: %d) msg (id: %llu) from client: %s:%s", msg.get_type(), msg.get_id(), h9socket.get_remote_address().c_str(), h9socket.get_remote_port().c_str());
+        h9_log_err("Msg id %llu: unknown type: %d from client: %s", msg.get_id(), msg.get_type(), get_client_idstring().c_str());
         ErrorMsg err_msg = {ErrorMsg::ErrorNumber::UNSUPPORTED_MESSAGE_TYPE, "Unsupported message type"};
         err_msg.set_request_id(msg.get_id());
-        send(err_msg);
+        send(std::move(err_msg));
     }
 }
 
@@ -114,6 +126,14 @@ std::string TCPClientThread::get_remote_address() noexcept {
 
 std::string TCPClientThread::get_remote_port() noexcept {
     return h9socket.get_remote_port();
+}
+
+std::string TCPClientThread::get_entity() noexcept {
+    return entity;
+}
+
+std::string TCPClientThread::get_client_idstring() noexcept {
+    return get_entity() + "@" + get_remote_address() + ":" + get_remote_port();
 }
 
 bool TCPClientThread::is_running() {

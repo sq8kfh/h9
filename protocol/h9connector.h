@@ -17,8 +17,10 @@ class H9Connector {
 private:
     H9MsgSocket h9socket;
 public:
-    H9Connector(std::string hostname, std::string port);
+    H9Connector(std::string hostname, std::string port) noexcept;
     ~H9Connector() noexcept;
+
+    int connect(std::string entity) noexcept;
     void close() noexcept;
     void shutdown_read() noexcept;
 

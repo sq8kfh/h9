@@ -33,6 +33,7 @@ public:
     Log& logger();
     //Log& log(const std::string& log_name);
     time_t get_start_time();
+    std::string get_app_name();
 };
 
 

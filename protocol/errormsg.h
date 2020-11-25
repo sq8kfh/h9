@@ -3,7 +3,7 @@
  *
  * Created by SQ8KFH on 2019-05-19.
  *
- * Copyright (C) 2019 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2019-2020 Kamil Palkowski. All rights reserved.
  */
 
 #ifndef _H9_ERRORMSG_H_
@@ -18,7 +18,11 @@ public:
     enum class ErrorNumber {
         INVALID_MESSAGE_SCHEMA,
         UNSUPPORTED_MESSAGE_TYPE,
-        UNSUPPORTED_METHOD
+        UNSUPPORTED_METHOD,
+        INVALID_PARAMETERS,
+        INVALID_DEVICE,
+        UNSUPPORTED_DEVICE_METHOD,
+        UNSUPPORTED_EVENT,
     };
     ErrorMsg(GenericMsg&& k);
     ErrorMsg(ErrorNumber errnum, const std::string& msg = "");

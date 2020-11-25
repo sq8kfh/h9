@@ -12,9 +12,10 @@
 #include "config.h"
 #include <mutex>
 #include <queue>
+#include <string>
 #include <thread>
 #include "executoradapter.h"
-#include "protocol/callmsg.h"
+#include "protocol/executemethodmsg.h"
 #include "protocol/genericmsg.h"
 #include "protocol/h9msgsocket.h"
 #if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
@@ -35,9 +36,11 @@ private:
     Epoll event;
 #endif
 
-std::thread client_thread_desc;
+    std::thread client_thread_desc;
     std::atomic_bool running;
     std::atomic_bool thread_running;
+
+    std::string entity;
 
     std::mutex async_msg_queue_mtx;
     std::queue<GenericMsg> async_msg_queue;
@@ -54,6 +57,8 @@ public:
 
     std::string get_remote_address() noexcept;
     std::string get_remote_port() noexcept;
+    std::string get_entity() noexcept;
+    std::string get_client_idstring() noexcept;
 
     bool is_running();
     void send_msg(GenericMsg msg);
