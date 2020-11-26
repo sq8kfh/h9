@@ -20,7 +20,7 @@ void TCPClientThread::thread() {
     int read_fd = h9socket.get_socket();
 
     event.attach_socket(read_fd);
-    try {
+    //try {
         while (running) {
             int n = event.wait();
             for (int i = 0; i < n; ++i) {
@@ -28,12 +28,12 @@ void TCPClientThread::thread() {
                 else if (event.is_async_event(i)) thread_send_async_msg();
             }
         }
-    }
-    catch (...) {
-        execadapter.cleanup_connection();
-        thread_running = false;
-        throw;
-    }
+    //}
+    //catch (...) {
+    //    execadapter.cleanup_connection();
+    //    thread_running = false;
+    //    throw;
+    //}
     execadapter.cleanup_connection();
     thread_running = false;
 }

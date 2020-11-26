@@ -13,21 +13,21 @@ ExecuteDeviceMethodMsg::ExecuteDeviceMethodMsg(GenericMsg&& k): GenericMethod(st
 
 }
 
-ExecuteDeviceMethodMsg::ExecuteDeviceMethodMsg(std::uint16_t id, const std::string& method_name): GenericMethod(method_name) {
+ExecuteDeviceMethodMsg::ExecuteDeviceMethodMsg(std::uint16_t device_id, const std::string& method_name): GenericMethod(method_name) {
     xmlNodePtr root = get_msg_root();
 
     constexpr int str_sizie = 12;
     char str[str_sizie];
-    std::snprintf(str, str_sizie, "%hu", id);
-    xmlNewProp(root, reinterpret_cast<xmlChar const *>("id"), reinterpret_cast<xmlChar const *>(str));
+    std::snprintf(str, str_sizie, "%hu", device_id);
+    xmlSetProp(root, reinterpret_cast<xmlChar const *>("device-id"), reinterpret_cast<xmlChar const *>(str));
 }
 
-std::uint16_t ExecuteDeviceMethodMsg::get_id() {
+std::uint16_t ExecuteDeviceMethodMsg::get_device_id() {
     xmlNodePtr root = get_msg_root();
     xmlChar *tmp;
 
-    if ((tmp = xmlGetProp(root, (const xmlChar *) "id")) == nullptr) {
-        throw GenericMsg::InvalidMsg("missing 'id' property");
+    if ((tmp = xmlGetProp(root, (const xmlChar *) "device-id")) == nullptr) {
+        throw GenericMsg::InvalidMsg("missing 'device-id' property");
     }
     std::uint16_t ret = (uint8_t)strtol((char *)tmp, (char **)nullptr, 10);
     xmlFree(tmp);

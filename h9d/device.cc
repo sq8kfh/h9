@@ -8,21 +8,24 @@
 
 #include "device.h"
 #include "common/logger.h"
+#include "protocol/deviceevent.h"
 #include "tcpclientthread.h"
 
 
 void Device::update_device_state(H9frame frame) {
-
-    ////
-    //// POC
-    ////
     if (frame.type == H9frame::Type::REG_EXTERNALLY_CHANGED && frame.source_id == 32 && frame.data[0] == 10) {
-        MethodResponseMsg res("dev");
-        res.add_value("object", "antenna-switch");
-        res.add_value("id", 8);
-        res.add_value("method", "switch");
-        res.add_value("response", frame.data[1]);
-        notify_event_observer("antenna-switch", std::move(res));
+        DeviceEvent event_msg(node_id, "register_change");
+
+        event_msg.add_value("register_id", frame.data[0]);
+        event_msg.add_value("value_len", frame.dlc-1);
+        uint64_t tmp_value = 0;
+        for (int i=1; i < frame.dlc; ++i) {
+            tmp_value <<= 8;
+            tmp_value |= frame.data[i];
+        }
+        event_msg.add_value("value", tmp_value);
+
+        notify_event_observer("register_change", std::move(event_msg));
     }
 }
 
@@ -30,19 +33,20 @@ void Device::attach_event_observer(TCPClientThread *observer, std::string event_
     event_name_mtx.lock();
     event_observers[event_name].insert(observer);
     event_name_mtx.unlock();
-    h9_log_info("Attach observer %s:%s to '%s' event on device %hu", observer->get_remote_address().c_str(), observer->get_remote_port().c_str(), event_name.c_str(), get_node_id());
+    h9_log_info("Attach observer %s to '%s' event on device %hu", observer->get_client_idstring().c_str(), event_name.c_str(), get_node_id());
 }
 
 void Device::detach_event_observer(TCPClientThread *observer, std::string event_name) {
     event_name_mtx.lock();
     event_observers[event_name].erase(observer);
     event_name_mtx.unlock();
-    h9_log_info("Detach observer %s:%s from '%s' event on device %hu", observer->get_remote_address().c_str(), observer->get_remote_port().c_str(), event_name.c_str(), get_node_id());
+    h9_log_info("Detach observer %s from '%s' event on device %hu", observer->get_client_idstring().c_str(), event_name.c_str(), get_node_id());
 }
 
 void Device::notify_event_observer(std::string event_name, GenericMsg msg) {
     event_name_mtx.lock();
     for (auto observer : event_observers[event_name]) {
+        h9_log_debug("Notify observer %s, event '%s' on device %hu", observer->get_client_idstring().c_str(), event_name.c_str(), node_id);
         (*observer).send_msg(msg);
     }
     event_name_mtx.unlock();

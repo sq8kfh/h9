@@ -23,7 +23,7 @@ MethodResponseMsg::MethodResponseMsg(const std::string& method_name, bool execut
     }
 }
 
-bool MethodResponseMsg::get_execute_fail() {
+bool MethodResponseMsg::get_execute_status() {
     xmlNodePtr msg = get_msg_root();
     xmlChar *tmp;
     if ((tmp = xmlGetProp(msg, (const xmlChar *) "execute_status")) == nullptr) {
@@ -31,11 +31,7 @@ bool MethodResponseMsg::get_execute_fail() {
     }
     std::string execute_status = {reinterpret_cast<char const *>(tmp)};
     xmlFree(tmp);
-    return execute_status == "FAIL";
-}
-
-bool MethodResponseMsg::get_execute_ok() {
-    return !get_execute_fail();
+    return execute_status == "OK";
 }
 
 Value& MethodResponseMsg::result() {

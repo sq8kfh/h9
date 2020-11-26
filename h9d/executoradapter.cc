@@ -80,7 +80,7 @@ GenericMsg ExecutorAdapter::execute_method(ExecuteMethodMsg execmsg) {
         //
         // POC
         //
-        attach_device_event_observer(32, "antenna-switch");
+        //attach_device_event_observer(32, "antenna-switch");
 
         int active_antenna = executor->execute_object_method(execmsg["variable_antenna"].get_value_as_int(), _client);
 
@@ -94,6 +94,7 @@ GenericMsg ExecutorAdapter::execute_method(ExecuteMethodMsg execmsg) {
         return std::move(res);
     }
 
+    h9_log_warn("Unknown method '%s' from: %s", execmsg.get_method_name().c_str(), _client->get_client_idstring().c_str());
     ErrorMsg err_msg(ErrorMsg::ErrorNumber::UNSUPPORTED_METHOD, "Unsupported method: " + execmsg.get_method_name());
     err_msg.set_request_id(execmsg.get_id());
     return std::move(err_msg);
@@ -135,7 +136,6 @@ GenericMsg ExecutorAdapter::execute_device_method(DeviceMethodResponseMsg exedev
             DeviceMethodResponseMsg res(dev_id, method);
             res.set_request_id(exedevcmsg.get_id());
             return std::move(res);
-
         }
         catch (std::out_of_range &e) {
             h9_log_warn("Execute device method 'subscribe' with missing 'event' attribute (from: %s)", _client->get_client_idstring().c_str());
@@ -162,6 +162,7 @@ GenericMsg ExecutorAdapter::execute_device_method(DeviceMethodResponseMsg exedev
         }
     }
 
+    h9_log_warn("Unknown device (%hu) method '%s' from: %s", dev_id, method.c_str(), _client->get_client_idstring().c_str());
     ErrorMsg err_msg(ErrorMsg::ErrorNumber::UNSUPPORTED_DEVICE_METHOD, "Unsupported device (id: " + std::to_string(dev_id) + ") method: " + method);
     err_msg.set_request_id(exedevcmsg.get_id());
     return std::move(err_msg);

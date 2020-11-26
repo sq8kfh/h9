@@ -13,7 +13,7 @@ IdentificationMsg::IdentificationMsg(GenericMsg&& k): ConcretizeMsg(std::move(k)
 
 }
 
-IdentificationMsg::IdentificationMsg(const std::string& entity) {
+IdentificationMsg::IdentificationMsg(const std::string& entity): ConcretizeMsg<GenericMsg::Type::IDENTIFICATION>() {
     xmlNodePtr root = get_msg_root();
 
     xmlNewProp(root, reinterpret_cast<xmlChar const *>("entity"), reinterpret_cast<xmlChar const *>(entity.c_str()));

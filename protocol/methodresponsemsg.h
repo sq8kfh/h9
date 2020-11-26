@@ -22,8 +22,7 @@ public:
     MethodResponseMsg(GenericMsg&& k);
     MethodResponseMsg(const std::string& method_name, bool execute_fail = false);
 
-    bool get_execute_fail();
-    bool get_execute_ok();
+    bool get_execute_status();
 
     Value& result();
     int errorno() const;

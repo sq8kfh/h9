@@ -17,10 +17,9 @@
 class DeviceMethodResponseMsg: public GenericMethod<GenericMsg::Type::DEVICEMETHODRESPONSE, DeviceMethodResponseMsg> {
 public:
     DeviceMethodResponseMsg(GenericMsg&& k);
-    DeviceMethodResponseMsg(std::uint16_t id, const std::string& method_name, bool execute_fail = false);
+    DeviceMethodResponseMsg(std::uint16_t device_id, const std::string& method_name, bool execute_fail = false);
 
-    bool get_execute_fail();
-    bool get_execute_ok();
+    bool get_execute_status();
 
     std::uint16_t get_device_id();
 };

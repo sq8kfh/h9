@@ -4,7 +4,7 @@
         <xs:complexType>
             <xs:choice minOccurs="1" maxOccurs="1">
                 <xs:element name="identification" type="identification_t"/>
-                <xs:element name="send_frame" type="h9sendframe_t"/>
+                <xs:element name="sendframe" type="h9sendframe_t"/>
                 <xs:element name="frame" type="h9frame_t"/>
                 <xs:element name="error">
                     <xs:complexType>
@@ -15,6 +15,7 @@
                 </xs:element>
                 <xs:element name="execute" type="executemethod_t"/>
                 <xs:element name="response" type="methodresponse_t"/>
+                <xs:element name="event" type="deviceevent_t"/>
             </xs:choice>
 
             <xs:attribute name="version" use="required">
@@ -32,7 +33,7 @@
                     </xs:restriction>
                 </xs:simpleType>
             </xs:attribute>
-            <xs:attribute name="request_id" use="optional">
+            <xs:attribute name="request-id" use="optional">
                 <xs:simpleType>
                     <xs:restriction base="xs:nonNegativeInteger">
                         <xs:minInclusive value="1"/>
@@ -58,8 +59,7 @@
         </xs:sequence>
 
         <xs:attribute name="method" type="xs:string" use="required"/>
-        <xs:attribute name="device" type="xs:string" use="optional"/>
-        <xs:attribute name="id" use="optional">
+        <xs:attribute name="device-id" use="optional">
             <xs:simpleType>
                 <xs:restriction base="xs:nonNegativeInteger">
                     <xs:minInclusive value="0"/>
@@ -79,8 +79,27 @@
         </xs:sequence>
 
         <xs:attribute name="method" type="xs:string" use="required"/>
-        <xs:attribute name="device" type="xs:string" use="optional"/>
-        <xs:attribute name="id" use="optional">
+        <xs:attribute name="device-id" use="optional">
+            <xs:simpleType>
+                <xs:restriction base="xs:nonNegativeInteger">
+                    <xs:minInclusive value="0"/>
+                    <xs:maxInclusive value="511"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="deviceevent_t">
+        <xs:sequence minOccurs="0" maxOccurs="unbounded">
+            <xs:choice>
+                <xs:element name="value" type="value_t"/>
+                <xs:element name="array" type="array_t"/>
+                <xs:element name="dict" type="array_t"/>
+            </xs:choice>
+        </xs:sequence>
+
+        <xs:attribute name="event" type="xs:string" use="required"/>
+        <xs:attribute name="device-id" use="required">
             <xs:simpleType>
                 <xs:restriction base="xs:nonNegativeInteger">
                     <xs:minInclusive value="0"/>

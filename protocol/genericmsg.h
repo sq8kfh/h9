@@ -27,7 +27,8 @@ public:
         EXECUTEMETHOD,
         METHODRESPONSE,
         EXECUTEDEVICEMETHOD,
-        DEVICEMETHODRESPONSE
+        DEVICEMETHODRESPONSE,
+        DEVICEEVENT,
     };
     class InvalidMsg: public std::runtime_error {
     public:

@@ -37,7 +37,7 @@ GenericMsg::GenericMsg(GenericMsg::Type msg_type) {
             node = xmlNewNode(nullptr, reinterpret_cast<xmlChar const *>("frame"));
             break;
         case Type::SEND_FRAME:
-            node = xmlNewNode(nullptr, reinterpret_cast<xmlChar const *>("send_frame"));
+            node = xmlNewNode(nullptr, reinterpret_cast<xmlChar const *>("sendframe"));
             break;
         case Type::SUBSCRIBE:
             node = xmlNewNode(nullptr, reinterpret_cast<xmlChar const *>("subscribe"));
@@ -53,11 +53,14 @@ GenericMsg::GenericMsg(GenericMsg::Type msg_type) {
             break;
         case Type::EXECUTEDEVICEMETHOD:
             node = xmlNewNode(nullptr, reinterpret_cast<xmlChar const *>("execute"));
-            xmlNewProp(node, reinterpret_cast<xmlChar const *>("id"), reinterpret_cast<xmlChar const *>("0"));
+            xmlNewProp(node, reinterpret_cast<xmlChar const *>("device-id"), reinterpret_cast<xmlChar const *>("0"));
             break;
         case Type::DEVICEMETHODRESPONSE:
             node = xmlNewNode(nullptr, reinterpret_cast<xmlChar const *>("response"));
-            xmlNewProp(node, reinterpret_cast<xmlChar const *>("id"), reinterpret_cast<xmlChar const *>("0"));
+            xmlNewProp(node, reinterpret_cast<xmlChar const *>("device-id"), reinterpret_cast<xmlChar const *>("0"));
+            break;
+        case Type::DEVICEEVENT:
+            node = xmlNewNode(nullptr, reinterpret_cast<xmlChar const *>("event"));
             break;
     }
     xmlAddChild(root, node);
@@ -129,14 +132,14 @@ GenericMsg::Type GenericMsg::get_type() {
             return Type::IDENTIFICATION;
         else if (xmlStrcmp(node->name,reinterpret_cast<xmlChar const *>("frame")) == 0)
             return Type::FRAME;
-        else if (xmlStrcmp(node->name,reinterpret_cast<xmlChar const *>("send_frame")) == 0)
+        else if (xmlStrcmp(node->name,reinterpret_cast<xmlChar const *>("sendframe")) == 0)
             return Type::SEND_FRAME;
         else if (xmlStrcmp(node->name,reinterpret_cast<xmlChar const *>("subscribe")) == 0)
             return Type::SUBSCRIBE;
         else if (xmlStrcmp(node->name,reinterpret_cast<xmlChar const *>("error")) == 0)
             return Type::ERROR;
         else if (xmlStrcmp(node->name,reinterpret_cast<xmlChar const *>("execute")) == 0) {
-            if (xmlHasProp(node, (const xmlChar *) "id")) {
+            if (xmlHasProp(node, (const xmlChar *) "device-id")) {
                 return Type::EXECUTEDEVICEMETHOD;
             }
             else {
@@ -144,14 +147,15 @@ GenericMsg::Type GenericMsg::get_type() {
             }
         }
         else if (xmlStrcmp(node->name,reinterpret_cast<xmlChar const *>("response")) == 0) {
-            if (xmlHasProp(node, (const xmlChar *) "id")) {
+            if (xmlHasProp(node, (const xmlChar *) "device-id")) {
                 return Type::DEVICEMETHODRESPONSE;
             }
             else {
                 return Type::METHODRESPONSE;
             }
         }
-
+        else if (xmlStrcmp(node->name,reinterpret_cast<xmlChar const *>("event")) == 0)
+            return Type::DEVICEEVENT;
     }
     return Type::GENERIC;
 }
@@ -178,7 +182,7 @@ void GenericMsg::set_id(std::uint64_t id) {
 
 std::uint64_t GenericMsg::get_request_id(void) const {
     xmlChar *tmp;
-    if ((tmp = xmlGetProp(xmlDocGetRootElement(doc), (const xmlChar *) "request_id")) == nullptr) {
+    if ((tmp = xmlGetProp(xmlDocGetRootElement(doc), (const xmlChar *) "request-id")) == nullptr) {
         return 0;
     }
     std::uint64_t ret = strtoull((char *)tmp, (char **)nullptr, 10);
@@ -192,7 +196,7 @@ void GenericMsg::set_request_id(std::uint64_t id) {
     constexpr int str_sizie = 24;
     char str[str_sizie];
     std::snprintf(str, str_sizie, "%llu", id);
-    xmlSetProp(root, reinterpret_cast<xmlChar const *>("request_id"), reinterpret_cast<xmlChar const *>(str));
+    xmlSetProp(root, reinterpret_cast<xmlChar const *>("request-id"), reinterpret_cast<xmlChar const *>(str));
 }
 
 std::string GenericMsg::serialize() const {

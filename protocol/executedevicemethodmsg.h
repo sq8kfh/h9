@@ -17,9 +17,9 @@
 class ExecuteDeviceMethodMsg: public GenericMethod<GenericMsg::Type::DEVICEMETHODRESPONSE, ExecuteDeviceMethodMsg> {
 public:
     ExecuteDeviceMethodMsg(GenericMsg&& k);
-    ExecuteDeviceMethodMsg(std::uint16_t id, const std::string& method_name);
+    ExecuteDeviceMethodMsg(std::uint16_t device_id, const std::string& method_name);
 
-    std::uint16_t get_id();
+    std::uint16_t get_device_id();
 };
 
 

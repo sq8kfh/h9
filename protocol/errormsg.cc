@@ -7,6 +7,7 @@
  */
 
 #include "errormsg.h"
+#include <cassert>
 #include <string>
 
 
@@ -56,7 +57,16 @@ const char* ErrorMsg::errnum_to_string(ErrorMsg::ErrorNumber errnum) {
             return "INVALID_MESSAGE_SCHEMA";
         case ErrorNumber::UNSUPPORTED_MESSAGE_TYPE:
             return "UNSUPPORTED_MESSAGE_TYPE";
-        default:
-            throw std::invalid_argument("errnum_to_string: unknown errnum " + std::to_string(static_cast<int>(errnum)));
+        case ErrorNumber::UNSUPPORTED_METHOD:
+            return "UNSUPPORTED_METHOD";
+        case ErrorNumber::INVALID_PARAMETERS:
+            return "INVALID_PARAMETERS";
+        case ErrorNumber::INVALID_DEVICE:
+            return "INVALID_DEVICE";
+        case ErrorNumber::UNSUPPORTED_DEVICE_METHOD:
+            return "UNSUPPORTED_DEVICE_METHOD";
+        case ErrorNumber::UNSUPPORTED_EVENT:
+            return "UNSUPPORTED_EVENT";
     }
+    assert(false);
 }
