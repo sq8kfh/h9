@@ -44,8 +44,11 @@ public:
     int get_node_version(std::uint8_t *major = nullptr, std::uint8_t *minor = nullptr);
     int set_node_id(std::uint16_t id);
 
-    int set_reg(std::uint8_t reg, std::uint8_t value);
-    //int get_reg(std::uint8_t reg, );
+    ssize_t set_raw_reg(std::uint8_t reg, std::size_t nbyte, const std::uint8_t *buf);
+    ssize_t set_raw_reg(std::uint8_t reg, std::uint8_t value);
+    ssize_t set_raw_reg(std::uint8_t reg, std::uint16_t value);
+    ssize_t set_raw_reg(std::uint8_t reg, std::uint32_t value);
+    ssize_t get_raw_reg(std::uint8_t reg, std::size_t nbyte, std::uint8_t *buf);
 };
 
 

@@ -62,7 +62,7 @@ void TCPClientThread::thread_recv_msg() {
     }
     else if (msg.get_type() == GenericMsg::Type::EXECUTEDEVICEMETHOD) {
         DeviceMethodResponseMsg devexec_msg = std::move(msg);
-        h9_log_info("Msg id %llu: execute device (%hu) method '%s' from client %s", devexec_msg.get_id(), devexec_msg.get_id(), devexec_msg.get_method_name().c_str(), get_client_idstring().c_str());
+        h9_log_info("Msg id %llu: execute device (%hu) method '%s' from client %s", devexec_msg.get_id(), devexec_msg.get_device_id(), devexec_msg.get_method_name().c_str(), get_client_idstring().c_str());
 
         GenericMsg ret = execadapter.execute_device_method(std::move(devexec_msg));
         send(std::move(ret));

@@ -12,6 +12,8 @@
 #include "tcpclientthread.h"
 
 
+DeviceDescLoader Device::devicedescloader;
+
 void Device::update_device_state(H9frame frame) {
     if (frame.type == H9frame::Type::REG_EXTERNALLY_CHANGED && frame.source_id == 32 && frame.data[0] == 10) {
         DeviceEvent event_msg(node_id, "register_change");
@@ -52,22 +54,95 @@ void Device::notify_event_observer(std::string event_name, GenericMsg msg) {
     event_name_mtx.unlock();
 }
 
-Device::Device(Bus* bus, std::uint16_t node_id, std::uint16_t node_type, std::uint16_t node_version) noexcept: Node(bus, node_id), node_type(node_type), node_version(node_version) {
+Device::Device(Bus* bus, std::uint16_t node_id, std::uint16_t node_type, std::uint16_t node_version) noexcept:
+    Node(bus, node_id),
+    device_type(node_type),
+    device_version(node_version),
+    device_type_name("unknown") {
     h9_log_notice("Create device descriptor: id: %hu type: %hu version: %hhu.%hhu", node_id, node_type, node_version >> 8, node_version);
+
+    register_map[1] = {1, "Node type", "uint", 16, true, false, ""};
+    register_map[2] = {2, "Node version", "uint", 16, true, false, ""};
+    register_map[3] = {3, "Node id", "uint", 9, true, true, ""};
+
+    for (const auto &it: devicedescloader.get_device_register_by_type(node_type)) {
+        register_map[it.first] = {it.second.number, it.second.name, it.second.type, it.second.size, it.second.readable, it.second.writable, it.second.description};
+    }
 }
 
-std::uint16_t Device::get_node_type() noexcept {
-    return node_type;
+std::vector<std::string> Device::get_events_list() {
+    std::vector<std::string> ret;
+    ret.push_back("register_change");
+
+    return ret;
 }
 
-std::uint16_t Device::get_node_version() noexcept {
-    return node_version;
+std::vector<Device::RegisterDsc> Device::get_registers_list() {
+    std::vector<Device::RegisterDsc> ret;
+    for (const auto &reg: register_map) {
+        ret.push_back(reg.second);
+    }
+    return ret;
 }
 
-std::uint8_t Device::get_node_version_major() noexcept {
-    return node_version >> 8;
+std::vector<std::string> Device::get_device_specific_methods() {
+    return std::vector<std::string>();
 }
 
-std::uint8_t Device::get_node_version_minor() noexcept {
-    return node_version;
+std::uint16_t Device::get_device_id() noexcept {
+    return node_id;
+}
+
+std::uint16_t Device::get_device_type() noexcept {
+    return device_type;
+}
+
+std::uint16_t Device::get_device_version() noexcept {
+    return device_version;
+}
+
+std::uint8_t Device::get_device_version_major() noexcept {
+    return device_version >> 8;
+}
+
+std::uint8_t Device::get_device_version_minor() noexcept {
+    return device_version;
+}
+
+std::string Device::get_device_type_name() noexcept {
+    return device_type_name;
+}
+
+ssize_t Device::get_register(std::uint8_t reg, std::string &buf) {
+
+}
+
+ssize_t Device::get_register(std::uint8_t reg, std::int64_t &buf) {
+
+}
+
+ssize_t Device::set_register(std::uint8_t reg, std::string value) {
+    if (register_map.count(reg) && value.size() < 8) {
+        ssize_t n = value.size() < register_map[reg].size ? value.size() : register_map[reg].size;
+        set_raw_reg(reg, n, reinterpret_cast<const std::uint8_t*>(value.c_str()));
+        return n;
+    }
+    return -1;
+}
+
+ssize_t Device::set_register(std::uint8_t reg, std::int64_t value) {
+    if (register_map.count(reg)) {
+        ssize_t n = (register_map[reg].size + 7)/8;
+        if (n == 1) {
+            set_raw_reg(reg, static_cast<std::uint8_t>(value));
+        }
+        else if (n == 2) {
+            set_raw_reg(reg, static_cast<std::uint16_t>(value));
+        }
+        else if (n > 2) {
+            set_raw_reg(reg, static_cast<std::uint32_t>(value));
+        }
+        return n;
+    }
+    return -1;
 }

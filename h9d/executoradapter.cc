@@ -71,24 +71,8 @@ GenericMsg ExecutorAdapter::execute_method(ExecuteMethodMsg execmsg) {
             desc.add_value("id", it.id);
             desc.add_value("type", it.type);
             desc.add_value("version", std::to_string(it.version_major) + "." + std::to_string(it.version_minor));
+            desc.add_value("type_name", it.type_name);
         }
-
-        res.set_request_id(execmsg.get_id());
-        return std::move(res);
-    }
-    else if (execmsg.get_method_name() == "dev") {
-        //
-        // POC
-        //
-        //attach_device_event_observer(32, "antenna-switch");
-
-        int active_antenna = executor->execute_object_method(execmsg["variable_antenna"].get_value_as_int(), _client);
-
-        MethodResponseMsg res("dev");
-        res.add_value("object", execmsg["object"].get_value_as_str());
-        res.add_value("id", execmsg["id"].get_value_as_int());
-        res.add_value("method", execmsg["method"].get_value_as_str());
-        res.add_value("response", active_antenna);
 
         res.set_request_id(execmsg.get_id());
         return std::move(res);
@@ -100,7 +84,7 @@ GenericMsg ExecutorAdapter::execute_method(ExecuteMethodMsg execmsg) {
     return std::move(err_msg);
 }
 
-GenericMsg ExecutorAdapter::execute_device_method(DeviceMethodResponseMsg exedevcmsg) {
+GenericMsg ExecutorAdapter::execute_device_method(ExecuteDeviceMethodMsg exedevcmsg) {
     assert(_client);
 
     std::uint16_t dev_id = exedevcmsg.get_device_id();
@@ -121,11 +105,41 @@ GenericMsg ExecutorAdapter::execute_device_method(DeviceMethodResponseMsg exedev
         methods.add_value("subscribe");
         methods.add_value("unsubscribe");
 
+        for (const auto &it: executor->get_device_methods_list(dev_id)) {
+            methods.add_value(it);
+        }
+
         res.set_request_id(exedevcmsg.get_id());
         return std::move(res);
     }
     else if (method == "events_list") {
+        DeviceMethodResponseMsg res(dev_id, method);
+        auto events = res.add_array("events");
 
+        for (const auto &it: executor->get_device_events_list(dev_id)) {
+            events.add_value(it);
+        }
+
+        res.set_request_id(exedevcmsg.get_id());
+        return std::move(res);
+    }
+    else if (method == "registers_list") {
+        DeviceMethodResponseMsg res(dev_id, method);
+        auto registers = res.add_array("registers");
+
+        for (const auto &it: executor->get_device_registers_list(dev_id)) {
+            auto desc = registers.add_dict();
+            desc.add_value("register", it.number);
+            desc.add_value("name", it.name);
+            desc.add_value("type", it.type);
+            desc.add_value("size", it.size);
+            desc.add_value("readable", it.readable);
+            desc.add_value("writable", it.writable);
+            desc.add_value("description", it.description);
+        }
+
+        res.set_request_id(exedevcmsg.get_id());
+        return std::move(res);
     }
     else if (method == "subscribe") {
         try {
@@ -160,6 +174,11 @@ GenericMsg ExecutorAdapter::execute_device_method(DeviceMethodResponseMsg exedev
             err_msg.set_request_id(exedevcmsg.get_id());
             return std::move(err_msg);
         }
+    }
+    else if (executor->has_device_specific_method(dev_id, method)) {
+        auto res = executor->execute_device_method(_client, dev_id, method, exedevcmsg);
+        res.set_request_id(exedevcmsg.get_id());
+        return std::move(res);
     }
 
     h9_log_warn("Unknown device (%hu) method '%s' from: %s", dev_id, method.c_str(), _client->get_client_idstring().c_str());

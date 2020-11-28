@@ -15,7 +15,8 @@
 #include "bus.h"
 #include "dctx.h"
 #include "devmgr.h"
-
+#include "protocol/devicemethodresponsemsg.h"
+#include "protocol/executedevicemethodmsg.h"
 
 class Executor {
 private:
@@ -30,15 +31,20 @@ public:
 
     //DevMgr
     int active_devices_count();
+    bool is_device_exist(std::uint16_t dev_id);
+    std::vector<DevMgr::DeviceDsc> get_devices_list();
 
     //Device
     int attach_device_event_observer(TCPClientThread *client, std::uint16_t dev_id, std::string event_name);
     int detach_device_event_observer(TCPClientThread *client, std::uint16_t dev_id, std::string event_name);
-    std::vector<DevMgr::DeviceDsc> get_devices_list();
-    bool is_device_exist(std::uint16_t dev_id);
+    std::vector<std::string> get_device_events_list(std::uint16_t dev_id);
 
-    int execute_device_method(TCPClientThread *client, std::uint16_t device_id, std::string method_name);
-    int execute_object_method(int a, TCPClientThread *client);
+    std::vector<Device::RegisterDsc> get_device_registers_list(std::uint16_t dev_id);
+
+    std::vector<std::string> get_device_methods_list(std::uint16_t dev_id);
+    bool has_device_specific_method(std::uint16_t dev_id, std::string method_name);
+
+    DeviceMethodResponseMsg execute_device_method(TCPClientThread *client, std::uint16_t device_id, std::string method_name, ExecuteDeviceMethodMsg &exedevcmsg);
 };
 
 

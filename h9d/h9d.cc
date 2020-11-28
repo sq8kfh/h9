@@ -62,21 +62,6 @@ int main(int argc, char **argv) {
         }
     }
 
-
-    {
-        Node n = {&bus, 2};
-
-        //n.reset();
-
-        int nt = n.get_node_type();
-        h9_log_info("Node type: %d", nt);
-
-        uint8_t major;
-        uint8_t minor;
-        nt = n.get_node_version(&major, &minor);
-        h9_log_info("Node version: %hhu.%hhu %d", major, minor, nt);
-    }
-
     devmgr.discover();
     server.run();
 

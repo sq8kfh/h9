@@ -22,6 +22,7 @@ private:
 protected:
     const std::string _app_name;
     const std::string _app_desc;
+    std::string _devices_description_filename;
     void raise_verbose_level(unsigned int how_much);
     Ctx(std::string app_name, std::string app_desc);
     void enable_debug(bool debug);
@@ -34,6 +35,7 @@ public:
     //Log& log(const std::string& log_name);
     time_t get_start_time();
     std::string get_app_name();
+    std::string get_devices_description_filename();
 };
 
 

@@ -22,6 +22,7 @@ Ctx::Ctx(std::string app_name, std::string app_desc):
         _app_desc(std::move(app_desc)),
         start_time(std::time(nullptr)) {
     logger().set_debug(_debug);
+    _devices_description_filename = std::string(H9_CONFIG_PATH) + "devices.conf";
 }
 
 void Ctx::enable_debug(bool debug) {
@@ -47,4 +48,8 @@ time_t Ctx::get_start_time() {
 
 std::string Ctx::get_app_name() {
     return _app_name;
+}
+
+std::string Ctx::get_devices_description_filename() {
+    return _devices_description_filename;
 }

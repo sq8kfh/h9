@@ -79,6 +79,7 @@ int Node::get_node_type() {
     comparator.set_type(H9frame::Type::REG_VALUE);
     //comparator.set_alternate_type(H9frame::Type::ERROR);
     comparator.set_first_data_byte(1);
+    //TODO: catch H9frame::Type::ERROR
 
     auto seqnum = h9bus->get_next_seqnum(node_id);
     comparator.set_seqnum(seqnum);
@@ -98,6 +99,7 @@ int Node::get_node_version(std::uint8_t *major, std::uint8_t *minor) {
     comparator.set_source_id(node_id);
     comparator.set_type(H9frame::Type::REG_VALUE);
     comparator.set_first_data_byte(2);
+    //TODO: catch H9frame::Type::ERROR
 
     auto seqnum = h9bus->get_next_seqnum(node_id);
     comparator.set_seqnum(seqnum);
@@ -114,39 +116,69 @@ int Node::get_node_version(std::uint8_t *major, std::uint8_t *minor) {
 }
 
 int Node::set_node_id(std::uint16_t id) {
-    H9FrameComparator comparator;
-    comparator.set_source_id(node_id);
-    comparator.set_type(H9frame::Type::REG_EXTERNALLY_CHANGED);
-    comparator.set_first_data_byte(3);
-
-    auto seqnum = h9bus->get_next_seqnum(node_id);
-    comparator.set_seqnum(seqnum);
-
-    auto future = create_frame_future(comparator);
-    h9bus->send_set_reg(H9frame::Priority::LOW, seqnum, source_id, node_id, 3, id);
-    if (future.wait_for(std::chrono::seconds(timeout)) != std::future_status::ready) {
+    if (set_raw_reg(3, id) <= 0) {
         return -1;
     }
-    future.get();
 
-    seqnum = h9bus->get_next_seqnum(node_id);
+    auto seqnum = h9bus->get_next_seqnum(node_id);
     return h9bus->send_node_reset(H9frame::Priority::LOW, seqnum, source_id, node_id);
 }
 
-int Node::set_reg(std::uint8_t reg, std::uint8_t value) {
+ssize_t Node::set_raw_reg(std::uint8_t reg, std::size_t nbyte, const std::uint8_t *buf) {
     H9FrameComparator comparator;
     comparator.set_source_id(node_id);
     comparator.set_type(H9frame::Type::REG_EXTERNALLY_CHANGED);
     comparator.set_first_data_byte(reg);
+    //TODO: catch H9frame::Type::ERROR
 
     auto seqnum = h9bus->get_next_seqnum(node_id);
     comparator.set_seqnum(seqnum);
 
     auto future = create_frame_future(comparator);
-    h9bus->send_set_reg(H9frame::Priority::LOW, seqnum, source_id, node_id, reg, value);
+    h9bus->send_set_reg(H9frame::Priority::LOW, seqnum, source_id, node_id, reg, nbyte, buf);
     if (future.wait_for(std::chrono::seconds(timeout)) != std::future_status::ready) {
         return -1;
     }
 
-    return future.get().data[1];
+    return future.get().dlc - 1;
+}
+
+ssize_t Node::set_raw_reg(std::uint8_t reg, std::uint8_t value) {
+    return set_raw_reg(reg, 1, &value);
+}
+
+ssize_t Node::set_raw_reg(std::uint8_t reg, std::uint16_t value) {
+    std::uint16_t bigendian_value = htons(value);
+    return set_raw_reg(reg, 2, reinterpret_cast<const std::uint8_t*>(&bigendian_value));
+}
+
+ssize_t Node::set_raw_reg(std::uint8_t reg, std::uint32_t value) {
+    std::uint32_t bigendian_value = htonl(value);
+    return set_raw_reg(reg, 4, reinterpret_cast<const std::uint8_t*>(&bigendian_value));
+}
+
+ssize_t Node::get_raw_reg(std::uint8_t reg, std::size_t nbyte, std::uint8_t *buf) {
+    H9FrameComparator comparator;
+    comparator.set_source_id(node_id);
+    comparator.set_type(H9frame::Type::REG_VALUE);
+    comparator.set_first_data_byte(reg);
+    //TODO: catch H9frame::Type::ERROR
+
+    auto seqnum = h9bus->get_next_seqnum(node_id);
+    comparator.set_seqnum(seqnum);
+
+    auto future = create_frame_future(comparator);
+    h9bus->send_get_reg(H9frame::Priority::LOW, seqnum, source_id, node_id, reg);
+    if (future.wait_for(std::chrono::seconds(timeout)) != std::future_status::ready) {
+        return -1;
+    }
+    H9frame res = future.get();
+
+    ssize_t ret = nbyte < res.dlc - 1 ? nbyte : res.dlc - 1;
+
+    for (int i = 0; i < ret; ++i) {
+        buf[i] = res.data[i+1];
+    }
+
+    return ret;
 }

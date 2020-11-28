@@ -49,6 +49,7 @@ public:
         std::uint16_t type;
         std::uint8_t version_major;
         std::uint8_t version_minor;
+        std::string type_name;
     } DeviceDsc;
 
     explicit DevMgr(Bus *bus);
@@ -57,12 +58,22 @@ public:
     void load_config(DCtx *ctx);
     void discover();
 
+    int active_devices_count();
+    bool is_device_exist(std::uint16_t dev_id);
+    std::vector<DevMgr::DeviceDsc> get_devices_list();
+
     void attach_event_observer(TCPClientThread *observer, std::string event_name, std::uint16_t dev_id);
     void detach_event_observer(TCPClientThread *observer, std::string event_name, std::uint16_t dev_id);
-    std::vector<DevMgr::DeviceDsc> get_devices_list();
-    bool is_device_exist(std::uint16_t dev_id);
+    std::vector<std::string> get_events_list(std::uint16_t dev_id);
 
-    int active_devices_count();
+    std::vector<std::string> get_device_specific_methods(std::uint16_t dev_id);
+
+    std::vector<Device::RegisterDsc> get_registers_list(std::uint16_t dev_id);
+
+    ssize_t get_device_register(std::uint16_t dev_id, std::uint8_t reg, std::string &buf);
+    ssize_t get_device_register(std::uint16_t dev_id, std::uint8_t reg, std::int64_t &buf);
+    ssize_t set_device_register(std::uint16_t dev_id, std::uint8_t reg, std::string value);
+    ssize_t set_device_register(std::uint16_t dev_id, std::uint8_t reg, std::int64_t value);
 };
 
 

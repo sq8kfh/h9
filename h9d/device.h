@@ -13,7 +13,9 @@
 #include <set>
 #include <map>
 #include <mutex>
+#include <vector>
 #include "node.h"
+#include "common/devicedescloader.h"
 #include "protocol/genericmsg.h"
 
 
@@ -21,9 +23,15 @@ class DevMgr;
 class TCPClientThread;
 
 class Device: protected Node {
+public:
+    using RegisterDsc = DeviceDescLoader::RegisterDesc;
 private:
-    const std::uint16_t node_type;
-    const std::uint16_t node_version;
+    static DeviceDescLoader devicedescloader;
+
+    const std::uint16_t device_type;
+    const std::uint16_t device_version;
+
+    std::map<std::uint8_t, RegisterDsc> register_map;
 
     friend class DevMgr;
     void update_device_state(H9frame frame);
@@ -33,15 +41,26 @@ private:
     void attach_event_observer(TCPClientThread *observer, std::string event_name);
     void detach_event_observer(TCPClientThread *observer, std::string event_name);
 protected:
+    const std::string device_type_name;
     void notify_event_observer(std::string event_name, GenericMsg msg);
 public:
     Device(Bus* bus, std::uint16_t node_id, std::uint16_t node_type, std::uint16_t node_version) noexcept;
 
-    using Node::get_node_id;
-    std::uint16_t get_node_type() noexcept;
-    std::uint16_t get_node_version() noexcept;
-    std::uint8_t get_node_version_major() noexcept;
-    std::uint8_t get_node_version_minor() noexcept;
+    std::vector<std::string> get_events_list();
+    std::vector<RegisterDsc> get_registers_list();
+    virtual std::vector<std::string> get_device_specific_methods();
+
+    std::uint16_t get_device_id() noexcept;
+    std::uint16_t get_device_type() noexcept;
+    std::uint16_t get_device_version() noexcept;
+    std::uint8_t get_device_version_major() noexcept;
+    std::uint8_t get_device_version_minor() noexcept;
+    std::string get_device_type_name() noexcept;
+
+    ssize_t get_register(std::uint8_t reg, std::string &buf);
+    ssize_t get_register(std::uint8_t reg, std::int64_t &buf);
+    ssize_t set_register(std::uint8_t reg, std::string value);
+    ssize_t set_register(std::uint8_t reg, std::int64_t value);
 };
 
 

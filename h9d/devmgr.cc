@@ -101,12 +101,45 @@ DevMgr::~DevMgr() {
 }
 
 void DevMgr::load_config(DCtx *ctx) {
-
+    h9_log_notice("Loading devices description file: %s", ctx->get_devices_description_filename().c_str());
+    Device::devicedescloader.load_file(ctx->get_devices_description_filename());
 }
 
 void DevMgr::discover() {
     auto seqnum = h9bus->get_next_seqnum(1);
     h9bus->send_node_discover(H9frame::Priority::LOW, seqnum, 1);
+}
+
+int DevMgr::active_devices_count() {
+    //devices_map_mtx.lock_shared();
+    devices_map_mtx.lock();
+    int ret = devices_map.size();
+    //devices_map_mtx.unlock_shared()
+    devices_map_mtx.unlock();
+    return ret;
+}
+
+bool DevMgr::is_device_exist(std::uint16_t dev_id) {
+    //devices_map_mtx.lock_shared();
+    devices_map_mtx.lock();
+    bool ret = devices_map.count(dev_id);
+    //devices_map_mtx.unlock_shared()
+    devices_map_mtx.unlock();
+    return ret;
+}
+
+std::vector<DevMgr::DeviceDsc> DevMgr::get_devices_list() {
+    //devices_map_mtx.lock_shared();
+    devices_map_mtx.lock();
+    std::vector<DevMgr::DeviceDsc> ret;
+
+    for (auto it: devices_map) {
+        ret.push_back({it.first, it.second->get_device_type(), it.second->get_device_version_major(), it.second->get_device_version_minor(),  it.second->get_device_type_name()});
+    }
+
+    //devices_map_mtx.unlock_shared()
+    devices_map_mtx.unlock();
+    return std::move(ret);
 }
 
 void DevMgr::attach_event_observer(TCPClientThread *observer, std::string event_name, std::uint16_t dev_id) {
@@ -132,34 +165,100 @@ void DevMgr::detach_event_observer(TCPClientThread *observer, std::string event_
     devices_map_mtx.unlock();
 }
 
-std::vector<DevMgr::DeviceDsc> DevMgr::get_devices_list() {
+std::vector<std::string> DevMgr::get_events_list(std::uint16_t dev_id) {
     //devices_map_mtx.lock_shared();
     devices_map_mtx.lock();
-    std::vector<DevMgr::DeviceDsc> ret(devices_map.size());
-
-    for (auto it: devices_map) {
-        ret.push_back({it.first, it.second->get_node_type(), it.second->get_node_version_major(), it.second->get_node_version_minor()});
+    if (devices_map.count(dev_id)) {
+        auto ret = devices_map[dev_id]->get_events_list();
+        //devices_map_mtx.unlock_shared()
+        devices_map_mtx.unlock();
+        return ret;
     }
-
     //devices_map_mtx.unlock_shared()
     devices_map_mtx.unlock();
-    return std::move(ret);
+    return std::vector<std::string>();
 }
 
-bool DevMgr::is_device_exist(std::uint16_t dev_id) {
+std::vector<std::string> DevMgr::get_device_specific_methods(std::uint16_t dev_id) {
     //devices_map_mtx.lock_shared();
     devices_map_mtx.lock();
-    bool ret = devices_map.count(dev_id);
+    if (devices_map.count(dev_id)) {
+        auto ret = devices_map[dev_id]->get_device_specific_methods();
+        //devices_map_mtx.unlock_shared()
+        devices_map_mtx.unlock();
+        return ret;
+    }
     //devices_map_mtx.unlock_shared()
     devices_map_mtx.unlock();
-    return ret;
+    return std::vector<std::string>();
 }
 
-int DevMgr::active_devices_count() {
+std::vector<Device::RegisterDsc> DevMgr::get_registers_list(std::uint16_t dev_id) {
     //devices_map_mtx.lock_shared();
     devices_map_mtx.lock();
-    int ret = devices_map.size();
+    if (devices_map.count(dev_id)) {
+        auto ret = devices_map[dev_id]->get_registers_list();
+        //devices_map_mtx.unlock_shared()
+        devices_map_mtx.unlock();
+        return ret;
+    }
     //devices_map_mtx.unlock_shared()
     devices_map_mtx.unlock();
-    return ret;
+    return std::vector<Device::RegisterDsc>();
+}
+
+ssize_t DevMgr::get_device_register(std::uint16_t dev_id, std::uint8_t reg, std::string &buf) {
+    //devices_map_mtx.lock_shared();
+    devices_map_mtx.lock();
+    if (devices_map.count(dev_id)) {
+        auto ret = devices_map[dev_id]->get_register(reg, buf);
+        //devices_map_mtx.unlock_shared()
+        devices_map_mtx.unlock();
+        return ret;
+    }
+    //devices_map_mtx.unlock_shared()
+    devices_map_mtx.unlock();
+    return -1;
+}
+
+ssize_t DevMgr::get_device_register(std::uint16_t dev_id, std::uint8_t reg, std::int64_t &buf) {
+    //devices_map_mtx.lock_shared();
+    devices_map_mtx.lock();
+    if (devices_map.count(dev_id)) {
+        auto ret = devices_map[dev_id]->get_register(reg, buf);
+        //devices_map_mtx.unlock_shared()
+        devices_map_mtx.unlock();
+        return ret;
+    }
+    //devices_map_mtx.unlock_shared()
+    devices_map_mtx.unlock();
+    return -1;
+}
+
+ssize_t DevMgr::set_device_register(std::uint16_t dev_id, std::uint8_t reg, std::string value) {
+    //devices_map_mtx.lock_shared();
+    devices_map_mtx.lock();
+    if (devices_map.count(dev_id)) {
+        auto ret = devices_map[dev_id]->set_register(reg, value);
+        //devices_map_mtx.unlock_shared()
+        devices_map_mtx.unlock();
+        return ret;
+    }
+    //devices_map_mtx.unlock_shared()
+    devices_map_mtx.unlock();
+    return -1;
+}
+
+ssize_t DevMgr::set_device_register(std::uint16_t dev_id, std::uint8_t reg, std::int64_t value) {
+    //devices_map_mtx.lock_shared();
+    devices_map_mtx.lock();
+    if (devices_map.count(dev_id)) {
+        auto ret = devices_map[dev_id]->set_register(reg, value);
+        //devices_map_mtx.unlock_shared()
+        devices_map_mtx.unlock();
+        return ret;
+    }
+    //devices_map_mtx.unlock_shared()
+    devices_map_mtx.unlock();
+    return -1;
 }

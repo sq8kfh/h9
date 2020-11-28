@@ -15,6 +15,7 @@
 #include "executor.h"
 #include "protocol/devicemethodresponsemsg.h"
 #include "protocol/executemethodmsg.h"
+#include "protocol/executedevicemethodmsg.h"
 #include "protocol/methodresponsemsg.h"
 
 
@@ -35,7 +36,7 @@ public:
     void set_client(TCPClientThread *client);
 
     GenericMsg execute_method(ExecuteMethodMsg execmsg);
-    GenericMsg execute_device_method(DeviceMethodResponseMsg execmsg);
+    GenericMsg execute_device_method(ExecuteDeviceMethodMsg execmsg);
 
     void cleanup_connection();
 };

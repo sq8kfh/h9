@@ -23,7 +23,6 @@ void Bus::recv_thread() {
             if (raw_msg.get_type() == GenericMsg::Type::FRAME) {
                 FrameMsg msg = std::move(raw_msg);
                 H9frame frame = msg.get_frame();
-                h9_log_info(">>frame %llu %llu", msg.get_id(), msg.get_request_id());
 
                 notify_frame_observer(frame);
 
@@ -74,11 +73,9 @@ int Bus::send_frame_sync(H9frame frame) {
 }
 
 Bus::Bus(): h9bus_connector(nullptr) {
-    h9_log_info("cons %d", std::this_thread::get_id() );
 }
 
 Bus::~Bus() {
-    h9_log_info("des %d", std::this_thread::get_id() );
     run = false;
     h9bus_connector->shutdown_read();
     if (recv_thread_desc.joinable())
@@ -106,7 +103,7 @@ std::uint8_t Bus::get_next_seqnum(std::uint16_t source_id) {
     return ret;
 }
 
-int Bus::send_set_reg(H9frame::Priority priority, std::uint8_t seqnum, std::uint16_t source, std::uint16_t destination, std::uint8_t reg, std::size_t nbyte, void *data) {
+int Bus::send_set_reg(H9frame::Priority priority, std::uint8_t seqnum, std::uint16_t source, std::uint16_t destination, std::uint8_t reg, std::size_t nbyte, const std::uint8_t *data) {
     H9frame frame;
     frame.priority = priority;
     frame.type = H9frame::Type::SET_REG;
@@ -125,25 +122,11 @@ int Bus::send_set_reg(H9frame::Priority priority, std::uint8_t seqnum, std::uint
     frame.dlc = nbyte + 1;
 
     for (int i = 0; i < nbyte; ++i) {
-        frame.data[i+1] = static_cast<uint8_t*>(data)[i];
+        frame.data[i+1] = data[i];
     }
 
     int ret = send_frame_sync(frame);
     return ret == Bus::OK ? frame.seqnum : ret;
-}
-
-int Bus::send_set_reg(H9frame::Priority priority, std::uint8_t seqnum, std::uint16_t source, std::uint16_t destination, std::uint8_t reg, std::uint8_t reg_value) {
-    return send_set_reg(priority, seqnum, source, destination, reg, 1, &reg_value);
-}
-
-int Bus::send_set_reg(H9frame::Priority priority, std::uint8_t seqnum, std::uint16_t source, std::uint16_t destination, std::uint8_t reg, std::uint16_t reg_value) {
-    std::uint16_t bigendian_value = htons(reg_value);
-    return send_set_reg(priority, seqnum, source, destination, reg, 2, &bigendian_value);
-}
-
-int Bus::send_set_reg(H9frame::Priority priority, std::uint8_t seqnum, std::uint16_t source, std::uint16_t destination, std::uint8_t reg, std::uint32_t reg_value) {
-    std::uint32_t bigendian_value = htonl(reg_value);
-    return send_set_reg(priority, seqnum, source, destination, reg, 4, &bigendian_value);
 }
 
 int Bus::send_get_reg(H9frame::Priority priority, std::uint8_t seqnum, std::uint16_t source, std::uint16_t destination, std::uint8_t reg) {

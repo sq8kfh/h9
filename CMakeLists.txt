@@ -5,7 +5,7 @@ project(h9 VERSION 0.2.0)
 set(CMAKE_CXX_STANDARD 14)
 
 set(H9_USER_CONFIG_FILE "~/.h9")
-set(H9_CONFIG_PATH "./")
+set(H9_CONFIG_PATH "../conf/")
 set(H9_VERSION ${PROJECT_VERSION})
 
 find_package(PkgConfig REQUIRED)
