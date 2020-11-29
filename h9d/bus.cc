@@ -7,6 +7,7 @@
  */
 
 #include "bus.h"
+#include <atomic>
 #include <thread>
 #include <netinet/in.h>
 #include "protocol/errormsg.h"
@@ -87,20 +88,28 @@ Bus::~Bus() {
 void Bus::load_config(DCtx *ctx) {
     h9bus_connector = new H9Connector(ctx->cfg_h9bus_hostname(), std::to_string(ctx->cfg_h9bus_port()));
 
-    h9bus_connector->connect("h9d");
-    h9bus_connector->send(ExecuteMethodMsg("subscribe").add_value("event", "frame"));
-    //h9bus_connector->send(SubscribeMsg(SubscribeMsg::Content::FRAME));
-
+    try {
+        h9bus_connector->connect("h9d");
+        h9bus_connector->send(ExecuteMethodMsg("subscribe").add_value("event", "frame"));
+        //h9bus_connector->send(SubscribeMsg(SubscribeMsg::Content::FRAME));
+    }
+    catch (std::system_error &e) {
+        h9_log_crit("Can not connect to h9bus %s:%hu: %s", ctx->cfg_h9bus_hostname().c_str(), ctx->cfg_h9bus_port(), e.code().message().c_str());
+        exit(EXIT_FAILURE);
+    }
+    catch (std::runtime_error &e) {
+        h9_log_crit("Can not connect to h9bus %s:%hu: authentication fail", ctx->cfg_h9bus_hostname().c_str(), ctx->cfg_h9bus_port());
+        exit(EXIT_FAILURE);
+    }
     recv_thread_desc = std::thread([this]() {
        this->recv_thread();
     });
 }
 
 std::uint8_t Bus::get_next_seqnum(std::uint16_t source_id) {
-    static std::uint8_t next_seqnum[1 << H9frame::H9FRAME_SOURCE_ID_BIT_LENGTH] = {0};
-    std::uint8_t ret = next_seqnum[source_id];
-    next_seqnum[source_id] = (next_seqnum[source_id] + 1) & ((1 << H9frame::H9FRAME_SEQNUM_BIT_LENGTH) - 1);
-    return ret;
+    static std::atomic<std::uint8_t> next_seqnum[1 << H9frame::H9FRAME_SOURCE_ID_BIT_LENGTH] = {};
+    std::uint8_t ret = next_seqnum[source_id]++;
+    return ret & ((1 << H9frame::H9FRAME_SEQNUM_BIT_LENGTH) - 1);
 }
 
 int Bus::send_set_reg(H9frame::Priority priority, std::uint8_t seqnum, std::uint16_t source, std::uint16_t destination, std::uint8_t reg, std::size_t nbyte, const std::uint8_t *data) {

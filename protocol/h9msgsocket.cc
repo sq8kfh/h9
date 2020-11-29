@@ -13,7 +13,7 @@
 
 
 H9MsgSocket::H9MsgSocket(int socket) noexcept: H9Socket(socket), next_msg_id(0)  {
-    if (connect() < 0)
+    if (connect() < 0) //this should never happen if yes something is wrong with socket
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
 }
 
@@ -24,9 +24,13 @@ int H9MsgSocket::get_socket() noexcept {
     return _socket;
 }
 
-int H9MsgSocket::authentication(std::string entity) noexcept {
+int H9MsgSocket::authentication(const std::string& entity) noexcept {
     IdentificationMsg ident_msg(entity);
-    return send(ident_msg);
+    if (send(ident_msg) <= 0) {
+        return -1;
+    }
+    //return 0; //authentication fail
+    return 1; //if ok
 }
 
 int H9MsgSocket::send(GenericMsg &msg) noexcept {
@@ -60,10 +64,6 @@ int H9MsgSocket::recv_complete_msg(GenericMsg &msg) noexcept {
     }
 }
 
-void H9MsgSocket::close() noexcept {
-    H9Socket::close();
-}
-
 void H9MsgSocket::shutdown_read() noexcept {
     shutdown(_socket, SHUT_RD);
 }
@@ -75,12 +75,4 @@ std::uint64_t H9MsgSocket::get_next_id() noexcept {
     //std::hash<std::uint64_t> hasher;
     //return hasher(next);
     return next_msg_id;
-}
-
-std::string H9MsgSocket::get_remote_address() noexcept {
-    return _hostname;
-}
-
-std::string H9MsgSocket::get_remote_port() noexcept {
-    return _port;
 }

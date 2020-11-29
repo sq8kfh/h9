@@ -152,7 +152,7 @@ GenericMsg ExecutorAdapter::execute_device_method(ExecuteDeviceMethodMsg exedevc
             return std::move(res);
         }
         catch (std::out_of_range &e) {
-            h9_log_warn("Execute device method 'subscribe' with missing 'event' attribute (from: %s)", _client->get_client_idstring().c_str());
+            h9_log_warn("Execute device method 'subscribe' with missing 'event' parameters (from: %s)", _client->get_client_idstring().c_str());
             ErrorMsg err_msg(ErrorMsg::ErrorNumber::INVALID_PARAMETERS, "Missing 'event' attribute");
             err_msg.set_request_id(exedevcmsg.get_id());
             return std::move(err_msg);
@@ -169,16 +169,24 @@ GenericMsg ExecutorAdapter::execute_device_method(ExecuteDeviceMethodMsg exedevc
             return std::move(res);
         }
         catch (std::out_of_range &e) {
-            h9_log_warn("Execute device method 'subscribe' with missing 'event' attribute (from: %s)", _client->get_client_idstring().c_str());
+            h9_log_warn("Execute device method 'unsubscribe' with missing 'event' parameters (from: %s)", _client->get_client_idstring().c_str());
             ErrorMsg err_msg(ErrorMsg::ErrorNumber::INVALID_PARAMETERS, "Missing 'event' attribute");
             err_msg.set_request_id(exedevcmsg.get_id());
             return std::move(err_msg);
         }
     }
     else if (executor->has_device_specific_method(dev_id, method)) {
-        auto res = executor->execute_device_method(_client, dev_id, method, exedevcmsg);
-        res.set_request_id(exedevcmsg.get_id());
-        return std::move(res);
+        try {
+            auto res = executor->execute_device_method(_client, dev_id, method, exedevcmsg);
+            res.set_request_id(exedevcmsg.get_id());
+            return std::move(res);
+        }
+        catch (std::out_of_range &e) {
+            h9_log_warn("Execute device method '%s' with missing '%s' parameters (from: %s)", method.c_str(), e.what(), _client->get_client_idstring().c_str());
+            ErrorMsg err_msg(ErrorMsg::ErrorNumber::INVALID_PARAMETERS, "Invalid parameters");
+            err_msg.set_request_id(exedevcmsg.get_id());
+            return std::move(err_msg);
+        }
     }
 
     h9_log_warn("Unknown device (%hu) method '%s' from: %s", dev_id, method.c_str(), _client->get_client_idstring().c_str());

@@ -7,18 +7,8 @@
  */
 
 #include "h9connector.h"
-
 #include <system_error>
-#include <cstring>
 #include <unistd.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/errno.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-
-#include "common/logger.h"
 
 
 H9Connector::H9Connector(std::string hostname, std::string port) noexcept:
@@ -29,10 +19,17 @@ H9Connector::~H9Connector() noexcept {
     h9socket.close();
 }
 
-int H9Connector::connect(std::string entity) noexcept {
-    h9socket.connect();
-    h9socket.authentication(entity);
-    return 0;
+void H9Connector::connect(std::string entity) {
+    if (h9socket.connect() < 0){
+        throw std::system_error(errno, std::system_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
+    }
+    int res = h9socket.authentication(entity);
+    if (res < 0) {
+        throw std::system_error(errno, std::system_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
+    }
+    else if (res == 0) {
+        throw std::runtime_error("Authentication fail");
+    }
 }
 
 void H9Connector::close() noexcept {
@@ -47,21 +44,21 @@ GenericMsg H9Connector::recv() {
     GenericMsg msg;
     int res = h9socket.recv_complete_msg(msg);
     if (res <= 0) {
-        throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
+        throw std::system_error(errno, std::system_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
     return std::move(msg);
 }
 
 std::uint64_t H9Connector::send(GenericMsg msg) {
     if (h9socket.send(msg) <=0) {
-        throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
+        throw std::system_error(errno, std::system_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
     return msg.get_id();
 }
 
 std::uint64_t H9Connector::send(GenericMsg msg, std::uint64_t id) {
     if (h9socket.send(msg, id) <=0) {
-        throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
+        throw std::system_error(errno, std::system_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
     return id;
 }

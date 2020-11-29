@@ -20,13 +20,33 @@ public:
     H9Connector(std::string hostname, std::string port) noexcept;
     ~H9Connector() noexcept;
 
-    int connect(std::string entity) noexcept;
+    /*
+     * throw: std::system_error
+     */
+    void connect(std::string entity);
     void close() noexcept;
     void shutdown_read() noexcept;
 
+    /*
+     * throw: std::system_error
+     */
     GenericMsg recv();
+
+    /*
+     * throw: std::system_error
+     * return: the id of the sent message
+     */
     std::uint64_t send(GenericMsg msg);
+
+    /*
+     * throw: std::system_error
+     * return: the id of the sent message
+     */
     std::uint64_t send(GenericMsg msg, std::uint64_t id);
+
+    /*
+     * throw: std::system_error
+     */
     std::uint64_t get_next_id() noexcept;
 };
 

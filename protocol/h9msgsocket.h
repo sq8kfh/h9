@@ -25,19 +25,19 @@ public:
     int get_socket() noexcept;
 
     using H9Socket::connect;
-    int authentication(std::string entity) noexcept ;
+    int authentication(const std::string& entity) noexcept;
 
     int send(GenericMsg &msg) noexcept;
     int send(GenericMsg &msg, std::uint64_t id) noexcept;
     int recv(GenericMsg &msg, int timeout_in_seconds = 0) noexcept;
     int recv_complete_msg(GenericMsg &msg) noexcept;
 
-    void close() noexcept;
+    using H9Socket::close;
     void shutdown_read() noexcept;
 
     std::uint64_t get_next_id() noexcept;
-    std::string get_remote_address() noexcept;
-    std::string get_remote_port() noexcept;
+    using H9Socket::get_remote_address;
+    using H9Socket::get_remote_port;
 };
 
 

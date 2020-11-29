@@ -17,6 +17,7 @@
 #include "protocol/subscribemsg.h"
 #include "common/clientctx.h"
 
+
 char* mcu_map[] = {(char*)"UNKNOWN",       // 0
                    (char*)"ATmega16M1",    // 1
                    (char*)"ATmega32M1",    // 2
@@ -177,8 +178,16 @@ int main(int argc, char **argv)
 
     H9Connector h9_connector = {ctx.get_h9bus_host(), ctx.get_h9bus_port()};
 
-    if (h9_connector.connect(ctx.get_app_name()) == -1) {
-        return EXIT_FAILURE;
+    try {
+        h9_connector.connect(ctx.get_app_name());
+    }
+    catch (std::system_error &e) {
+        h9_log_stderr("Can not connect to h9bus %s:%s: %s", ctx.get_h9bus_host().c_str(), ctx.get_h9bus_port().c_str(), e.code().message().c_str());
+        exit(EXIT_FAILURE);
+    }
+    catch (std::runtime_error &e) {
+        h9_log_stderr("Can not connect to h9bus %s:%s: authentication fail", ctx.get_h9bus_host().c_str(), ctx.get_h9bus_port().c_str());
+        exit(EXIT_FAILURE);
     }
 
     h9_connector.send(ExecuteMethodMsg("subscribe").add_value("event", "frame"));
