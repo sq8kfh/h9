@@ -16,18 +16,18 @@ MethodResponseMsg::MethodResponseMsg(GenericMsg&& k): GenericMethod(std::move(k)
 MethodResponseMsg::MethodResponseMsg(const std::string& method_name, bool execute_fail): GenericMethod(method_name), _result(get_msg_root()) {
     xmlNodePtr root = get_msg_root();
     if (execute_fail) {
-        xmlNewProp(root, reinterpret_cast<xmlChar const *>("execute_status"), reinterpret_cast<xmlChar const *>("FAIL"));
+        xmlNewProp(root, reinterpret_cast<xmlChar const *>("execute-status"), reinterpret_cast<xmlChar const *>("FAIL"));
     }
     else {
-        xmlNewProp(root, reinterpret_cast<xmlChar const *>("execute_status"), reinterpret_cast<xmlChar const *>("OK"));
+        xmlNewProp(root, reinterpret_cast<xmlChar const *>("execute-status"), reinterpret_cast<xmlChar const *>("OK"));
     }
 }
 
 bool MethodResponseMsg::get_execute_status() {
     xmlNodePtr msg = get_msg_root();
     xmlChar *tmp;
-    if ((tmp = xmlGetProp(msg, (const xmlChar *) "execute_status")) == nullptr) {
-        throw GenericMsg::InvalidMsg("missing 'execute_status' property");
+    if ((tmp = xmlGetProp(msg, (const xmlChar *) "execute-status")) == nullptr) {
+        throw GenericMsg::InvalidMsg("missing 'execute-status' property");
     }
     std::string execute_status = {reinterpret_cast<char const *>(tmp)};
     xmlFree(tmp);

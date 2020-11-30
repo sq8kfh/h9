@@ -71,10 +71,11 @@ bool Executor::has_device_specific_method(std::uint16_t dev_id, std::string meth
 DeviceMethodResponseMsg Executor::execute_device_method(TCPClientThread *client, std::uint16_t device_id, std::string method_name, ExecuteDeviceMethodMsg &exedevcmsg) {
     h9_log_debug("Execute device (%hu) method '%s' for %s", device_id, method_name.c_str(), client->get_client_idstring().c_str());
     if (method_name == "set_register") {
-        if (devmgr->set_device_register(device_id, exedevcmsg["register"].get_value_as_int(), exedevcmsg["value"].get_value_as_int()) <= 0) {
+        std::int64_t setted; //setted value
+        if (devmgr->set_device_register(device_id, exedevcmsg["register"].get_value_as_int(), exedevcmsg["value"].get_value_as_int(), &setted) <= 0) {
             return DeviceMethodResponseMsg(device_id, method_name, true).add_value("error_msg", "timeout");
         }
-        return DeviceMethodResponseMsg(device_id, method_name);
+        return DeviceMethodResponseMsg(device_id, method_name).add_value("register", exedevcmsg["register"].get_value_as_int()).add_value("value", setted);
     }
     else if (method_name == "get_register") {
         std::int64_t buf;

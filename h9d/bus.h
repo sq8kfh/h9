@@ -42,7 +42,7 @@ private:
     void recv_thread();
     int send_frame_sync(H9frame frame);
 
-    int send_timeout = 5;
+    int send_timeout = 5; //send timeout TODO: set it configurable
     std::atomic_bool run = {true};
 public:
     Bus();

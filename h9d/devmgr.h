@@ -20,6 +20,7 @@
 #include "dctx.h"
 #include "device.h"
 #include "frameobserver.h"
+#include "sharedmutex.h"
 
 
 class TCPClientThread;
@@ -29,8 +30,8 @@ private:
     Bus* const h9bus;
     void on_frame_recv(H9frame frame) override;
 
-    //std::shared_mutex devices_map_mtx;
-    std::mutex devices_map_mtx;             //TODO: shared_mutex (C++17)
+    SharedMutex devices_map_mtx;
+    //std::mutex devices_map_mtx;             //TODO: shared_mutex (C++17)
 
     std::map<std::uint16_t, Device*> devices_map;
 
@@ -73,7 +74,7 @@ public:
     ssize_t get_device_register(std::uint16_t dev_id, std::uint8_t reg, std::string &buf);
     ssize_t get_device_register(std::uint16_t dev_id, std::uint8_t reg, std::int64_t &buf);
     ssize_t set_device_register(std::uint16_t dev_id, std::uint8_t reg, std::string value);
-    ssize_t set_device_register(std::uint16_t dev_id, std::uint8_t reg, std::int64_t value);
+    ssize_t set_device_register(std::uint16_t dev_id, std::uint8_t reg, std::int64_t value, std::int64_t *setted = nullptr);
 };
 
 

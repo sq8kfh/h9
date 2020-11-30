@@ -61,6 +61,10 @@ Device::Device(Bus* bus, std::uint16_t node_id, std::uint16_t node_type, std::ui
     device_type_name("unknown") {
     h9_log_notice("Create device descriptor: id: %hu type: %hu version: %hhu.%hhu", node_id, node_type, node_version >> 8, node_version);
 
+    if (devicedescloader.get_device_name_by_type(node_type) != "") {
+        device_type_name = devicedescloader.get_device_name_by_type(node_type);
+    }
+
     register_map[1] = {1, "Node type", "uint", 16, true, false, ""};
     register_map[2] = {2, "Node version", "uint", 16, true, false, ""};
     register_map[3] = {3, "Node id", "uint", 9, true, true, ""};
@@ -118,7 +122,17 @@ ssize_t Device::get_register(std::uint8_t reg, std::string &buf) {
 }
 
 ssize_t Device::get_register(std::uint8_t reg, std::int64_t &buf) {
-
+    std::uint8_t tmp[8];
+    ssize_t ret = get_raw_reg(reg, 8, tmp);
+    if (ret > 0) {
+        buf = 0;
+        for (int i = 0; i < ret; ++i) {
+            buf <<= 8;
+            buf |= tmp[i];
+        }
+        return ret;
+    }
+    return -1;
 }
 
 ssize_t Device::set_register(std::uint8_t reg, std::string value) {
@@ -130,19 +144,26 @@ ssize_t Device::set_register(std::uint8_t reg, std::string value) {
     return -1;
 }
 
-ssize_t Device::set_register(std::uint8_t reg, std::int64_t value) {
+ssize_t Device::set_register(std::uint8_t reg, std::int64_t value, std::int64_t *setted) {
     if (register_map.count(reg)) {
+        ssize_t ret = -1;
         ssize_t n = (register_map[reg].size + 7)/8;
         if (n == 1) {
-            set_raw_reg(reg, static_cast<std::uint8_t>(value));
+            std::uint8_t tmp;
+            ret = set_raw_reg(reg, static_cast<std::uint8_t>(value), &tmp);
+            if (setted) *setted = tmp;
         }
         else if (n == 2) {
-            set_raw_reg(reg, static_cast<std::uint16_t>(value));
+            std::uint16_t tmp;
+            ret = set_raw_reg(reg, static_cast<std::uint16_t>(value), &tmp);
+            if (setted) *setted = tmp;
         }
         else if (n > 2) {
-            set_raw_reg(reg, static_cast<std::uint32_t>(value));
+            std::uint32_t tmp;
+            ret = set_raw_reg(reg, static_cast<std::uint32_t>(value), &tmp);
+            if (setted) *setted = tmp;
         }
-        return n;
+        return ret;
     }
     return -1;
 }

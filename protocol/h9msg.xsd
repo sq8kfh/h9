@@ -79,6 +79,14 @@
         </xs:sequence>
 
         <xs:attribute name="method" type="xs:string" use="required"/>
+        <xs:attribute name="execute-status"  use="required">
+            <xs:simpleType>
+                <xs:restriction base="xs:string">
+                    <xs:enumeration value="FAIL"/>
+                    <xs:enumeration value="OK"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
         <xs:attribute name="device-id" use="optional">
             <xs:simpleType>
                 <xs:restriction base="xs:nonNegativeInteger">

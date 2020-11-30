@@ -124,7 +124,7 @@ int Node::set_node_id(std::uint16_t id) {
     return h9bus->send_node_reset(H9frame::Priority::LOW, seqnum, source_id, node_id);
 }
 
-ssize_t Node::set_raw_reg(std::uint8_t reg, std::size_t nbyte, const std::uint8_t *buf) {
+ssize_t Node::set_raw_reg(std::uint8_t reg, std::size_t nbyte, const std::uint8_t *buf, std::uint8_t *setted) {
     H9FrameComparator comparator;
     comparator.set_source_id(node_id);
     comparator.set_type(H9frame::Type::REG_EXTERNALLY_CHANGED);
@@ -139,22 +139,36 @@ ssize_t Node::set_raw_reg(std::uint8_t reg, std::size_t nbyte, const std::uint8_
     if (future.wait_for(std::chrono::seconds(timeout)) != std::future_status::ready) {
         return -1;
     }
+    H9frame res = future.get();
 
-    return future.get().dlc - 1;
+    if (setted) {
+        ssize_t tmp = nbyte < res.dlc - 1 ? nbyte : res.dlc - 1;
+        for (int i = 0; i < tmp; ++i) {
+            setted[i] = res.data[i+1];
+        }
+    }
+
+    return res.dlc - 1;
 }
 
-ssize_t Node::set_raw_reg(std::uint8_t reg, std::uint8_t value) {
-    return set_raw_reg(reg, 1, &value);
+ssize_t Node::set_raw_reg(std::uint8_t reg, std::uint8_t value, std::uint8_t *setted) {
+    return set_raw_reg(reg, 1, &value, setted);
 }
 
-ssize_t Node::set_raw_reg(std::uint8_t reg, std::uint16_t value) {
+ssize_t Node::set_raw_reg(std::uint8_t reg, std::uint16_t value, std::uint16_t *setted) {
     std::uint16_t bigendian_value = htons(value);
-    return set_raw_reg(reg, 2, reinterpret_cast<const std::uint8_t*>(&bigendian_value));
+    std::uint16_t tmp;
+    ssize_t ret = set_raw_reg(reg, 2, reinterpret_cast<const std::uint8_t*>(&bigendian_value), reinterpret_cast<std::uint8_t*>(&tmp));
+    if (setted) *setted = ntohs(tmp);
+    return ret;
 }
 
-ssize_t Node::set_raw_reg(std::uint8_t reg, std::uint32_t value) {
+ssize_t Node::set_raw_reg(std::uint8_t reg, std::uint32_t value, std::uint32_t *setted) {
     std::uint32_t bigendian_value = htonl(value);
-    return set_raw_reg(reg, 4, reinterpret_cast<const std::uint8_t*>(&bigendian_value));
+    std::uint32_t tmp;
+    ssize_t ret = set_raw_reg(reg, 4, reinterpret_cast<const std::uint8_t*>(&bigendian_value), reinterpret_cast<std::uint8_t*>(&tmp));
+    if (setted) *setted = ntohl(tmp);
+    return ret;
 }
 
 ssize_t Node::get_raw_reg(std::uint8_t reg, std::size_t nbyte, std::uint8_t *buf) {

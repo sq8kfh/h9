@@ -21,18 +21,18 @@ DeviceMethodResponseMsg::DeviceMethodResponseMsg(std::uint16_t device_id, const 
     xmlSetProp(root, reinterpret_cast<xmlChar const *>("device-id"), reinterpret_cast<xmlChar const *>(str));
 
     if (execute_fail) {
-        xmlNewProp(root, reinterpret_cast<xmlChar const *>("execute_status"), reinterpret_cast<xmlChar const *>("FAIL"));
+        xmlNewProp(root, reinterpret_cast<xmlChar const *>("execute-status"), reinterpret_cast<xmlChar const *>("FAIL"));
     }
     else {
-        xmlNewProp(root, reinterpret_cast<xmlChar const *>("execute_status"), reinterpret_cast<xmlChar const *>("OK"));
+        xmlNewProp(root, reinterpret_cast<xmlChar const *>("execute-status"), reinterpret_cast<xmlChar const *>("OK"));
     }
 }
 
 bool DeviceMethodResponseMsg::get_execute_status() {
     xmlNodePtr msg = get_msg_root();
     xmlChar *tmp;
-    if ((tmp = xmlGetProp(msg, (const xmlChar *) "execute_status")) == nullptr) {
-        throw GenericMsg::InvalidMsg("missing 'execute_status' property");
+    if ((tmp = xmlGetProp(msg, (const xmlChar *) "execute-status")) == nullptr) {
+        throw GenericMsg::InvalidMsg("missing 'execute-status' property");
     }
     std::string execute_status = {reinterpret_cast<char const *>(tmp)};
     xmlFree(tmp);

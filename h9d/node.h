@@ -30,7 +30,7 @@ private:
     std::future<H9frame> create_frame_future(H9FrameComparator comparator);
 
     std::uint16_t source_id = 1;
-    int timeout = 5;
+    int timeout = 5; //recv response TODO: set it configurable
 protected:
     const std::uint16_t node_id;
 public:
@@ -44,10 +44,10 @@ public:
     int get_node_version(std::uint8_t *major = nullptr, std::uint8_t *minor = nullptr);
     int set_node_id(std::uint16_t id);
 
-    ssize_t set_raw_reg(std::uint8_t reg, std::size_t nbyte, const std::uint8_t *buf);
-    ssize_t set_raw_reg(std::uint8_t reg, std::uint8_t value);
-    ssize_t set_raw_reg(std::uint8_t reg, std::uint16_t value);
-    ssize_t set_raw_reg(std::uint8_t reg, std::uint32_t value);
+    ssize_t set_raw_reg(std::uint8_t reg, std::size_t nbyte, const std::uint8_t *buf, std::uint8_t *setted = nullptr);
+    ssize_t set_raw_reg(std::uint8_t reg, std::uint8_t value, std::uint8_t *setted = nullptr);
+    ssize_t set_raw_reg(std::uint8_t reg, std::uint16_t value, std::uint16_t *setted = nullptr);
+    ssize_t set_raw_reg(std::uint8_t reg, std::uint32_t value, std::uint32_t *setted = nullptr);
     ssize_t get_raw_reg(std::uint8_t reg, std::size_t nbyte, std::uint8_t *buf);
 };
 

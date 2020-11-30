@@ -46,16 +46,16 @@ void DevMgr::devices_update_thread() {
                 frame.type == H9frame::Type::NODE_SPECIFIC_BULK4 || frame.type == H9frame::Type::NODE_SPECIFIC_BULK5 ||
                 frame.type == H9frame::Type::NODE_SPECIFIC_BULK6 || frame.type == H9frame::Type::NODE_SPECIFIC_BULK7) {
 
-            //devices_map_mtx.lock_shared();
-            devices_map_mtx.lock();
+            devices_map_mtx.lock_shared();
+            //devices_map_mtx.lock();
             if (devices_map.count(frame.source_id)) {
                 devices_map[frame.source_id]->update_device_state(frame);
-                //devices_map_mtx.unlock_shared()
-                devices_map_mtx.unlock();
+                devices_map_mtx.unlock_shared();
+                //devices_map_mtx.unlock();
             }
             else {
-                //devices_map_mtx.unlock_shared()
-                devices_map_mtx.unlock();
+                devices_map_mtx.unlock_shared();
+                //devices_map_mtx.unlock();
                 h9_log_warn("Received frame from unknown device (id: %hu)", frame.source_id);
                 auto seqnum = h9bus->get_next_seqnum(1);
                 h9bus->send_node_discover(H9frame::Priority::LOW, seqnum, 1, frame.source_id);
@@ -111,154 +111,154 @@ void DevMgr::discover() {
 }
 
 int DevMgr::active_devices_count() {
-    //devices_map_mtx.lock_shared();
-    devices_map_mtx.lock();
+    devices_map_mtx.lock_shared();
+    //devices_map_mtx.lock();
     int ret = devices_map.size();
-    //devices_map_mtx.unlock_shared()
-    devices_map_mtx.unlock();
+    devices_map_mtx.unlock_shared();
+    //devices_map_mtx.unlock();
     return ret;
 }
 
 bool DevMgr::is_device_exist(std::uint16_t dev_id) {
-    //devices_map_mtx.lock_shared();
-    devices_map_mtx.lock();
+    devices_map_mtx.lock_shared();
+    //devices_map_mtx.lock();
     bool ret = devices_map.count(dev_id);
-    //devices_map_mtx.unlock_shared()
-    devices_map_mtx.unlock();
+    devices_map_mtx.unlock_shared();
+    //devices_map_mtx.unlock();
     return ret;
 }
 
 std::vector<DevMgr::DeviceDsc> DevMgr::get_devices_list() {
-    //devices_map_mtx.lock_shared();
-    devices_map_mtx.lock();
+    devices_map_mtx.lock_shared();
+    //devices_map_mtx.lock();
     std::vector<DevMgr::DeviceDsc> ret;
 
     for (auto it: devices_map) {
         ret.push_back({it.first, it.second->get_device_type(), it.second->get_device_version_major(), it.second->get_device_version_minor(),  it.second->get_device_type_name()});
     }
 
-    //devices_map_mtx.unlock_shared()
-    devices_map_mtx.unlock();
+    devices_map_mtx.unlock_shared();
+    //devices_map_mtx.unlock();
     return std::move(ret);
 }
 
 void DevMgr::attach_event_observer(TCPClientThread *observer, std::string event_name, std::uint16_t dev_id) {
-    //devices_map_mtx.lock_shared();
-    devices_map_mtx.lock();
+    devices_map_mtx.lock_shared();
+    //devices_map_mtx.lock();
     if (devices_map.count(dev_id)) {
         devices_map[dev_id]->attach_event_observer(observer, event_name);
     }
     else {
         h9_log_warn("Can not attach event observer %s:%s, device id: %hu does not exist", observer->get_remote_address().c_str(), observer->get_remote_port().c_str(), dev_id);
     }
-    //devices_map_mtx.unlock_shared()
-    devices_map_mtx.unlock();
+    devices_map_mtx.unlock_shared();
+    //devices_map_mtx.unlock();
 }
 
 void DevMgr::detach_event_observer(TCPClientThread *observer, std::string event_name, std::uint16_t dev_id) {
-    //devices_map_mtx.lock_shared();
-    devices_map_mtx.lock();
+    devices_map_mtx.lock_shared();
+    //devices_map_mtx.lock();
     if (devices_map.count(dev_id)) {
         devices_map[dev_id]->detach_event_observer(observer, event_name);
     }
-    //devices_map_mtx.unlock_shared()
-    devices_map_mtx.unlock();
+    devices_map_mtx.unlock_shared();
+    //devices_map_mtx.unlock();
 }
 
 std::vector<std::string> DevMgr::get_events_list(std::uint16_t dev_id) {
-    //devices_map_mtx.lock_shared();
-    devices_map_mtx.lock();
+    devices_map_mtx.lock_shared();
+    //devices_map_mtx.lock();
     if (devices_map.count(dev_id)) {
         auto ret = devices_map[dev_id]->get_events_list();
-        //devices_map_mtx.unlock_shared()
-        devices_map_mtx.unlock();
+        devices_map_mtx.unlock_shared();
+        //devices_map_mtx.unlock();
         return ret;
     }
-    //devices_map_mtx.unlock_shared()
-    devices_map_mtx.unlock();
+    devices_map_mtx.unlock_shared();
+    //devices_map_mtx.unlock();
     return std::vector<std::string>();
 }
 
 std::vector<std::string> DevMgr::get_device_specific_methods(std::uint16_t dev_id) {
-    //devices_map_mtx.lock_shared();
-    devices_map_mtx.lock();
+    devices_map_mtx.lock_shared();
+    //devices_map_mtx.lock();
     if (devices_map.count(dev_id)) {
         auto ret = devices_map[dev_id]->get_device_specific_methods();
-        //devices_map_mtx.unlock_shared()
-        devices_map_mtx.unlock();
+        devices_map_mtx.unlock_shared();
+        //devices_map_mtx.unlock();
         return ret;
     }
-    //devices_map_mtx.unlock_shared()
-    devices_map_mtx.unlock();
+    devices_map_mtx.unlock_shared();
+    //devices_map_mtx.unlock();
     return std::vector<std::string>();
 }
 
 std::vector<Device::RegisterDsc> DevMgr::get_registers_list(std::uint16_t dev_id) {
-    //devices_map_mtx.lock_shared();
-    devices_map_mtx.lock();
+    devices_map_mtx.lock_shared();
+    //devices_map_mtx.lock();
     if (devices_map.count(dev_id)) {
         auto ret = devices_map[dev_id]->get_registers_list();
-        //devices_map_mtx.unlock_shared()
-        devices_map_mtx.unlock();
+        devices_map_mtx.unlock_shared();
+        //devices_map_mtx.unlock();
         return ret;
     }
-    //devices_map_mtx.unlock_shared()
-    devices_map_mtx.unlock();
+    devices_map_mtx.unlock_shared();
+    //devices_map_mtx.unlock();
     return std::vector<Device::RegisterDsc>();
 }
 
 ssize_t DevMgr::get_device_register(std::uint16_t dev_id, std::uint8_t reg, std::string &buf) {
-    //devices_map_mtx.lock_shared();
-    devices_map_mtx.lock();
+    devices_map_mtx.lock_shared();
+    //devices_map_mtx.lock();
     if (devices_map.count(dev_id)) {
         auto ret = devices_map[dev_id]->get_register(reg, buf);
-        //devices_map_mtx.unlock_shared()
-        devices_map_mtx.unlock();
+        devices_map_mtx.unlock_shared();
+        //devices_map_mtx.unlock();
         return ret;
     }
-    //devices_map_mtx.unlock_shared()
-    devices_map_mtx.unlock();
+    devices_map_mtx.unlock_shared();
+    //devices_map_mtx.unlock();
     return -1;
 }
 
 ssize_t DevMgr::get_device_register(std::uint16_t dev_id, std::uint8_t reg, std::int64_t &buf) {
-    //devices_map_mtx.lock_shared();
-    devices_map_mtx.lock();
+    devices_map_mtx.lock_shared();
+    //devices_map_mtx.lock();
     if (devices_map.count(dev_id)) {
         auto ret = devices_map[dev_id]->get_register(reg, buf);
-        //devices_map_mtx.unlock_shared()
-        devices_map_mtx.unlock();
+        devices_map_mtx.unlock_shared();
+        //devices_map_mtx.unlock();
         return ret;
     }
-    //devices_map_mtx.unlock_shared()
-    devices_map_mtx.unlock();
+    devices_map_mtx.unlock_shared();
+    //devices_map_mtx.unlock();
     return -1;
 }
 
 ssize_t DevMgr::set_device_register(std::uint16_t dev_id, std::uint8_t reg, std::string value) {
-    //devices_map_mtx.lock_shared();
-    devices_map_mtx.lock();
+    devices_map_mtx.lock_shared();
+    //devices_map_mtx.lock();
     if (devices_map.count(dev_id)) {
         auto ret = devices_map[dev_id]->set_register(reg, value);
-        //devices_map_mtx.unlock_shared()
-        devices_map_mtx.unlock();
+        devices_map_mtx.unlock_shared();
+        //devices_map_mtx.unlock();
         return ret;
     }
-    //devices_map_mtx.unlock_shared()
-    devices_map_mtx.unlock();
+    devices_map_mtx.unlock_shared();
+    //devices_map_mtx.unlock();
     return -1;
 }
 
-ssize_t DevMgr::set_device_register(std::uint16_t dev_id, std::uint8_t reg, std::int64_t value) {
-    //devices_map_mtx.lock_shared();
-    devices_map_mtx.lock();
+ssize_t DevMgr::set_device_register(std::uint16_t dev_id, std::uint8_t reg, std::int64_t value, std::int64_t *setted) {
+    devices_map_mtx.lock_shared();
+    //devices_map_mtx.lock();
     if (devices_map.count(dev_id)) {
-        auto ret = devices_map[dev_id]->set_register(reg, value);
-        //devices_map_mtx.unlock_shared()
-        devices_map_mtx.unlock();
+        auto ret = devices_map[dev_id]->set_register(reg, value, setted);
+        devices_map_mtx.unlock_shared();
+        //devices_map_mtx.unlock();
         return ret;
     }
-    //devices_map_mtx.unlock_shared()
-    devices_map_mtx.unlock();
+    devices_map_mtx.unlock_shared();
+    //devices_map_mtx.unlock();
     return -1;
 }

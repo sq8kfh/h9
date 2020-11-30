@@ -41,7 +41,7 @@ private:
     void attach_event_observer(TCPClientThread *observer, std::string event_name);
     void detach_event_observer(TCPClientThread *observer, std::string event_name);
 protected:
-    const std::string device_type_name;
+    std::string device_type_name;
     void notify_event_observer(std::string event_name, GenericMsg msg);
 public:
     Device(Bus* bus, std::uint16_t node_id, std::uint16_t node_type, std::uint16_t node_version) noexcept;
@@ -60,7 +60,7 @@ public:
     ssize_t get_register(std::uint8_t reg, std::string &buf);
     ssize_t get_register(std::uint8_t reg, std::int64_t &buf);
     ssize_t set_register(std::uint8_t reg, std::string value);
-    ssize_t set_register(std::uint8_t reg, std::int64_t value);
+    ssize_t set_register(std::uint8_t reg, std::int64_t value, std::int64_t *setted = nullptr);
 };
 
 
