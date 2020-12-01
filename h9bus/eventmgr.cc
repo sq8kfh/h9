@@ -112,7 +112,7 @@ void EventMgr::execute_method(TcpClient* tcp_client, ExecuteMethodMsg call_msg) 
             if (event == "frame") {
                 tcp_client->subscriber(1);
 
-                MethodResponseMsg res("subscribe", false);
+                MethodResponseMsg res("subscribe");
                 res.set_request_id(call_msg.get_id());
 
                 tcp_client->send(res);
@@ -139,7 +139,7 @@ void EventMgr::execute_method(TcpClient* tcp_client, ExecuteMethodMsg call_msg) 
             if (event == "frame") {
                 tcp_client->subscriber(0);
 
-                MethodResponseMsg res("unsubscribe", false);
+                MethodResponseMsg res("unsubscribe");
                 res.set_request_id(call_msg.get_id());
 
                 tcp_client->send(res);
@@ -169,7 +169,7 @@ void EventMgr::execute_method(TcpClient* tcp_client, ExecuteMethodMsg call_msg) 
 }
 
 MethodResponseMsg EventMgr::get_stat() {
-    MethodResponseMsg res = {"h9bus_stat"};
+    MethodResponseMsg res("h9bus_stat");
     res.add_value("version", H9_VERSION);
     res.add_value("uptime", std::time(nullptr) - _ctx->get_start_time());
     res.add_value("connected_clients_count", _server_mgr->connected_clients_count());

@@ -15,13 +15,19 @@
 
 
 class DeviceMethodResponseMsg: public GenericMethod<GenericMsg::Type::DEVICEMETHODRESPONSE, DeviceMethodResponseMsg> {
+private:
+    Value _result;
 public:
     DeviceMethodResponseMsg(GenericMsg&& k);
-    DeviceMethodResponseMsg(std::uint16_t device_id, const std::string& method_name, bool execute_fail = false);
+    DeviceMethodResponseMsg(std::uint16_t device_id, const std::string& method_name);
+    DeviceMethodResponseMsg(std::uint16_t device_id, const std::string& method_name, unsigned int error_code, const std::string& error_message);
 
-    bool get_execute_status();
+    unsigned int get_error_code();
+    std::string get_error_message();
 
     std::uint16_t get_device_id();
+
+    Value& result();
 };
 
 

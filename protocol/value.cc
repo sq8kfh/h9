@@ -41,7 +41,7 @@ int Value::get_value_as_int() const {
         xmlFree(tmp);
         return ret;
     }
-    throw std::invalid_argument("_node->children-is not a XML_TEXT_NODE");
+    throw std::invalid_argument(get_name());
 }
 
 std::string Value::get_value_as_str() const {
@@ -51,7 +51,7 @@ std::string Value::get_value_as_str() const {
         xmlFree(tmp);
         return std::move(ret);
     }
-    throw std::invalid_argument("_node->children-is not a XML_TEXT_NODE");
+    throw std::invalid_argument(get_name());
 }
 
 //Value Value::add_array(const char* name) {

@@ -16,6 +16,7 @@
 class ErrorMsg: public ConcretizeMsg<GenericMsg::Type::ERROR> {
 public:
     enum class ErrorNumber {
+        GENERIC = 1,
         INVALID_MESSAGE_SCHEMA,
         UNSUPPORTED_MESSAGE_TYPE,
         UNSUPPORTED_METHOD,
@@ -25,9 +26,9 @@ public:
         UNSUPPORTED_EVENT,
     };
     ErrorMsg(GenericMsg&& k);
-    ErrorMsg(ErrorNumber errnum, const std::string& msg = "");
-    ErrorNumber get_errnum();
-    std::string get_msg();
+    ErrorMsg(ErrorNumber code, const std::string& msg);
+    ErrorNumber get_code();
+    std::string get_message();
 
     static const char* errnum_to_string(ErrorNumber errnum);
 };

@@ -73,14 +73,14 @@ DeviceMethodResponseMsg Executor::execute_device_method(TCPClientThread *client,
     if (method_name == "set_register") {
         std::int64_t setted; //setted value
         if (devmgr->set_device_register(device_id, exedevcmsg["register"].get_value_as_int(), exedevcmsg["value"].get_value_as_int(), &setted) <= 0) {
-            return DeviceMethodResponseMsg(device_id, method_name, true).add_value("error_msg", "timeout");
+            return DeviceMethodResponseMsg(device_id, method_name, 102, "Timeout");
         }
         return DeviceMethodResponseMsg(device_id, method_name).add_value("register", exedevcmsg["register"].get_value_as_int()).add_value("value", setted);
     }
     else if (method_name == "get_register") {
         std::int64_t buf;
         if (devmgr->get_device_register(device_id, exedevcmsg["register"].get_value_as_int(), buf) <= 0) {
-            return DeviceMethodResponseMsg(device_id, method_name, true).add_value("error_msg", "timeout");
+            return DeviceMethodResponseMsg(device_id, method_name,  102, "Timeout");
         }
         return DeviceMethodResponseMsg(device_id, method_name).add_value("register", exedevcmsg["register"].get_value_as_int()).add_value("value", buf);
     }

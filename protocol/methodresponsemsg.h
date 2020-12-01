@@ -20,13 +20,13 @@ private:
     Value _result;
 public:
     MethodResponseMsg(GenericMsg&& k);
-    MethodResponseMsg(const std::string& method_name, bool execute_fail = false);
+    explicit MethodResponseMsg(const std::string& method_name);
+    MethodResponseMsg(const std::string& method_name, unsigned int error_code, const std::string& error_message);
 
-    bool get_execute_status();
+    unsigned int get_error_code();
+    std::string get_error_message();
 
     Value& result();
-    int errorno() const;
-    std::string errormsg() const;
 };
 
 

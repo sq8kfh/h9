@@ -6,13 +6,7 @@
                 <xs:element name="identification" type="identification_t"/>
                 <xs:element name="sendframe" type="h9sendframe_t"/>
                 <xs:element name="frame" type="h9frame_t"/>
-                <xs:element name="error">
-                    <xs:complexType>
-                        <xs:attribute name="errnum" type="xs:nonNegativeInteger" use="required"/>
-                        <xs:attribute name="name" type="xs:string"/>
-                        <xs:attribute name="msg" type="xs:string"/>
-                    </xs:complexType>
-                </xs:element>
+                <xs:element name="error" type="error_t"/>
                 <xs:element name="execute" type="executemethod_t"/>
                 <xs:element name="response" type="methodresponse_t"/>
                 <xs:element name="event" type="deviceevent_t"/>
@@ -44,18 +38,40 @@
         </xs:complexType>
     </xs:element>
 
+    <xs:group name="faultresponse">
+        <xs:sequence>
+            <xs:element name="error" type="error_t"/>
+        </xs:sequence>
+    </xs:group>
+
+    <xs:group name="valuegroup">
+        <xs:choice>
+            <xs:element name="value" type="value_t"/>
+            <xs:element name="array" type="array_t"/>
+            <xs:element name="dict" type="array_t"/>
+        </xs:choice>
+    </xs:group>
+
     <xs:complexType name="identification_t">
         <xs:attribute name="entity" type="xs:string" use="required"/>
         <!--<xs:attribute name="user" use="optional"/>-->
     </xs:complexType>
 
+    <xs:complexType name="error_t">
+        <xs:attribute name="code" use="required">
+            <xs:simpleType>
+                <xs:restriction base="xs:nonNegativeInteger">
+                    <xs:minInclusive value="1"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="name" type="xs:string"/>
+        <xs:attribute name="message" type="xs:string" use="required"/>
+    </xs:complexType>
+
     <xs:complexType name="executemethod_t">
         <xs:sequence minOccurs="0" maxOccurs="unbounded">
-            <xs:choice>
-                <xs:element name="value" type="value_t"/>
-                <xs:element name="array" type="array_t"/>
-                <xs:element name="dict" type="array_t"/>
-            </xs:choice>
+            <xs:group ref="valuegroup"/>
         </xs:sequence>
 
         <xs:attribute name="method" type="xs:string" use="required"/>
@@ -70,23 +86,14 @@
     </xs:complexType>
 
     <xs:complexType name="methodresponse_t">
-        <xs:sequence minOccurs="0" maxOccurs="unbounded">
+        <xs:sequence minOccurs="0" maxOccurs="1">
             <xs:choice>
-                <xs:element name="value" type="value_t"/>
-                <xs:element name="array" type="array_t"/>
-                <xs:element name="dict" type="array_t"/>
+                <xs:group ref="valuegroup"/>
+                <xs:group ref="faultresponse"/>
             </xs:choice>
         </xs:sequence>
 
         <xs:attribute name="method" type="xs:string" use="required"/>
-        <xs:attribute name="execute-status"  use="required">
-            <xs:simpleType>
-                <xs:restriction base="xs:string">
-                    <xs:enumeration value="FAIL"/>
-                    <xs:enumeration value="OK"/>
-                </xs:restriction>
-            </xs:simpleType>
-        </xs:attribute>
         <xs:attribute name="device-id" use="optional">
             <xs:simpleType>
                 <xs:restriction base="xs:nonNegativeInteger">
@@ -99,11 +106,7 @@
 
     <xs:complexType name="deviceevent_t">
         <xs:sequence minOccurs="0" maxOccurs="unbounded">
-            <xs:choice>
-                <xs:element name="value" type="value_t"/>
-                <xs:element name="array" type="array_t"/>
-                <xs:element name="dict" type="array_t"/>
-            </xs:choice>
+            <xs:group ref="valuegroup"/>
         </xs:sequence>
 
         <xs:attribute name="event" type="xs:string" use="required"/>

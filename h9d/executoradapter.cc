@@ -157,6 +157,12 @@ GenericMsg ExecutorAdapter::execute_device_method(ExecuteDeviceMethodMsg exedevc
             err_msg.set_request_id(exedevcmsg.get_id());
             return std::move(err_msg);
         }
+        catch (std::invalid_argument &e) {
+            h9_log_warn("Execute device method 'subscribe' with invalid '%s' parameters (from: %s)", e.what(), _client->get_client_idstring().c_str());
+            ErrorMsg err_msg(ErrorMsg::ErrorNumber::INVALID_PARAMETERS, "Invalid parameters");
+            err_msg.set_request_id(exedevcmsg.get_id());
+            return std::move(err_msg);
+        }
     }
     else if (method == "unsubscribe") {
         try {
@@ -174,6 +180,12 @@ GenericMsg ExecutorAdapter::execute_device_method(ExecuteDeviceMethodMsg exedevc
             err_msg.set_request_id(exedevcmsg.get_id());
             return std::move(err_msg);
         }
+        catch (std::invalid_argument &e) {
+            h9_log_warn("Execute device method 'unsubscribe' with invalid '%s' parameters (from: %s)", e.what(), _client->get_client_idstring().c_str());
+            ErrorMsg err_msg(ErrorMsg::ErrorNumber::INVALID_PARAMETERS, "Invalid parameters");
+            err_msg.set_request_id(exedevcmsg.get_id());
+            return std::move(err_msg);
+        }
     }
     else if (executor->has_device_specific_method(dev_id, method)) {
         try {
@@ -183,6 +195,12 @@ GenericMsg ExecutorAdapter::execute_device_method(ExecuteDeviceMethodMsg exedevc
         }
         catch (std::out_of_range &e) {
             h9_log_warn("Execute device method '%s' with missing '%s' parameters (from: %s)", method.c_str(), e.what(), _client->get_client_idstring().c_str());
+            ErrorMsg err_msg(ErrorMsg::ErrorNumber::INVALID_PARAMETERS, "Missing parameters");
+            err_msg.set_request_id(exedevcmsg.get_id());
+            return std::move(err_msg);
+        }
+        catch (std::invalid_argument &e) {
+            h9_log_warn("Execute device method '%s' with invalid '%s' parameters (from: %s)", method.c_str(), e.what(), _client->get_client_idstring().c_str());
             ErrorMsg err_msg(ErrorMsg::ErrorNumber::INVALID_PARAMETERS, "Invalid parameters");
             err_msg.set_request_id(exedevcmsg.get_id());
             return std::move(err_msg);
