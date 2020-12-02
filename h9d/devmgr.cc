@@ -38,24 +38,23 @@ void DevMgr::devices_update_thread() {
             h9_log_notice("Dev turned on id: %d, type: %d, version: %d.%d", frame.source_id, frame.data[0] << 8 | frame.data[1], frame.data[2], frame.data[3]);
             add_device(frame.source_id, frame.data[0] << 8 | frame.data[1], frame.data[2] << 8 | frame.data[3]);
         }
-        else if(frame.type == H9frame::Type::REG_EXTERNALLY_CHANGED || frame.type == H9frame::Type::REG_INTERNALLY_CHANGED ||
+        //else if(frame.type >= H9frame::Type::SET_REG) { //SKIP BOOTLOADER FRAME
+        else if(frame.type >= H9frame::Type::REG_EXTERNALLY_CHANGED) {
+        /*else if(frame.type == H9frame::Type::REG_EXTERNALLY_CHANGED || frame.type == H9frame::Type::REG_INTERNALLY_CHANGED ||
                 frame.type == H9frame::Type::REG_VALUE_BROADCAST || frame.type == H9frame::Type::REG_VALUE ||
                 frame.type == H9frame::Type::ERROR || frame.type == H9frame::Type::NODE_HEARTBEAT ||
                 frame.type == H9frame::Type::NODE_SPECIFIC_BULK0 || frame.type == H9frame::Type::NODE_SPECIFIC_BULK1 ||
                 frame.type == H9frame::Type::NODE_SPECIFIC_BULK2 || frame.type == H9frame::Type::NODE_SPECIFIC_BULK3 ||
                 frame.type == H9frame::Type::NODE_SPECIFIC_BULK4 || frame.type == H9frame::Type::NODE_SPECIFIC_BULK5 ||
-                frame.type == H9frame::Type::NODE_SPECIFIC_BULK6 || frame.type == H9frame::Type::NODE_SPECIFIC_BULK7) {
+                frame.type == H9frame::Type::NODE_SPECIFIC_BULK6 || frame.type == H9frame::Type::NODE_SPECIFIC_BULK7) {*/
 
             devices_map_mtx.lock_shared();
-            //devices_map_mtx.lock();
             if (devices_map.count(frame.source_id)) {
                 devices_map[frame.source_id]->update_device_state(frame);
                 devices_map_mtx.unlock_shared();
-                //devices_map_mtx.unlock();
             }
             else {
                 devices_map_mtx.unlock_shared();
-                //devices_map_mtx.unlock();
                 h9_log_warn("Received frame from unknown device (id: %hu)", frame.source_id);
                 auto seqnum = h9bus->get_next_seqnum(1);
                 h9bus->send_node_discover(H9frame::Priority::LOW, seqnum, 1, frame.source_id);
@@ -67,13 +66,16 @@ void DevMgr::devices_update_thread() {
 void DevMgr::add_device(std::uint16_t node_id, std::uint16_t node_type, std::uint16_t node_version) {
     devices_map_mtx.lock();
     if (devices_map.count(node_id)) {
-        if (devices_map[node_id]->get_node_type() != node_type || devices_map[node_id]->get_node_version() != node_version) {
+        if (devices_map[node_id]->get_device_type() != node_type || devices_map[node_id]->get_device_version() != node_version) {
             h9_log_warn("Node %hu (type: %hu, version: %hhu.%hhu) exist, override by node type: %hu version: %hhu.%hhu",
-                    node_id, devices_map[node_id]->get_node_type(),
-                    devices_map[node_id]->get_node_version() >> 8, devices_map[node_id]->get_node_version(),
+                    node_id, devices_map[node_id]->get_device_type(),
+                    devices_map[node_id]->get_device_version_major(), devices_map[node_id]->get_device_version_minor(),
                     node_type, node_version >> 8, node_version);
             delete devices_map[node_id];
             devices_map[node_id] = new Device(h9bus, node_id, node_type, node_version);
+        }
+        else {
+            devices_map[node_id]->update_device_last_seen_time();
         }
     }
     else {
@@ -105,9 +107,10 @@ void DevMgr::load_config(DCtx *ctx) {
     Device::devicedescloader.load_file(ctx->get_devices_description_filename());
 }
 
-void DevMgr::discover() {
+int DevMgr::discover() {
     auto seqnum = h9bus->get_next_seqnum(1);
     h9bus->send_node_discover(H9frame::Priority::LOW, seqnum, 1);
+    return 0;
 }
 
 int DevMgr::active_devices_count() {
@@ -134,7 +137,7 @@ std::vector<DevMgr::DeviceDsc> DevMgr::get_devices_list() {
     std::vector<DevMgr::DeviceDsc> ret;
 
     for (auto it: devices_map) {
-        ret.push_back({it.first, it.second->get_device_type(), it.second->get_device_version_major(), it.second->get_device_version_minor(),  it.second->get_device_type_name()});
+        ret.push_back({it.first, it.second->get_device_type(), it.second->get_device_version_major(), it.second->get_device_version_minor(),  it.second->get_device_name()});
     }
 
     devices_map_mtx.unlock_shared();
@@ -142,7 +145,7 @@ std::vector<DevMgr::DeviceDsc> DevMgr::get_devices_list() {
     return std::move(ret);
 }
 
-void DevMgr::attach_event_observer(TCPClientThread *observer, std::string event_name, std::uint16_t dev_id) {
+int DevMgr::attach_event_observer(TCPClientThread *observer, std::string event_name, std::uint16_t dev_id) {
     devices_map_mtx.lock_shared();
     //devices_map_mtx.lock();
     if (devices_map.count(dev_id)) {
@@ -153,9 +156,10 @@ void DevMgr::attach_event_observer(TCPClientThread *observer, std::string event_
     }
     devices_map_mtx.unlock_shared();
     //devices_map_mtx.unlock();
+    return 0;
 }
 
-void DevMgr::detach_event_observer(TCPClientThread *observer, std::string event_name, std::uint16_t dev_id) {
+int DevMgr::detach_event_observer(TCPClientThread *observer, std::string event_name, std::uint16_t dev_id) {
     devices_map_mtx.lock_shared();
     //devices_map_mtx.lock();
     if (devices_map.count(dev_id)) {
@@ -163,6 +167,7 @@ void DevMgr::detach_event_observer(TCPClientThread *observer, std::string event_
     }
     devices_map_mtx.unlock_shared();
     //devices_map_mtx.unlock();
+    return 0;
 }
 
 std::vector<std::string> DevMgr::get_events_list(std::uint16_t dev_id) {
@@ -260,5 +265,37 @@ ssize_t DevMgr::set_device_register(std::uint16_t dev_id, std::uint8_t reg, std:
     }
     devices_map_mtx.unlock_shared();
     //devices_map_mtx.unlock();
+    return -1;
+}
+
+int DevMgr::get_device_info(std::uint16_t dev_id, DevMgr::DeviceInfo &device_info) {
+    devices_map_mtx.lock_shared();
+    if (devices_map.count(dev_id)) {
+        int ret = 0;
+        auto dev = devices_map[dev_id];
+        device_info.id = dev_id;
+        device_info.type = dev->get_device_type();
+        device_info.name = dev->get_device_name();
+        device_info.version_major = dev->get_device_version_major();
+        device_info.version_minor = dev->get_device_version_minor();
+        device_info.created_time = dev->get_device_created_time();
+        device_info.last_seen_time = dev->get_device_last_seen_time();
+        device_info.description = dev->get_device_description();
+
+        devices_map_mtx.unlock_shared();
+        return ret;
+    }
+    devices_map_mtx.unlock_shared();
+    return -1;
+}
+
+int DevMgr::device_reset(std::uint16_t dev_id) {
+    devices_map_mtx.lock_shared();
+    if (devices_map.count(dev_id)) {
+        auto ret = devices_map[dev_id]->reset();
+        devices_map_mtx.unlock_shared();
+        return ret;
+    }
+    devices_map_mtx.unlock_shared();
     return -1;
 }

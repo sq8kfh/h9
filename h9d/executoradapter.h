@@ -29,8 +29,8 @@ private:
     TCPClientThread *_client;
 
     std::list<std::tuple<std::uint16_t, std::string>> attach_device_event_observer_memento;
-    int attach_device_event_observer(std::uint16_t dev_id, std::string event_name);
-    int detach_device_event_observer(std::uint16_t dev_id, std::string event_name);
+    DeviceMethodResponseMsg attach_device_event_observer(std::uint16_t dev_id, std::string event_name);
+    DeviceMethodResponseMsg detach_device_event_observer(std::uint16_t dev_id, std::string event_name);
 public:
     ExecutorAdapter(Executor *executor, TCPServer *tcpserver) noexcept;
     void set_client(TCPClientThread *client);

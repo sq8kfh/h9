@@ -119,16 +119,20 @@ void EventMgr::execute_method(TcpClient* tcp_client, ExecuteMethodMsg call_msg) 
             }
             else {
                 h9_log_warn("Execute method 'subscribe' with unsupported event: %s (from %s)", event.c_str(), tcp_client->get_client_idstring().c_str());
-                //TODO: return MethodResponseMsg with error
-                //MethodResponseMsg res("subscribe", true);
-                ErrorMsg err_msg(ErrorMsg::ErrorNumber::UNSUPPORTED_EVENT, "Unsupported event: " + event);
-                err_msg.set_request_id(call_msg.get_id());
-                tcp_client->send(err_msg);
+                MethodResponseMsg res("subscribe", 103, "Unsupported event: " + event);
+                res.set_request_id(call_msg.get_id());
+                tcp_client->send(res);
             }
         }
         catch (std::out_of_range &e) {
-            h9_log_warn("Execute method 'subscribe' with missing 'event' attribute (from: %s)", tcp_client->get_client_idstring().c_str());
+            h9_log_warn("Execute method 'subscribe' with missing '%s' attribute (from: %s)", e.what(), tcp_client->get_client_idstring().c_str());
             ErrorMsg err_msg(ErrorMsg::ErrorNumber::INVALID_PARAMETERS, "Missing 'event' attribute");
+            err_msg.set_request_id(call_msg.get_id());
+            tcp_client->send(err_msg);
+        }
+        catch (std::invalid_argument &e) {
+            h9_log_warn("Execute method 'subscribe' with invalid '%s' parameters (from: %s)", e.what(), tcp_client->get_client_idstring().c_str());
+            ErrorMsg err_msg(ErrorMsg::ErrorNumber::INVALID_PARAMETERS, "Invalid parameters");
             err_msg.set_request_id(call_msg.get_id());
             tcp_client->send(err_msg);
         }
@@ -146,16 +150,20 @@ void EventMgr::execute_method(TcpClient* tcp_client, ExecuteMethodMsg call_msg) 
             }
             else {
                 h9_log_warn("Execute method 'unsubscribe' with unsupported event: %s (from %s)", event.c_str(), tcp_client->get_client_idstring().c_str());
-                //TODO: return MethodResponseMsg with error
-                //MethodResponseMsg res("unsubscribe", true);
-                ErrorMsg err_msg(ErrorMsg::ErrorNumber::UNSUPPORTED_EVENT, "Unsupported event: " + event);
-                err_msg.set_request_id(call_msg.get_id());
-                tcp_client->send(err_msg);
+                MethodResponseMsg res("subscribe", 103, "Unsupported event: " + event);
+                res.set_request_id(call_msg.get_id());
+                tcp_client->send(res);
             }
         }
         catch (std::out_of_range &e) {
-            h9_log_warn("Execute method 'unsubscribe' with missing 'event' attribute (from: %s)", tcp_client->get_client_idstring().c_str());
+            h9_log_warn("Execute method 'unsubscribe' with missing '%s' attribute (from: %s)", e.what(), tcp_client->get_client_idstring().c_str());
             ErrorMsg err_msg(ErrorMsg::ErrorNumber::INVALID_PARAMETERS, "Missing 'event' attribute");
+            err_msg.set_request_id(call_msg.get_id());
+            tcp_client->send(err_msg);
+        }
+        catch (std::invalid_argument &e) {
+            h9_log_warn("Execute method 'unsubscribe' with invalid '%s' parameters (from: %s)", e.what(), tcp_client->get_client_idstring().c_str());
+            ErrorMsg err_msg(ErrorMsg::ErrorNumber::INVALID_PARAMETERS, "Invalid parameters");
             err_msg.set_request_id(call_msg.get_id());
             tcp_client->send(err_msg);
         }

@@ -45,26 +45,31 @@ private:
 
     void add_device(std::uint16_t node_id, std::uint16_t node_type, std::uint16_t node_version);
 public:
-    typedef struct {
+    struct DeviceDsc {
         std::uint16_t id;
         std::uint16_t type;
         std::uint8_t version_major;
         std::uint8_t version_minor;
-        std::string type_name;
-    } DeviceDsc;
+        std::string name;
+    };
+    struct DeviceInfo: public DeviceDsc {
+        std::time_t created_time;
+        std::time_t last_seen_time;
+        std::string description;
+    };
 
     explicit DevMgr(Bus *bus);
     DevMgr(const DevMgr &a) = delete;
     ~DevMgr();
     void load_config(DCtx *ctx);
-    void discover();
+    int discover();
 
     int active_devices_count();
     bool is_device_exist(std::uint16_t dev_id);
     std::vector<DevMgr::DeviceDsc> get_devices_list();
 
-    void attach_event_observer(TCPClientThread *observer, std::string event_name, std::uint16_t dev_id);
-    void detach_event_observer(TCPClientThread *observer, std::string event_name, std::uint16_t dev_id);
+    int attach_event_observer(TCPClientThread *observer, std::string event_name, std::uint16_t dev_id);
+    int detach_event_observer(TCPClientThread *observer, std::string event_name, std::uint16_t dev_id);
     std::vector<std::string> get_events_list(std::uint16_t dev_id);
 
     std::vector<std::string> get_device_specific_methods(std::uint16_t dev_id);
@@ -75,6 +80,9 @@ public:
     ssize_t get_device_register(std::uint16_t dev_id, std::uint8_t reg, std::int64_t &buf);
     ssize_t set_device_register(std::uint16_t dev_id, std::uint8_t reg, std::string value);
     ssize_t set_device_register(std::uint16_t dev_id, std::uint8_t reg, std::int64_t value, std::int64_t *setted = nullptr);
+
+    int get_device_info(std::uint16_t dev_id, DeviceInfo &device_info);
+    int device_reset(std::uint16_t dev_id);
 };
 
 

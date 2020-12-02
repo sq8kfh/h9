@@ -7,6 +7,7 @@
  */
 
 #include "device.h"
+#include <cassert>
 #include "common/logger.h"
 #include "protocol/deviceevent.h"
 #include "tcpclientthread.h"
@@ -15,7 +16,10 @@
 DeviceDescLoader Device::devicedescloader;
 
 void Device::update_device_state(H9frame frame) {
-    if (frame.type == H9frame::Type::REG_EXTERNALLY_CHANGED && frame.source_id == 32 && frame.data[0] == 10) {
+    update_device_last_seen_time();
+
+    if (frame.type == H9frame::Type::REG_EXTERNALLY_CHANGED || frame.type == H9frame::Type::REG_INTERNALLY_CHANGED ||
+        frame.type == H9frame::Type::REG_VALUE_BROADCAST) { // && frame.source_id == 32 && frame.data[0] == 10) {
         DeviceEvent event_msg(node_id, "register_change");
 
         event_msg.add_value("register_id", frame.data[0]);
@@ -29,6 +33,10 @@ void Device::update_device_state(H9frame frame) {
 
         notify_event_observer("register_change", std::move(event_msg));
     }
+}
+
+void Device::update_device_last_seen_time() {
+    last_seen_time = std::time(nullptr);
 }
 
 void Device::attach_event_observer(TCPClientThread *observer, std::string event_name) {
@@ -58,11 +66,16 @@ Device::Device(Bus* bus, std::uint16_t node_id, std::uint16_t node_type, std::ui
     Node(bus, node_id),
     device_type(node_type),
     device_version(node_version),
-    device_type_name("unknown") {
+    device_name("unknown"),
+    device_description(""),
+    created_time(std::time(nullptr)) {
     h9_log_notice("Create device descriptor: id: %hu type: %hu version: %hhu.%hhu", node_id, node_type, node_version >> 8, node_version);
 
+    last_seen_time = created_time;
+
     if (devicedescloader.get_device_name_by_type(node_type) != "") {
-        device_type_name = devicedescloader.get_device_name_by_type(node_type);
+        device_name = devicedescloader.get_device_name_by_type(node_type);
+        device_description = devicedescloader.get_device_description_by_type(node_type);
     }
 
     register_map[1] = {1, "Node type", "uint", 16, true, false, ""};
@@ -113,12 +126,24 @@ std::uint8_t Device::get_device_version_minor() noexcept {
     return device_version;
 }
 
-std::string Device::get_device_type_name() noexcept {
-    return device_type_name;
+std::string Device::get_device_name() noexcept {
+    return device_name;
+}
+
+std::time_t Device::get_device_created_time() noexcept {
+    return created_time;
+}
+
+std::time_t Device::get_device_last_seen_time() noexcept {
+    return last_seen_time;
+}
+
+std::string Device::get_device_description() noexcept {
+    return device_description;
 }
 
 ssize_t Device::get_register(std::uint8_t reg, std::string &buf) {
-
+    assert(false);
 }
 
 ssize_t Device::get_register(std::uint8_t reg, std::int64_t &buf) {

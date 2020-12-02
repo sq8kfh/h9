@@ -29,6 +29,7 @@ public:
 
     struct DeviceDesc {
         std::string name;
+        std::string description;
         std::map<std::uint16_t, RegisterDesc> registers;
     };
 
@@ -41,6 +42,7 @@ public:
     void load_file(std::string devices_desc_file);
 
     std::string get_device_name_by_type(std::uint16_t type);
+    std::string get_device_description_by_type(std::uint16_t type);
     std::map<std::uint16_t, RegisterDesc> get_device_register_by_type(std::uint16_t type);
 };
 

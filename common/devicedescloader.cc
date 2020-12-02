@@ -37,6 +37,7 @@ void DeviceDescLoader::load_file(std::string devices_desc_file) {
 
     cfg_opt_t cfg_device_sec[] = {
             CFG_STR("name", nullptr, CFGF_NONE),
+            CFG_STR("description", "", CFGF_NONE),
             CFG_SEC("register", cfg_register_sec, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
             CFG_END()
     };
@@ -67,6 +68,7 @@ void DeviceDescLoader::load_file(std::string devices_desc_file) {
 
         auto &desc = devices[device_type];
         desc.name = std::string(cfg_getstr(device, "name"));
+        desc.description = std::string(cfg_getstr(device, "description"));
 
         int rn = cfg_size(device, "register");
         for (int ri = 0; ri < rn; ++ri) {
@@ -90,6 +92,13 @@ void DeviceDescLoader::load_file(std::string devices_desc_file) {
 std::string DeviceDescLoader::get_device_name_by_type(std::uint16_t type) {
     if (devices.count(type)) {
         return devices[type].name;
+    }
+    return "";
+}
+
+std::string DeviceDescLoader::get_device_description_by_type(std::uint16_t type) {
+    if (devices.count(type)) {
+        return devices[type].description;
     }
     return "";
 }
