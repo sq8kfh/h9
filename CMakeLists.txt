@@ -16,6 +16,18 @@ pkg_check_modules(CONFUSE libconfuse REQUIRED)
 pkg_check_modules(LIBXML2 libxml-2.0 REQUIRED)
 pkg_check_modules(READLINE readline>=8.0)
 
+if(NOT READLINE) 
+    message(STATUS "Checking for module 'readline>=7.0'")
+    include(cmake/FindReadline.cmake)
+    if(Readline_VERSION VERSION_GREATER_EQUAL "7.0") 
+	message(STATUS "  Found readline ${Readline_VERSION}")
+    else()
+	message(FATAL_ERROR "  No package 'readline' foun")
+    endif()
+    set(READLINE_LIBRARIES ${Readline_LIBRARIES})
+    set(READLINE_INCLUDE_DIRS ${Readline_INCLUDE_DIRS})
+endif()
+
 find_program(XXD_EXECUTABLE xxd)
 
 configure_file(config.h.in config.h)
