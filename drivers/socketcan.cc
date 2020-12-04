@@ -32,7 +32,7 @@ void SocketCAN::open() {
 
     strcpy(ifr.ifr_name, _interface.c_str());
     if (ioctl(sockfd, SIOCGIFINDEX, &ifr) < 0) {
-        throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
+        throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__) + " '" + _interface + "'");
     }
 
     addr.can_family = PF_CAN;

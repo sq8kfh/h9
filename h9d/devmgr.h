@@ -20,7 +20,9 @@
 #include "dctx.h"
 #include "device.h"
 #include "frameobserver.h"
+#if (defined(__APPLE__) && defined(__MACH__))
 #include "sharedmutex.h"
+#endif
 
 
 class TCPClientThread;
@@ -30,8 +32,11 @@ private:
     Bus* const h9bus;
     void on_frame_recv(H9frame frame) override;
 
+#if (defined(__APPLE__) && defined(__MACH__))
     SharedMutex devices_map_mtx;
-    //std::mutex devices_map_mtx;             //TODO: shared_mutex (C++17)
+#else
+    std::mutex devices_map_mtx;
+#endif
 
     std::map<std::uint16_t, Device*> devices_map;
 
