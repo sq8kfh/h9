@@ -18,7 +18,7 @@
 #include "protocol/executemethodmsg.h"
 #include "protocol/genericmsg.h"
 #include "protocol/h9msgsocket.h"
-#if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
+#if defined(__APPLE__) && defined(__MACH__)
 #include "kqueue.h"
 #elif defined(__linux__)
 #include "epoll.h"
@@ -30,7 +30,7 @@ private:
     H9MsgSocket h9socket;
     ExecutorAdapter execadapter;
 
-#if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
+#if (defined(__unix__) && defined(BSD)) || (defined(__APPLE__) && defined(__MACH__))
     KQueue event;
 #elif defined(__linux__)
     Epoll event;

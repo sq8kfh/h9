@@ -17,8 +17,8 @@ class Epoll {
 private:
     constexpr static int event_number = 2;
     int epoll;
-    struct epoll_event tevent[MAX_EVENTS];
-    int eventfd;
+    struct epoll_event tevent[event_number];
+    int event_fd;
 public:
     Epoll();
     ~Epoll();

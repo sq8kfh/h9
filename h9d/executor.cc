@@ -7,6 +7,7 @@
  */
 
 #include "executor.h"
+#include <algorithm>
 #include <cassert>
 #include "node.h"
 #include "tcpclientthread.h"

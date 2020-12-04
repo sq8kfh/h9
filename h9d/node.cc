@@ -7,6 +7,7 @@
  */
 
 #include "node.h"
+#include <arpa/inet.h>
 #include "common/logger.h"
 #include "bus.h"
 

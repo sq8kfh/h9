@@ -8,6 +8,7 @@
 
 #include "config.h"
 #include <cstdlib>
+#include <cstring>
 #include <thread>
 #include <unistd.h>
 #include "common/logger.h"

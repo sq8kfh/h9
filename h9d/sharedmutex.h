@@ -12,6 +12,8 @@
 #include "config.h"
 #include <atomic>
 #include <mutex>
+#include <condition_variable>
+
 
 class SharedMutex {
 private:

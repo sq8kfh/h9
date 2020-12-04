@@ -12,11 +12,13 @@
 #include "config.h"
 #include <mutex>
 #include <list>
+#include <sys/socket.h>
+#include <netinet/in.h>
 #include "common/logger.h"
 #include "dctx.h"
 #include "executoradapter.h"
 #include "tcpclientthread.h"
-#if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
+#if (defined(__APPLE__) && defined(__MACH__))
 #include "kqueue.h"
 #elif defined(__linux__)
 #include "epoll.h"
@@ -28,7 +30,7 @@ private:
     std::uint16_t server_port;
     int sockfd;
 
-#if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
+#if (defined(__unix__) && defined(BSD)) || (defined(__APPLE__) && defined(__MACH__))
     KQueue event;
 #elif defined(__linux__)
     Epoll event;

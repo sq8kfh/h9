@@ -35,7 +35,7 @@ private:
 #if (defined(__APPLE__) && defined(__MACH__))
     SharedMutex devices_map_mtx;
 #else
-    std::mutex devices_map_mtx;
+    std::shared_mutex devices_map_mtx;
 #endif
 
     std::map<std::uint16_t, Device*> devices_map;

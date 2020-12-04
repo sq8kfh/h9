@@ -7,6 +7,7 @@
  */
 
 #include "tcpserver.h"
+#include <cstring>
 #include <string>
 #include <unistd.h>
 #include <sys/types.h>
