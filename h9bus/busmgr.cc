@@ -80,34 +80,38 @@ void BusMgr::load_config(BusCtx *ctx) {
         Driver::TRecvFrameCallback recv_frame_callback = std::bind(&BusMgr::on_recv_frame, this, std::placeholders::_1, std::placeholders::_2);
         Driver::TSendFrameCallback send_frame_callback = std::bind(&BusMgr::on_send_frame, this, std::placeholders::_1, std::placeholders::_2);
 
-        if (driver == "dummy") {
-            Dummy *dummy = new Dummy(endpoint_name, recv_frame_callback, send_frame_callback);
-            dev[endpoint_name] = dummy;
-            dummy->open();
-            _socket_mgr->register_socket(dummy);
-        }
-        else if (driver == "loop") {
-            Loop *loop = new Loop(endpoint_name, recv_frame_callback, send_frame_callback);
-            dev[endpoint_name] = loop;
-            loop->open();
-            _socket_mgr->register_socket(loop);
-        }
-        else if (driver == "slcan") {
-            Slcan *slcan = new Slcan(endpoint_name, recv_frame_callback, send_frame_callback, cs);
-            dev[endpoint_name] = slcan;
-            slcan->open();
-            _socket_mgr->register_socket(slcan);
-        }
+        try {
+            if (driver == "dummy") {
+                Dummy *dummy = new Dummy(endpoint_name, recv_frame_callback, send_frame_callback);
+                dev[endpoint_name] = dummy;
+                dummy->open();
+                _socket_mgr->register_socket(dummy);
+            } else if (driver == "loop") {
+                Loop *loop = new Loop(endpoint_name, recv_frame_callback, send_frame_callback);
+                dev[endpoint_name] = loop;
+                loop->open();
+                _socket_mgr->register_socket(loop);
+            } else if (driver == "slcan") {
+                Slcan *slcan = new Slcan(endpoint_name, recv_frame_callback, send_frame_callback, cs);
+                dev[endpoint_name] = slcan;
+                slcan->open();
+                _socket_mgr->register_socket(slcan);
+            }
 #if defined(__linux__)
-        else if (driver == "socketcan") {
-            SocketCAN *socketcan = new SocketCAN(endpoint_name, recv_frame_callback, send_frame_callback, cs);
-            dev[endpoint_name] = socketcan;
-            socketcan->open();
-            _socket_mgr->register_socket(socketcan);
-        }
+                else if (driver == "socketcan") {
+                    SocketCAN *socketcan = new SocketCAN(endpoint_name, recv_frame_callback, send_frame_callback, cs);
+                    dev[endpoint_name] = socketcan;
+                    socketcan->open();
+                    _socket_mgr->register_socket(socketcan);
+                }
 #endif
-        else {
-            h9_log_crit("Unsupported bus(%s) driver: %s", endpoint_name.c_str(), driver.c_str());
+            else {
+                h9_log_crit("Unsupported bus(%s) driver: %s", endpoint_name.c_str(), driver.c_str());
+                exit(EXIT_FAILURE);
+            }
+        }
+        catch (std::system_error &e) {
+            h9_log_crit("Can not init bus driver %s '%s': %s", driver.c_str(), cs.c_str(), e.code().message().c_str());
             exit(EXIT_FAILURE);
         }
     }

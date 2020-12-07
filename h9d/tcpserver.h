@@ -18,7 +18,7 @@
 #include "dctx.h"
 #include "executoradapter.h"
 #include "tcpclientthread.h"
-#if (defined(__APPLE__) && defined(__MACH__))
+#if (defined(__unix__) && defined(BSD)) || (defined(__APPLE__) && defined(__MACH__))
 #include "kqueue.h"
 #elif defined(__linux__)
 #include "epoll.h"

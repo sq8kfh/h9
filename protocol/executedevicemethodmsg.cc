@@ -29,7 +29,7 @@ std::uint16_t ExecuteDeviceMethodMsg::get_device_id() {
     if ((tmp = xmlGetProp(root, (const xmlChar *) "device-id")) == nullptr) {
         throw GenericMsg::InvalidMsg("missing 'device-id' property");
     }
-    std::uint16_t ret = (uint8_t)strtol((char *)tmp, (char **)nullptr, 10);
+    std::uint16_t ret = (uint16_t)strtol((char *)tmp, (char **)nullptr, 10);
     xmlFree(tmp);
     return ret;
 }
