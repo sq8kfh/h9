@@ -26,29 +26,31 @@ private:
     std::mutex frame_promise_list_mtx;
     std::list<std::tuple<H9FrameComparator, std::promise<H9frame>, std::chrono::time_point<std::chrono::steady_clock>>> frame_promise_list;
 
-    void on_frame_recv(H9frame frame) final;
-    std::future<H9frame> create_frame_future(H9FrameComparator comparator);
+    void on_frame_recv(H9frame frame) noexcept final;
+    std::future<H9frame> create_frame_future(H9FrameComparator comparator) noexcept;
 
     std::uint16_t source_id = 1;
-    int timeout = 5; //recv response TODO: set it configurable
+
+    friend void Bus::load_config(DCtx *ctx);
+    static int recv_timeout;
 protected:
     const std::uint16_t node_id;
 public:
-    Node(Bus* bus, std::uint16_t node_id);
-    ~Node();
+    Node(Bus* bus, std::uint16_t node_id) noexcept;
+    ~Node() noexcept;
 
     std::uint16_t get_node_id() noexcept;
 
-    int reset();
-    int get_node_type();
-    int get_node_version(std::uint8_t *major = nullptr, std::uint8_t *minor = nullptr);
-    int set_node_id(std::uint16_t id);
+    int reset() noexcept;
+    int get_node_type() noexcept;
+    int get_node_version(std::uint8_t *major = nullptr, std::uint8_t *minor = nullptr) noexcept;
+    int set_node_id(std::uint16_t id) noexcept;
 
-    ssize_t set_raw_reg(std::uint8_t reg, std::size_t nbyte, const std::uint8_t *buf, std::uint8_t *setted = nullptr);
-    ssize_t set_raw_reg(std::uint8_t reg, std::uint8_t value, std::uint8_t *setted = nullptr);
-    ssize_t set_raw_reg(std::uint8_t reg, std::uint16_t value, std::uint16_t *setted = nullptr);
-    ssize_t set_raw_reg(std::uint8_t reg, std::uint32_t value, std::uint32_t *setted = nullptr);
-    ssize_t get_raw_reg(std::uint8_t reg, std::size_t nbyte, std::uint8_t *buf);
+    ssize_t set_raw_reg(std::uint8_t reg, std::size_t nbyte, const std::uint8_t *buf, std::uint8_t *setted = nullptr) noexcept;
+    ssize_t set_raw_reg(std::uint8_t reg, std::uint8_t value, std::uint8_t *setted = nullptr) noexcept;
+    ssize_t set_raw_reg(std::uint8_t reg, std::uint16_t value, std::uint16_t *setted = nullptr) noexcept;
+    ssize_t set_raw_reg(std::uint8_t reg, std::uint32_t value, std::uint32_t *setted = nullptr) noexcept;
+    ssize_t get_raw_reg(std::uint8_t reg, std::size_t nbyte, std::uint8_t *buf) noexcept;
 };
 
 

@@ -16,6 +16,8 @@
 #include <vector>
 #include "node.h"
 #include "common/devicedescloader.h"
+#include "common/h9tuple.h"
+#include "common/h9value.h"
 #include "protocol/genericmsg.h"
 
 
@@ -37,24 +39,25 @@ private:
     std::map<std::uint8_t, RegisterDsc> register_map;
 
     friend class DevMgr;
-    void update_device_state(H9frame frame);
-    void update_device_last_seen_time();
+    void update_device_state(H9frame frame) noexcept;
+    void update_device_last_seen_time() noexcept;
 
     std::mutex event_name_mtx;
     std::map<std::string, std::set<TCPClientThread *>> event_observers;
-    void attach_event_observer(TCPClientThread *observer, std::string event_name);
-    void detach_event_observer(TCPClientThread *observer, std::string event_name);
+    void attach_event_observer(TCPClientThread *observer, const std::string& event_name) noexcept;
+    void detach_event_observer(TCPClientThread *observer, const std::string& event_name) noexcept;
 protected:
     std::string device_name;
     std::string device_description;
 
-    void notify_event_observer(std::string event_name, GenericMsg msg);
+    void notify_event_observer(std::string event_name, GenericMsg msg) noexcept;
 public:
     Device(Bus* bus, std::uint16_t node_id, std::uint16_t node_type, std::uint16_t node_version) noexcept;
 
-    std::vector<std::string> get_events_list();
-    std::vector<RegisterDsc> get_registers_list();
-    virtual std::vector<std::string> get_device_specific_methods();
+    std::vector<std::string> get_events_list() noexcept;
+    std::vector<RegisterDsc> get_registers_list() noexcept;
+    virtual std::vector<std::string> get_device_specific_methods() noexcept;
+    virtual H9Value execute_device_specific_method(const std::string &method_name, const H9Tuple& tuple);
 
     std::uint16_t get_device_id() noexcept;
     std::uint16_t get_device_type() noexcept;
@@ -66,10 +69,10 @@ public:
     std::time_t get_device_last_seen_time() noexcept;
     std::string get_device_description() noexcept;
 
-    ssize_t get_register(std::uint8_t reg, std::string &buf);
-    ssize_t get_register(std::uint8_t reg, std::int64_t &buf);
-    ssize_t set_register(std::uint8_t reg, std::string value);
-    ssize_t set_register(std::uint8_t reg, std::int64_t value, std::int64_t *setted = nullptr);
+    ssize_t get_register(std::uint8_t reg, std::string &buf) noexcept;
+    ssize_t get_register(std::uint8_t reg, std::int64_t &buf) noexcept;
+    ssize_t set_register(std::uint8_t reg, const std::string& value) noexcept;
+    ssize_t set_register(std::uint8_t reg, std::int64_t value, std::int64_t *setted = nullptr) noexcept;
 };
 
 

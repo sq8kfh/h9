@@ -23,6 +23,8 @@
 #if (defined(__APPLE__) && defined(__MACH__))
 #include "sharedmutex.h"
 #endif
+#include "common/h9tuple.h"
+#include "common/h9value.h"
 
 
 class TCPClientThread;
@@ -30,7 +32,7 @@ class TCPClientThread;
 class DevMgr: public FrameObserver {
 private:
     Bus* const h9bus;
-    void on_frame_recv(H9frame frame) override;
+    void on_frame_recv(H9frame frame) noexcept override;
 
 #if (defined(__APPLE__) && defined(__MACH__))
     SharedMutex devices_map_mtx;
@@ -48,7 +50,7 @@ private:
     std::thread devices_update_thread_desc;
     void devices_update_thread();
 
-    void add_device(std::uint16_t node_id, std::uint16_t node_type, std::uint16_t node_version);
+    void add_device(std::uint16_t node_id, std::uint16_t node_type, std::uint16_t node_version) noexcept;
 public:
     struct DeviceDsc {
         std::uint16_t id;
@@ -67,27 +69,28 @@ public:
     DevMgr(const DevMgr &a) = delete;
     ~DevMgr();
     void load_config(DCtx *ctx);
-    int discover();
+    int discover() noexcept;
 
-    int active_devices_count();
-    bool is_device_exist(std::uint16_t dev_id);
-    std::vector<DevMgr::DeviceDsc> get_devices_list();
+    int active_devices_count() noexcept;
+    bool is_device_exist(std::uint16_t dev_id) noexcept;
+    std::vector<DevMgr::DeviceDsc> get_devices_list() noexcept;
 
-    int attach_event_observer(TCPClientThread *observer, std::string event_name, std::uint16_t dev_id);
-    int detach_event_observer(TCPClientThread *observer, std::string event_name, std::uint16_t dev_id);
-    std::vector<std::string> get_events_list(std::uint16_t dev_id);
+    int attach_event_observer(TCPClientThread *observer, const std::string& event_name, std::uint16_t dev_id) noexcept;
+    int detach_event_observer(TCPClientThread *observer, const std::string& event_name, std::uint16_t dev_id) noexcept;
+    std::vector<std::string> get_events_list(std::uint16_t dev_id) noexcept;
 
-    std::vector<std::string> get_device_specific_methods(std::uint16_t dev_id);
+    std::vector<std::string> get_device_specific_methods(std::uint16_t dev_id) noexcept;
+    H9Value execute_device_specific_method(std::uint16_t dev_id, const std::string &method_name, const H9Tuple& tuple);
 
-    std::vector<Device::RegisterDsc> get_registers_list(std::uint16_t dev_id);
+    std::vector<Device::RegisterDsc> get_registers_list(std::uint16_t dev_id) noexcept;
 
-    ssize_t get_device_register(std::uint16_t dev_id, std::uint8_t reg, std::string &buf);
-    ssize_t get_device_register(std::uint16_t dev_id, std::uint8_t reg, std::int64_t &buf);
-    ssize_t set_device_register(std::uint16_t dev_id, std::uint8_t reg, std::string value);
-    ssize_t set_device_register(std::uint16_t dev_id, std::uint8_t reg, std::int64_t value, std::int64_t *setted = nullptr);
+    ssize_t get_device_register(std::uint16_t dev_id, std::uint8_t reg, std::string &buf) noexcept;
+    ssize_t get_device_register(std::uint16_t dev_id, std::uint8_t reg, std::int64_t &buf) noexcept;
+    ssize_t set_device_register(std::uint16_t dev_id, std::uint8_t reg, const std::string& value) noexcept;
+    ssize_t set_device_register(std::uint16_t dev_id, std::uint8_t reg, std::int64_t value, std::int64_t *setted = nullptr) noexcept;
 
-    int get_device_info(std::uint16_t dev_id, DeviceInfo &device_info);
-    int device_reset(std::uint16_t dev_id);
+    int get_device_info(std::uint16_t dev_id, DeviceInfo &device_info) noexcept;
+    int device_reset(std::uint16_t dev_id) noexcept;
 };
 
 

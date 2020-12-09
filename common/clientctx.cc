@@ -14,8 +14,8 @@ ClientCtx::ClientCtx(const std::string& app_name, const std::string& app_desc):
     Ctx(app_name, app_desc),
     _options(app_name, app_desc),
     cfg_h9bus_opts {
-        CFG_STR("HostName", DEFAULT_H9_BUS_HOST_FOR_CLIENT, CFGF_NONE),
-        CFG_INT("Port", H9_BUS_DEFAULT_PORT, CFGF_NONE),
+        CFG_STR("HostName", DEFAULT_H9BUS_HOST_FOR_CLIENT, CFGF_NONE),
+        CFG_INT("Port", H9BUS_DEFAULT_PORT, CFGF_NONE),
         CFG_INT("DefaultSourceID", DEFAULT_SOURCE_ID_FOR_CLIENT, CFGF_NONE),
         CFG_END()
     },
@@ -34,12 +34,12 @@ ClientCtx::ClientCtx(const std::string& app_name, const std::string& app_desc):
             ;
     _options.add_options("connection")
             ("c,connect", "Connection address", cxxopts::value<std::string>())
-            ("p,port", "Connection port", cxxopts::value<int>()->default_value(std::to_string(H9_BUS_DEFAULT_PORT)))
+            ("p,port", "Connection port", cxxopts::value<int>()->default_value(std::to_string(H9BUS_DEFAULT_PORT)))
             ("F,config", "User config file", cxxopts::value<std::string>()->default_value(H9_USER_CONFIG_FILE))
             ;
 
-    h9bus_host = DEFAULT_H9_BUS_HOST_FOR_CLIENT;
-    h9bus_port = std::to_string(H9_BUS_DEFAULT_PORT);
+    h9bus_host = DEFAULT_H9BUS_HOST_FOR_CLIENT;
+    h9bus_port = std::to_string(H9BUS_DEFAULT_PORT);
     default_source_id = DEFAULT_SOURCE_ID_FOR_CLIENT;
 }
 
@@ -74,8 +74,8 @@ void ClientCtx::load_configuration(const cxxopts::ParseResult& opts) {
         }
         else {
             std::string tmp_host = "default";
-            h9bus_host = DEFAULT_H9_BUS_HOST_FOR_CLIENT;
-            h9bus_port = std::to_string(H9_BUS_DEFAULT_PORT);
+            h9bus_host = DEFAULT_H9BUS_HOST_FOR_CLIENT;
+            h9bus_port = std::to_string(H9BUS_DEFAULT_PORT);
             if (opts.count("connect") == 1) {
                 tmp_host = opts["connect"].as<std::string>();
                 h9bus_host = tmp_host;

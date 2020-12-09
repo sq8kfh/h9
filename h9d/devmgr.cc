@@ -7,12 +7,13 @@
  */
 
 #include "devmgr.h"
+#include <cassert>
 #include "bus.h"
 #include "common/logger.h"
 #include "tcpclientthread.h"
 
 
-void DevMgr::on_frame_recv(H9frame frame) {
+void DevMgr::on_frame_recv(H9frame frame) noexcept {
     frame_queue_mtx.lock();
     frame_queue.push(frame);
     frame_queue_mtx.unlock();
@@ -63,7 +64,7 @@ void DevMgr::devices_update_thread() {
     }
 }
 
-void DevMgr::add_device(std::uint16_t node_id, std::uint16_t node_type, std::uint16_t node_version) {
+void DevMgr::add_device(std::uint16_t node_id, std::uint16_t node_type, std::uint16_t node_version) noexcept {
     devices_map_mtx.lock();
     if (devices_map.count(node_id)) {
         if (devices_map[node_id]->get_device_type() != node_type || devices_map[node_id]->get_device_version() != node_version) {
@@ -107,33 +108,28 @@ void DevMgr::load_config(DCtx *ctx) {
     Device::devicedescloader.load_file(ctx->get_devices_description_filename());
 }
 
-int DevMgr::discover() {
+int DevMgr::discover() noexcept {
     auto seqnum = h9bus->get_next_seqnum(1);
     h9bus->send_node_discover(H9frame::Priority::LOW, seqnum, 1);
     return 0;
 }
 
-int DevMgr::active_devices_count() {
+int DevMgr::active_devices_count() noexcept {
     devices_map_mtx.lock_shared();
-    //devices_map_mtx.lock();
     int ret = devices_map.size();
     devices_map_mtx.unlock_shared();
-    //devices_map_mtx.unlock();
     return ret;
 }
 
-bool DevMgr::is_device_exist(std::uint16_t dev_id) {
+bool DevMgr::is_device_exist(std::uint16_t dev_id) noexcept{
     devices_map_mtx.lock_shared();
-    //devices_map_mtx.lock();
     bool ret = devices_map.count(dev_id);
     devices_map_mtx.unlock_shared();
-    //devices_map_mtx.unlock();
     return ret;
 }
 
-std::vector<DevMgr::DeviceDsc> DevMgr::get_devices_list() {
+std::vector<DevMgr::DeviceDsc> DevMgr::get_devices_list() noexcept {
     devices_map_mtx.lock_shared();
-    //devices_map_mtx.lock();
     std::vector<DevMgr::DeviceDsc> ret;
 
     for (auto it: devices_map) {
@@ -141,13 +137,11 @@ std::vector<DevMgr::DeviceDsc> DevMgr::get_devices_list() {
     }
 
     devices_map_mtx.unlock_shared();
-    //devices_map_mtx.unlock();
     return std::move(ret);
 }
 
-int DevMgr::attach_event_observer(TCPClientThread *observer, std::string event_name, std::uint16_t dev_id) {
+int DevMgr::attach_event_observer(TCPClientThread *observer, const std::string& event_name, std::uint16_t dev_id) noexcept {
     devices_map_mtx.lock_shared();
-    //devices_map_mtx.lock();
     if (devices_map.count(dev_id)) {
         devices_map[dev_id]->attach_event_observer(observer, event_name);
     }
@@ -155,120 +149,113 @@ int DevMgr::attach_event_observer(TCPClientThread *observer, std::string event_n
         h9_log_warn("Can not attach event observer %s:%s, device id: %hu does not exist", observer->get_remote_address().c_str(), observer->get_remote_port().c_str(), dev_id);
     }
     devices_map_mtx.unlock_shared();
-    //devices_map_mtx.unlock();
     return 0;
 }
 
-int DevMgr::detach_event_observer(TCPClientThread *observer, std::string event_name, std::uint16_t dev_id) {
+int DevMgr::detach_event_observer(TCPClientThread *observer, const std::string& event_name, std::uint16_t dev_id) noexcept {
     devices_map_mtx.lock_shared();
-    //devices_map_mtx.lock();
     if (devices_map.count(dev_id)) {
         devices_map[dev_id]->detach_event_observer(observer, event_name);
     }
     devices_map_mtx.unlock_shared();
-    //devices_map_mtx.unlock();
     return 0;
 }
 
-std::vector<std::string> DevMgr::get_events_list(std::uint16_t dev_id) {
+std::vector<std::string> DevMgr::get_events_list(std::uint16_t dev_id) noexcept {
     devices_map_mtx.lock_shared();
-    //devices_map_mtx.lock();
     if (devices_map.count(dev_id)) {
         auto ret = devices_map[dev_id]->get_events_list();
         devices_map_mtx.unlock_shared();
-        //devices_map_mtx.unlock();
         return ret;
     }
     devices_map_mtx.unlock_shared();
-    //devices_map_mtx.unlock();
     return std::vector<std::string>();
 }
 
-std::vector<std::string> DevMgr::get_device_specific_methods(std::uint16_t dev_id) {
+std::vector<std::string> DevMgr::get_device_specific_methods(std::uint16_t dev_id) noexcept {
     devices_map_mtx.lock_shared();
-    //devices_map_mtx.lock();
     if (devices_map.count(dev_id)) {
         auto ret = devices_map[dev_id]->get_device_specific_methods();
         devices_map_mtx.unlock_shared();
-        //devices_map_mtx.unlock();
         return ret;
     }
     devices_map_mtx.unlock_shared();
-    //devices_map_mtx.unlock();
     return std::vector<std::string>();
 }
 
-std::vector<Device::RegisterDsc> DevMgr::get_registers_list(std::uint16_t dev_id) {
+H9Value DevMgr::execute_device_specific_method(std::uint16_t dev_id, const std::string &method_name, const H9Tuple& tuple) {
     devices_map_mtx.lock_shared();
-    //devices_map_mtx.lock();
+    if (devices_map.count(dev_id)) {
+        try {
+            auto ret = devices_map[dev_id]->execute_device_specific_method(method_name, tuple);
+            devices_map_mtx.unlock_shared();
+            return ret;
+        }
+        catch (...) {
+            devices_map_mtx.unlock_shared();
+            throw;
+        }
+    }
+    devices_map_mtx.unlock_shared();
+    assert(0);
+}
+
+std::vector<Device::RegisterDsc> DevMgr::get_registers_list(std::uint16_t dev_id) noexcept {
+    devices_map_mtx.lock_shared();
     if (devices_map.count(dev_id)) {
         auto ret = devices_map[dev_id]->get_registers_list();
         devices_map_mtx.unlock_shared();
-        //devices_map_mtx.unlock();
         return ret;
     }
     devices_map_mtx.unlock_shared();
-    //devices_map_mtx.unlock();
     return std::vector<Device::RegisterDsc>();
 }
 
-ssize_t DevMgr::get_device_register(std::uint16_t dev_id, std::uint8_t reg, std::string &buf) {
+ssize_t DevMgr::get_device_register(std::uint16_t dev_id, std::uint8_t reg, std::string &buf) noexcept {
     devices_map_mtx.lock_shared();
-    //devices_map_mtx.lock();
     if (devices_map.count(dev_id)) {
         auto ret = devices_map[dev_id]->get_register(reg, buf);
         devices_map_mtx.unlock_shared();
-        //devices_map_mtx.unlock();
         return ret;
     }
     devices_map_mtx.unlock_shared();
-    //devices_map_mtx.unlock();
     return -1;
 }
 
-ssize_t DevMgr::get_device_register(std::uint16_t dev_id, std::uint8_t reg, std::int64_t &buf) {
+ssize_t DevMgr::get_device_register(std::uint16_t dev_id, std::uint8_t reg, std::int64_t &buf) noexcept {
     devices_map_mtx.lock_shared();
-    //devices_map_mtx.lock();
     if (devices_map.count(dev_id)) {
         auto ret = devices_map[dev_id]->get_register(reg, buf);
         devices_map_mtx.unlock_shared();
-        //devices_map_mtx.unlock();
         return ret;
     }
     devices_map_mtx.unlock_shared();
-    //devices_map_mtx.unlock();
     return -1;
 }
 
-ssize_t DevMgr::set_device_register(std::uint16_t dev_id, std::uint8_t reg, std::string value) {
+ssize_t DevMgr::set_device_register(std::uint16_t dev_id, std::uint8_t reg, const std::string& value) noexcept {
     devices_map_mtx.lock_shared();
-    //devices_map_mtx.lock();
     if (devices_map.count(dev_id)) {
         auto ret = devices_map[dev_id]->set_register(reg, value);
         devices_map_mtx.unlock_shared();
-        //devices_map_mtx.unlock();
         return ret;
     }
     devices_map_mtx.unlock_shared();
-    //devices_map_mtx.unlock();
     return -1;
 }
 
-ssize_t DevMgr::set_device_register(std::uint16_t dev_id, std::uint8_t reg, std::int64_t value, std::int64_t *setted) {
+ssize_t DevMgr::set_device_register(std::uint16_t dev_id, std::uint8_t reg, std::int64_t value, std::int64_t *setted) noexcept {
     devices_map_mtx.lock_shared();
-    //devices_map_mtx.lock();
     if (devices_map.count(dev_id)) {
         auto ret = devices_map[dev_id]->set_register(reg, value, setted);
         devices_map_mtx.unlock_shared();
-        //devices_map_mtx.unlock();
         return ret;
     }
     devices_map_mtx.unlock_shared();
-    //devices_map_mtx.unlock();
     return -1;
 }
 
-int DevMgr::get_device_info(std::uint16_t dev_id, DevMgr::DeviceInfo &device_info) {
+int DevMgr::get_device_info(std::uint16_t dev_id, DevMgr::DeviceInfo &device_info) noexcept {
     devices_map_mtx.lock_shared();
     if (devices_map.count(dev_id)) {
         int ret = 0;
@@ -289,7 +276,7 @@ int DevMgr::get_device_info(std::uint16_t dev_id, DevMgr::DeviceInfo &device_inf
     return -1;
 }
 
-int DevMgr::device_reset(std::uint16_t dev_id) {
+int DevMgr::device_reset(std::uint16_t dev_id) noexcept {
     devices_map_mtx.lock_shared();
     if (devices_map.count(dev_id)) {
         auto ret = devices_map[dev_id]->reset();

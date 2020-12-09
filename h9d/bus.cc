@@ -10,6 +10,7 @@
 #include <atomic>
 #include <thread>
 #include <netinet/in.h>
+#include "node.h"
 #include "protocol/errormsg.h"
 #include "protocol/framemsg.h"
 #include "protocol/sendframemsg.h"
@@ -55,7 +56,7 @@ void Bus::recv_thread() {
     }
 }
 
-int Bus::send_frame_sync(H9frame frame) {
+int Bus::send_frame_sync(H9frame frame) noexcept {
     std::promise<int> send_promise;
     std::future<int> send_future = send_promise.get_future();
     std::uint64_t msg_id = h9bus_connector->get_next_id();
@@ -63,7 +64,16 @@ int Bus::send_frame_sync(H9frame frame) {
     send_promise_map[msg_id] = std::move(send_promise);
     send_promise_map_mtx.unlock();
 
-    h9bus_connector->send(SendFrameMsg(frame), msg_id);
+    try {
+        h9bus_connector->send(SendFrameMsg(frame), msg_id);
+    }
+    catch (std::runtime_error &e) {
+        h9_log_err("h9bus error during sending frame: %s", e.what());
+        send_promise_map_mtx.lock();
+        send_promise_map.erase(msg_id);
+        send_promise_map_mtx.unlock();
+        return NOT_CONNECTED_TO_H9BUS;
+    }
     if (send_future.wait_for(std::chrono::seconds(send_timeout)) != std::future_status::ready) {
         send_promise_map_mtx.lock();
         send_promise_map.erase(msg_id);
@@ -73,10 +83,10 @@ int Bus::send_frame_sync(H9frame frame) {
     return send_future.get();
 }
 
-Bus::Bus(): h9bus_connector(nullptr) {
+Bus::Bus() noexcept: h9bus_connector(nullptr), run(true), send_timeout(DEFAULT_SEND_FRAME_TO_H9BUS_TIMEOUT) {
 }
 
-Bus::~Bus() {
+Bus::~Bus() noexcept {
     run = false;
     h9bus_connector->shutdown_read();
     if (recv_thread_desc.joinable())
@@ -86,6 +96,9 @@ Bus::~Bus() {
 }
 
 void Bus::load_config(DCtx *ctx) {
+    send_timeout = ctx->cfg_h9bus_send_frame_timeout();
+    Node::recv_timeout = ctx->cfg_h9bus_recv_response_timeout();
+
     h9bus_connector = new H9Connector(ctx->cfg_h9bus_hostname(), std::to_string(ctx->cfg_h9bus_port()));
 
     try {
@@ -106,13 +119,13 @@ void Bus::load_config(DCtx *ctx) {
     });
 }
 
-std::uint8_t Bus::get_next_seqnum(std::uint16_t source_id) {
+std::uint8_t Bus::get_next_seqnum(std::uint16_t source_id) noexcept {
     static std::atomic<std::uint8_t> next_seqnum[1 << H9frame::H9FRAME_SOURCE_ID_BIT_LENGTH] = {};
     std::uint8_t ret = next_seqnum[source_id]++;
     return ret & ((1 << H9frame::H9FRAME_SEQNUM_BIT_LENGTH) - 1);
 }
 
-int Bus::send_set_reg(H9frame::Priority priority, std::uint8_t seqnum, std::uint16_t source, std::uint16_t destination, std::uint8_t reg, std::size_t nbyte, const std::uint8_t *data) {
+int Bus::send_set_reg(H9frame::Priority priority, std::uint8_t seqnum, std::uint16_t source, std::uint16_t destination, std::uint8_t reg, std::size_t nbyte, const std::uint8_t *data) noexcept {
     H9frame frame;
     frame.priority = priority;
     frame.type = H9frame::Type::SET_REG;
@@ -138,7 +151,7 @@ int Bus::send_set_reg(H9frame::Priority priority, std::uint8_t seqnum, std::uint
     return ret == Bus::OK ? frame.seqnum : ret;
 }
 
-int Bus::send_get_reg(H9frame::Priority priority, std::uint8_t seqnum, std::uint16_t source, std::uint16_t destination, std::uint8_t reg) {
+int Bus::send_get_reg(H9frame::Priority priority, std::uint8_t seqnum, std::uint16_t source, std::uint16_t destination, std::uint8_t reg) noexcept {
     H9frame frame;
     frame.priority = priority;
     frame.type = H9frame::Type::GET_REG;
@@ -159,7 +172,7 @@ int Bus::send_get_reg(H9frame::Priority priority, std::uint8_t seqnum, std::uint
     return ret == Bus::OK ? frame.seqnum : ret;
 }
 
-int Bus::send_set_bit(H9frame::Priority priority, std::uint8_t seqnum, std::uint16_t source, std::uint16_t destination, std::uint8_t reg, int bit) {
+int Bus::send_set_bit(H9frame::Priority priority, std::uint8_t seqnum, std::uint16_t source, std::uint16_t destination, std::uint8_t reg, int bit) noexcept {
     H9frame frame;
     frame.priority = priority;
     frame.type = H9frame::Type::SET_BIT;
@@ -180,7 +193,7 @@ int Bus::send_set_bit(H9frame::Priority priority, std::uint8_t seqnum, std::uint
     return ret == Bus::OK ? frame.seqnum : ret;
 }
 
-int Bus::send_clear_bit(H9frame::Priority priority, std::uint8_t seqnum, std::uint16_t source, std::uint16_t destination, std::uint8_t reg, int bit) {
+int Bus::send_clear_bit(H9frame::Priority priority, std::uint8_t seqnum, std::uint16_t source, std::uint16_t destination, std::uint8_t reg, int bit) noexcept {
     H9frame frame;
     frame.priority = priority;
     frame.type = H9frame::Type::CLEAR_BIT;
@@ -201,7 +214,7 @@ int Bus::send_clear_bit(H9frame::Priority priority, std::uint8_t seqnum, std::ui
     return ret == Bus::OK ? frame.seqnum : ret;
 }
 
-int Bus::send_toggle_bit(H9frame::Priority priority, std::uint8_t seqnum, std::uint16_t source, std::uint16_t destination, std::uint8_t reg, int bit) {
+int Bus::send_toggle_bit(H9frame::Priority priority, std::uint8_t seqnum, std::uint16_t source, std::uint16_t destination, std::uint8_t reg, int bit) noexcept {
     H9frame frame;
     frame.priority = priority;
     frame.type = H9frame::Type::TOGGLE_BIT;
@@ -222,7 +235,7 @@ int Bus::send_toggle_bit(H9frame::Priority priority, std::uint8_t seqnum, std::u
     return ret == Bus::OK ? frame.seqnum : ret;
 }
 
-int Bus::send_node_upgrade(H9frame::Priority priority, std::uint8_t seqnum, std::uint16_t source, std::uint16_t destination) {
+int Bus::send_node_upgrade(H9frame::Priority priority, std::uint8_t seqnum, std::uint16_t source, std::uint16_t destination) noexcept {
     H9frame frame;
     frame.priority = priority;
     frame.type = H9frame::Type::NODE_UPGRADE;
@@ -241,7 +254,7 @@ int Bus::send_node_upgrade(H9frame::Priority priority, std::uint8_t seqnum, std:
     return ret == Bus::OK ? frame.seqnum : ret;
 }
 
-int Bus::send_node_reset(H9frame::Priority priority, std::uint8_t seqnum, std::uint16_t source, std::uint16_t destination) {
+int Bus::send_node_reset(H9frame::Priority priority, std::uint8_t seqnum, std::uint16_t source, std::uint16_t destination) noexcept {
     H9frame frame;
     frame.priority = priority;
     frame.type = H9frame::Type::NODE_RESET;
@@ -260,7 +273,7 @@ int Bus::send_node_reset(H9frame::Priority priority, std::uint8_t seqnum, std::u
     return ret == Bus::OK ? frame.seqnum : ret;
 }
 
-int Bus::send_node_discover(H9frame::Priority priority, std::uint8_t seqnum, std::uint16_t source, std::uint16_t destination) {
+int Bus::send_node_discover(H9frame::Priority priority, std::uint8_t seqnum, std::uint16_t source, std::uint16_t destination) noexcept {
     H9frame frame;
     frame.priority = priority;
     frame.type = H9frame::Type::DISCOVER;

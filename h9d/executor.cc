@@ -90,7 +90,7 @@ bool Executor::has_device_specific_method(std::uint16_t dev_id, std::string meth
     return std::find(method_list.begin(), method_list.end(), method_name) != method_list.end();
 }
 
-DeviceMethodResponseMsg Executor::execute_device_method(TCPClientThread *client, std::uint16_t device_id, std::string method_name, ExecuteDeviceMethodMsg &exedevcmsg) {
+DeviceMethodResponseMsg Executor::execute_device_method(const TCPClientThread *client, std::uint16_t device_id, std::string method_name, ExecuteDeviceMethodMsg &exedevcmsg) {
     h9_log_debug("Execute device (%hu) method '%s' for %s", device_id, method_name.c_str(), client->get_client_idstring().c_str());
     if (method_name == "set_register") {
         std::int64_t setted; //setted value

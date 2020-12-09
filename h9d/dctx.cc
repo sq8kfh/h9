@@ -32,7 +32,9 @@ void DCtx::load_configuration(const std::string& conf_filename, bool override_da
 
     cfg_opt_t cfg_bus_sec[] = {
             CFG_STR("h9bus_hostname", "localhost", CFGF_NONE),
-            CFG_INT("h9bus_port", H9_BUS_DEFAULT_PORT, CFGF_NONE),
+            CFG_INT("h9bus_port", H9BUS_DEFAULT_PORT, CFGF_NONE),
+            CFG_INT("h9bus_send_frame_timeout", DEFAULT_SEND_FRAME_TO_H9BUS_TIMEOUT, CFGF_NONE),
+            CFG_INT("h9bus_recv_response_timeout", DEFAULT_RECV_RESPONSE_FRAME_TIMEOUT, CFGF_NONE),
             CFG_END()
     };
 
@@ -129,7 +131,7 @@ uint16_t DCtx::cfg_server_port() {
     if (cfg_process) {
         return cfg_getint(cfg_process, "port");
     }
-    return H9_BUS_DEFAULT_PORT;
+    return H9D_DEFAULT_PORT;
 }
 
 std::string DCtx::cfg_h9bus_hostname() {
@@ -145,7 +147,23 @@ uint16_t DCtx::cfg_h9bus_port() {
     if (bus_process) {
         return cfg_getint(bus_process, "h9bus_port");
     }
-    return H9D_DEFAULT_PORT;
+    return H9BUS_DEFAULT_PORT;
+}
+
+int DCtx::cfg_h9bus_send_frame_timeout() {
+    cfg_t *bus_process = cfg_getsec(cfg, "bus");
+    if (bus_process) {
+        return cfg_getint(bus_process, "h9bus_send_frame_timeout");
+    }
+    return DEFAULT_SEND_FRAME_TO_H9BUS_TIMEOUT;
+}
+
+int DCtx::cfg_h9bus_recv_response_timeout() {
+    cfg_t *bus_process = cfg_getsec(cfg, "bus");
+    if (bus_process) {
+        return cfg_getint(bus_process, "h9bus_recv_response_timeout");
+    }
+    return DEFAULT_RECV_RESPONSE_FRAME_TIMEOUT;
 }
 
 std::string DCtx::cfg_log_logfile() {

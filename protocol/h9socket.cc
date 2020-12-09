@@ -205,10 +205,10 @@ int H9Socket::send(const std::string& buf) noexcept {
     return nbyte + sizeof(header);
 }
 
-std::string H9Socket::get_remote_address() noexcept {
+std::string H9Socket::get_remote_address() const noexcept {
     return _hostname;
 }
 
-std::string H9Socket::get_remote_port() noexcept {
+std::string H9Socket::get_remote_port() const noexcept {
     return _port;
 }

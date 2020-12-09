@@ -26,7 +26,7 @@ void BusCtx::load_configuration(const std::string& conf_filename, bool override_
     };
 
     cfg_opt_t cfg_server_sec[] = {
-            CFG_INT("port", H9_BUS_DEFAULT_PORT, CFGF_NONE),
+            CFG_INT("port", H9BUS_DEFAULT_PORT, CFGF_NONE),
             CFG_END()
     };
 
@@ -129,7 +129,7 @@ uint16_t BusCtx::cfg_server_port() {
     if (cfg_process) {
         return cfg_getint(cfg_process, "port");
     }
-    return H9_BUS_DEFAULT_PORT;
+    return H9BUS_DEFAULT_PORT;
 }
 
 std::string BusCtx::cfg_log_logfile() {

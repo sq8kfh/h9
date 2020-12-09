@@ -29,8 +29,12 @@ public:
     int cfg_drop_privileges_uid();
     int cfg_drop_privileges_gid();
     uint16_t cfg_server_port();
+
     std::string cfg_h9bus_hostname();
     uint16_t cfg_h9bus_port();
+    int cfg_h9bus_send_frame_timeout();
+    int cfg_h9bus_recv_response_timeout();
+
     std::string cfg_log_logfile();
 };
 

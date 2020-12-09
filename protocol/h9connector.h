@@ -44,9 +44,6 @@ public:
      */
     std::uint64_t send(GenericMsg msg, std::uint64_t id);
 
-    /*
-     * throw: std::system_error
-     */
     std::uint64_t get_next_id() noexcept;
 };
 

@@ -227,7 +227,7 @@ void Log::log(const Log::Level& level, const std::string& msg) const {
         if (_print_date) {
             time_t now;
             time(&now);
-            char buf[sizeof "1987-01-20T01:07:09Z"];
+            char buf[sizeof "2016-06-30T17:26:29Z"];
             strftime(buf, sizeof buf, "%FT%TZ", gmtime(&now));
             std::clog << buf << " [" << level_name << "] " << msg << std::endl;
         }

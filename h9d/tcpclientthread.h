@@ -55,10 +55,10 @@ public:
     TCPClientThread(const TCPClientThread &a) = delete;
     ~TCPClientThread();
 
-    std::string get_remote_address() noexcept;
-    std::string get_remote_port() noexcept;
-    std::string get_entity() noexcept;
-    std::string get_client_idstring() noexcept;
+    std::string get_remote_address() const noexcept;
+    std::string get_remote_port() const noexcept;
+    std::string get_entity() const noexcept;
+    std::string get_client_idstring() const noexcept;
 
     bool is_running();
     void send_msg(GenericMsg msg);

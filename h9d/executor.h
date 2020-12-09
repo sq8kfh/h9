@@ -47,7 +47,7 @@ public:
     std::vector<std::string> get_device_methods_list(std::uint16_t dev_id);
     bool has_device_specific_method(std::uint16_t dev_id, std::string method_name);
 
-    DeviceMethodResponseMsg execute_device_method(TCPClientThread *client, std::uint16_t device_id, std::string method_name, ExecuteDeviceMethodMsg &exedevcmsg);
+    DeviceMethodResponseMsg execute_device_method(const TCPClientThread *client, std::uint16_t device_id, std::string method_name, ExecuteDeviceMethodMsg &exedevcmsg);
 };
 
 

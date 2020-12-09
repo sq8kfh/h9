@@ -33,8 +33,8 @@ public:
     void close() noexcept;
     int recv(std::string& buf, int timeout_in_seconds = 0) noexcept;
     int send(const std::string& buf) noexcept;
-    std::string get_remote_address() noexcept;
-    std::string get_remote_port() noexcept;
+    std::string get_remote_address() const noexcept;
+    std::string get_remote_port() const noexcept;
 };
 
 

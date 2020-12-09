@@ -120,19 +120,19 @@ TCPClientThread::~TCPClientThread() {
     h9socket.close();
 }
 
-std::string TCPClientThread::get_remote_address() noexcept {
+std::string TCPClientThread::get_remote_address() const noexcept {
     return h9socket.get_remote_address();
 }
 
-std::string TCPClientThread::get_remote_port() noexcept {
+std::string TCPClientThread::get_remote_port() const noexcept {
     return h9socket.get_remote_port();
 }
 
-std::string TCPClientThread::get_entity() noexcept {
+std::string TCPClientThread::get_entity() const noexcept {
     return entity;
 }
 
-std::string TCPClientThread::get_client_idstring() noexcept {
+std::string TCPClientThread::get_client_idstring() const noexcept {
     return get_entity() + "@" + get_remote_address() + ":" + get_remote_port();
 }
 
