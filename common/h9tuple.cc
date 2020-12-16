@@ -18,7 +18,7 @@ H9Tuple H9Tuple::buildTuple(const char *format, ...) {
 }
 
 H9Tuple H9Tuple::buildTuple(const char *format, std::va_list vargs) {
-
+    return H9Tuple();
 }
 
 H9Tuple::H9Tuple() noexcept {

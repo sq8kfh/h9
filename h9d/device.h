@@ -51,23 +51,24 @@ protected:
     std::string device_description;
 
     void notify_event_observer(std::string event_name, GenericMsg msg) noexcept;
-public:
     Device(Bus* bus, std::uint16_t node_id, std::uint16_t node_type, std::uint16_t node_version) noexcept;
+public:
+    static Device* buildDevice(Bus* bus, std::uint16_t node_id, std::uint16_t node_type, std::uint16_t node_version) noexcept;
 
     std::vector<std::string> get_events_list() noexcept;
     std::vector<RegisterDsc> get_registers_list() noexcept;
     virtual std::vector<std::string> get_device_specific_methods() noexcept;
     virtual H9Value execute_device_specific_method(const std::string &method_name, const H9Tuple& tuple);
 
-    std::uint16_t get_device_id() noexcept;
-    std::uint16_t get_device_type() noexcept;
-    std::uint16_t get_device_version() noexcept;
-    std::uint8_t get_device_version_major() noexcept;
-    std::uint8_t get_device_version_minor() noexcept;
-    std::string get_device_name() noexcept;
-    std::time_t get_device_created_time() noexcept;
-    std::time_t get_device_last_seen_time() noexcept;
-    std::string get_device_description() noexcept;
+    std::uint16_t get_device_id() const noexcept;
+    std::uint16_t get_device_type() const noexcept;
+    std::uint16_t get_device_version() const noexcept;
+    std::uint8_t get_device_version_major() const noexcept;
+    std::uint8_t get_device_version_minor() const noexcept;
+    std::string get_device_name() const noexcept;
+    std::time_t get_device_created_time() const noexcept;
+    std::time_t get_device_last_seen_time() const noexcept;
+    std::string get_device_description() const noexcept;
 
     ssize_t get_register(std::uint8_t reg, std::string &buf) noexcept;
     ssize_t get_register(std::uint8_t reg, std::int64_t &buf) noexcept;

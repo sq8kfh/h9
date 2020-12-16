@@ -73,14 +73,14 @@ void DevMgr::add_device(std::uint16_t node_id, std::uint16_t node_type, std::uin
                     devices_map[node_id]->get_device_version_major(), devices_map[node_id]->get_device_version_minor(),
                     node_type, node_version >> 8, node_version);
             delete devices_map[node_id];
-            devices_map[node_id] = new Device(h9bus, node_id, node_type, node_version);
+            devices_map[node_id] = Device::buildDevice(h9bus, node_id, node_type, node_version);
         }
         else {
             devices_map[node_id]->update_device_last_seen_time();
         }
     }
     else {
-        devices_map[node_id] = new Device(h9bus, node_id, node_type, node_version);
+        devices_map[node_id] = Device::buildDevice(h9bus, node_id, node_type, node_version);
     }
     devices_map_mtx.unlock();
 }

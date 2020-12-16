@@ -133,6 +133,7 @@ DeviceMethodResponseMsg Executor::execute_device_method(const TCPClientThread *c
         return res;
     }
     else {
-        assert(false);
+        auto ret = devmgr->execute_device_specific_method(device_id, method_name, H9Tuple::buildTuple(""));
+        return DeviceMethodResponseMsg(device_id, method_name);
     }
 }

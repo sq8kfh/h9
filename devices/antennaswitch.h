@@ -15,6 +15,8 @@
 class AntennaSwitch: public Device {
 public:
     AntennaSwitch(Bus* bus, std::uint16_t node_id, std::uint16_t node_version) noexcept;
+    std::vector<std::string> get_device_specific_methods() noexcept;
+    H9Value execute_device_specific_method(const std::string &method_name, const H9Tuple& tuple);
 };
 
 

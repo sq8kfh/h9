@@ -11,6 +11,7 @@
 #include "common/logger.h"
 #include "protocol/deviceevent.h"
 #include "tcpclientthread.h"
+#include "devices/antennaswitch.h"
 
 
 DeviceDescLoader Device::devicedescloader;
@@ -86,6 +87,7 @@ Device::Device(Bus* bus, std::uint16_t node_id, std::uint16_t node_type, std::ui
     register_map[1] = {1, "Node type", "uint", 16, true, false, ""};
     register_map[2] = {2, "Node version", "uint", 16, true, false, ""};
     register_map[3] = {3, "Node id", "uint", 9, true, true, ""};
+    register_map[4] = {4, "MCU type", "uint", 8, true, false, ""};
 
     for (const auto &it: devicedescloader.get_device_register_by_type(node_type)) {
         register_map[it.first] = {it.second.number, it.second.name, it.second.type, it.second.size, it.second.readable, it.second.writable, it.second.description};
@@ -115,39 +117,39 @@ H9Value Device::execute_device_specific_method(const std::string &method_name, c
     assert(0);
 }
 
-std::uint16_t Device::get_device_id() noexcept {
+std::uint16_t Device::get_device_id() const noexcept {
     return node_id;
 }
 
-std::uint16_t Device::get_device_type() noexcept {
+std::uint16_t Device::get_device_type() const noexcept {
     return device_type;
 }
 
-std::uint16_t Device::get_device_version() noexcept {
+std::uint16_t Device::get_device_version() const noexcept {
     return device_version;
 }
 
-std::uint8_t Device::get_device_version_major() noexcept {
+std::uint8_t Device::get_device_version_major() const noexcept {
     return device_version >> 8;
 }
 
-std::uint8_t Device::get_device_version_minor() noexcept {
+std::uint8_t Device::get_device_version_minor() const noexcept {
     return device_version;
 }
 
-std::string Device::get_device_name() noexcept {
+std::string Device::get_device_name() const noexcept {
     return device_name;
 }
 
-std::time_t Device::get_device_created_time() noexcept {
+std::time_t Device::get_device_created_time() const noexcept {
     return created_time;
 }
 
-std::time_t Device::get_device_last_seen_time() noexcept {
+std::time_t Device::get_device_last_seen_time() const noexcept {
     return last_seen_time;
 }
 
-std::string Device::get_device_description() noexcept {
+std::string Device::get_device_description() const noexcept {
     return device_description;
 }
 
@@ -207,4 +209,13 @@ ssize_t Device::set_register(std::uint8_t reg, std::int64_t value, std::int64_t 
         return ret;
     }
     return -1;
+}
+
+Device* Device::buildDevice(Bus *bus, std::uint16_t node_id, std::uint16_t node_type, std::uint16_t node_version) noexcept {
+    if (node_type == 5) {
+        return new AntennaSwitch(bus, node_id, node_version);
+    }
+    else {
+        return new Device(bus, node_id, node_type, node_version);
+    }
 }
