@@ -3,7 +3,7 @@
  *
  * Created by SQ8KFH on 2019-04-28.
  *
- * Copyright (C) 2019-2020 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2019-2021 Kamil Palkowski. All rights reserved.
  */
 
 #include "h9frame.h"
@@ -79,6 +79,7 @@ const char* H9frame::error_to_string(Error error) {
         case Error::INVALID_MSG: return "INVALID_MSG";
         case Error::UNSUPPORTED_BOOTLOADER: return "UNSUPPORTED_BOOTLOADER";
         case Error::INVALID_REGISTER: return "INVALID_REGISTER";
+        case Error::NODE_SPECIFIC_ERROR: return "NODE_SPECIFIC_ERROR";
     }
-    return nullptr;
+    return "UNKNOWN";
 }

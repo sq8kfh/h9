@@ -3,7 +3,7 @@
  *
  * Created by SQ8KFH on 2019-04-28.
  *
- * Copyright (C) 2019-2020 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2019-2021 Kamil Palkowski. All rights reserved.
  */
 
 #ifndef _H9_H9FRAME_H_
@@ -56,6 +56,7 @@ public:
         INVALID_MSG = 1,
         UNSUPPORTED_BOOTLOADER = 2,
         INVALID_REGISTER = 3,
+        NODE_SPECIFIC_ERROR = 0xff,
     };
 
     constexpr static std::uint16_t BROADCAST_ID = 0x01ff;
