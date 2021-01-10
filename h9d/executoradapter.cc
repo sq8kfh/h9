@@ -155,6 +155,12 @@ GenericMsg ExecutorAdapter::execute_device_method(ExecuteDeviceMethodMsg exedevc
                 desc.add_value("readable", it.readable);
                 desc.add_value("writable", it.writable);
                 desc.add_value("description", it.description);
+                if (!it.bits_names.empty()) {
+                    auto bits_list = desc.add_array("bits_names");
+                    for (const auto &name: it.bits_names) {
+                        bits_list.add_value(name);
+                    }
+                }
             }
 
             res.set_request_id(exedevcmsg.get_id());

@@ -3,7 +3,7 @@
  *
  * Created by SQ8KFH on 2020-11-28.
  *
- * Copyright (C) 2020 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2020-2021 Kamil Palkowski. All rights reserved.
  */
 
 #ifndef H9_DEVICEDESCLOADER_H
@@ -12,6 +12,7 @@
 #include "config.h"
 #include <string>
 #include <map>
+#include <vector>
 #include <confuse.h>
 
 
@@ -24,6 +25,7 @@ public:
         int size;
         bool readable;
         bool writable;
+        std::vector<std::string> bits_names;
         std::string description;
     };
 

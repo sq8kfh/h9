@@ -3,7 +3,7 @@
  *
  * Created by SQ8KFH on 2020-11-28.
  *
- * Copyright (C) 2020 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2020-2021 Kamil Palkowski. All rights reserved.
  */
 
 #include "devicedescloader.h"
@@ -31,6 +31,7 @@ void DeviceDescLoader::load_file(std::string devices_desc_file) {
             CFG_STR("mode", nullptr, CFGF_NONE),
             CFG_BOOL("readable", cfg_false, CFGF_NONE),
             CFG_BOOL("writable", cfg_false, CFGF_NONE),
+            CFG_STR_LIST("bits-names", (char*)"{}", CFGF_NONE),
             CFG_STR("description", "", CFGF_NONE),
             CFG_END()
     };
@@ -84,6 +85,9 @@ void DeviceDescLoader::load_file(std::string devices_desc_file) {
             reg.size = cfg_getint(register_c, "size");
             reg.readable = cfg_getbool(register_c, "readable");
             reg.writable = cfg_getbool(register_c, "writable");
+            for (int i = cfg_size(register_c, "bits-names") - 1; i >= 0 ; --i) {
+                reg.bits_names.push_back(cfg_getnstr(register_c, "bits-names", i));
+            }
             reg.description = std::string(cfg_getstr(register_c, "description"));
         }
     }

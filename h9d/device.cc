@@ -84,13 +84,13 @@ Device::Device(Bus* bus, std::uint16_t node_id, std::uint16_t node_type, std::ui
         device_description = devicedescloader.get_device_description_by_type(node_type);
     }
 
-    register_map[1] = {1, "Node type", "uint", 16, true, false, ""};
-    register_map[2] = {2, "Node version", "uint", 16, true, false, ""};
-    register_map[3] = {3, "Node id", "uint", 9, true, true, ""};
-    register_map[4] = {4, "MCU type", "uint", 8, true, false, ""};
+    register_map[1] = {1, "Node type", "uint", 16, true, false, {}, ""};
+    register_map[2] = {2, "Node version", "uint", 16, true, false, {}, ""};
+    register_map[3] = {3, "Node id", "uint", 9, true, true, {}, ""};
+    register_map[4] = {4, "MCU type", "uint", 8, true, false, {}, ""};
 
     for (const auto &it: devicedescloader.get_device_register_by_type(node_type)) {
-        register_map[it.first] = {it.second.number, it.second.name, it.second.type, it.second.size, it.second.readable, it.second.writable, it.second.description};
+        register_map[it.first] = {it.second.number, it.second.name, it.second.type, it.second.size, it.second.readable, it.second.writable, it.second.bits_names, it.second.description};
     }
 }
 
