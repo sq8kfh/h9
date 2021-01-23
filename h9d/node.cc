@@ -97,7 +97,7 @@ int Node::get_node_type() noexcept {
     return res.data[1] << 8 | res.data[2];
 }
 
-int Node::get_node_version(std::uint8_t *major, std::uint8_t *minor) noexcept {
+uint64_t Node::get_node_version(std::uint16_t *major, std::uint16_t *minor, std::uint16_t *patch) noexcept {
     H9FrameComparator comparator;
     comparator.set_source_id(node_id);
     comparator.set_type(H9frame::Type::REG_VALUE);
@@ -113,13 +113,19 @@ int Node::get_node_version(std::uint8_t *major, std::uint8_t *minor) noexcept {
         return -1;
     }
     H9frame res = future.get();
-    if (major) *major = res.data[1];
-    if (minor) *minor = res.data[2];
-    return res.data[1] << 8 | res.data[2];
+    if (major) *major = res.data[1] << 8 | res.data[2];
+    if (minor) *minor = res.data[3] << 8 | res.data[4];
+    if (patch) *patch = res.data[5] << 8 | res.data[6];
+    uint64_t ret = 0;
+    for (int i = 1; i < 7; ++i) {
+        ret <<= 8;
+        ret |= res.data[i];
+    }
+    return ret;
 }
 
 int Node::set_node_id(std::uint16_t id) noexcept {
-    if (set_raw_reg(3, id) <= 0) {
+    if (set_raw_reg(4, id) <= 0) {
         return -1;
     }
 

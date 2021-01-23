@@ -43,7 +43,7 @@ public:
 
     int reset() noexcept;
     int get_node_type() noexcept;
-    int get_node_version(std::uint8_t *major = nullptr, std::uint8_t *minor = nullptr) noexcept;
+    uint64_t get_node_version(std::uint16_t *major = nullptr, std::uint16_t *minor = nullptr, std::uint16_t *patch = nullptr) noexcept;
     int set_node_id(std::uint16_t id) noexcept;
 
     ssize_t set_raw_reg(std::uint8_t reg, std::size_t nbyte, const std::uint8_t *buf, std::uint8_t *setted = nullptr) noexcept;
