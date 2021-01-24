@@ -75,7 +75,8 @@ Device::Device(Bus* bus, std::uint16_t node_id, std::uint16_t node_type, std::ui
     device_name("unknown"),
     device_description(""),
     created_time(std::time(nullptr)) {
-    h9_log_notice("Create device descriptor: id: %hu type: %hu version: %hhu.%hhu", node_id, node_type, node_version >> 8, node_version);
+    h9_log_notice("Create device descriptor: id: %hu type: %hu version: %hu.%hu.%hu", node_id, node_type,
+                  get_device_version_major(), get_device_version_minor(), get_device_version_patch());
 
     last_seen_time = created_time;
 

@@ -3,7 +3,7 @@
  *
  * Created by SQ8KFH on 2020-11-21.
  *
- * Copyright (C) 2020 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2020-2021 Kamil Palkowski. All rights reserved.
  */
 
 #include "executoradapter.h"
