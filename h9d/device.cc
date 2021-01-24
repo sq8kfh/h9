@@ -3,7 +3,7 @@
  *
  * Created by SQ8KFH on 2020-11-23.
  *
- * Copyright (C) 2020 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2020-2021 Kamil Palkowski. All rights reserved.
  */
 
 #include "device.h"
@@ -68,7 +68,7 @@ void Device::notify_event_observer(std::string event_name, GenericMsg msg) noexc
     event_name_mtx.unlock();
 }
 
-Device::Device(Bus* bus, std::uint16_t node_id, std::uint16_t node_type, std::uint16_t node_version) noexcept:
+Device::Device(Bus* bus, std::uint16_t node_id, std::uint16_t node_type, std::uint64_t node_version) noexcept:
     Node(bus, node_id),
     device_type(node_type),
     device_version(node_version),
@@ -86,7 +86,7 @@ Device::Device(Bus* bus, std::uint16_t node_id, std::uint16_t node_type, std::ui
 
     register_map[1] = {1, "Node type", "uint", 16, true, false, {}, ""};
     register_map[2] = {2, "Node version", "uint", 16, true, false, {}, ""};
-    register_map[3] = {3, "Build metadata", "char", 56, true, false, {}, ""};
+    register_map[3] = {3, "Build metadata", "char", 48, true, false, {}, ""};
     register_map[4] = {4, "Node id", "uint", 9, true, true, {}, ""};
     register_map[5] = {5, "MCU type", "uint", 8, true, false, {}, ""};
 
@@ -126,16 +126,20 @@ std::uint16_t Device::get_device_type() const noexcept {
     return device_type;
 }
 
-std::uint16_t Device::get_device_version() const noexcept {
+std::uint64_t Device::get_device_version() const noexcept {
     return device_version;
 }
 
-std::uint8_t Device::get_device_version_major() const noexcept {
-    return device_version >> 8;
+std::uint16_t Device::get_device_version_major() const noexcept {
+    return static_cast<std::uint16_t>(device_version >> 32);
 }
 
-std::uint8_t Device::get_device_version_minor() const noexcept {
-    return device_version;
+std::uint16_t Device::get_device_version_minor() const noexcept {
+    return static_cast<std::uint16_t>(device_version >> 16);
+}
+
+std::uint16_t Device::get_device_version_patch() const noexcept {
+    return static_cast<std::uint16_t>(device_version);
 }
 
 std::string Device::get_device_name() const noexcept {
@@ -212,7 +216,7 @@ ssize_t Device::set_register(std::uint8_t reg, std::int64_t value, std::int64_t 
     return -1;
 }
 
-Device* Device::buildDevice(Bus *bus, std::uint16_t node_id, std::uint16_t node_type, std::uint16_t node_version) noexcept {
+Device* Device::buildDevice(Bus *bus, std::uint16_t node_id, std::uint16_t node_type, std::uint64_t node_version) noexcept {
     if (node_type == 5) {
         return new AntennaSwitch(bus, node_id, node_version);
     }

@@ -3,7 +3,7 @@
  *
  * Created by SQ8KFH on 2020-11-19.
  *
- * Copyright (C) 2020 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2020-2021 Kamil Palkowski. All rights reserved.
  */
 
 #ifndef H9_DEVMGR_H
@@ -50,13 +50,14 @@ private:
     std::thread devices_update_thread_desc;
     void devices_update_thread();
 
-    void add_device(std::uint16_t node_id, std::uint16_t node_type, std::uint16_t node_version) noexcept;
+    void add_device(std::uint16_t node_id, std::uint16_t node_type, std::uint64_t node_version) noexcept;
 public:
     struct DeviceDsc {
         std::uint16_t id;
         std::uint16_t type;
-        std::uint8_t version_major;
-        std::uint8_t version_minor;
+        std::uint16_t version_major;
+        std::uint16_t version_minor;
+        std::uint16_t version_patch;
         std::string name;
     };
     struct DeviceInfo: public DeviceDsc {

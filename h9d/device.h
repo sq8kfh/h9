@@ -3,7 +3,7 @@
  *
  * Created by SQ8KFH on 2020-11-23.
  *
- * Copyright (C) 2020 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2020-2021 Kamil Palkowski. All rights reserved.
  */
 
 #ifndef H9_DEVICE_H
@@ -31,7 +31,7 @@ private:
     static DeviceDescLoader devicedescloader;
 
     const std::uint16_t device_type;
-    const std::uint16_t device_version;
+    const std::uint64_t device_version;
 
     const std::time_t created_time;
     std::time_t last_seen_time;
@@ -51,9 +51,9 @@ protected:
     std::string device_description;
 
     void notify_event_observer(std::string event_name, GenericMsg msg) noexcept;
-    Device(Bus* bus, std::uint16_t node_id, std::uint16_t node_type, std::uint16_t node_version) noexcept;
+    Device(Bus* bus, std::uint16_t node_id, std::uint16_t node_type, std::uint64_t node_version) noexcept;
 public:
-    static Device* buildDevice(Bus* bus, std::uint16_t node_id, std::uint16_t node_type, std::uint16_t node_version) noexcept;
+    static Device* buildDevice(Bus* bus, std::uint16_t node_id, std::uint16_t node_type, std::uint64_t node_version) noexcept;
 
     std::vector<std::string> get_events_list() noexcept;
     std::vector<RegisterDsc> get_registers_list() noexcept;
@@ -62,9 +62,10 @@ public:
 
     std::uint16_t get_device_id() const noexcept;
     std::uint16_t get_device_type() const noexcept;
-    std::uint16_t get_device_version() const noexcept;
-    std::uint8_t get_device_version_major() const noexcept;
-    std::uint8_t get_device_version_minor() const noexcept;
+    std::uint64_t get_device_version() const noexcept;
+    std::uint16_t get_device_version_major() const noexcept;
+    std::uint16_t get_device_version_minor() const noexcept;
+    std::uint16_t get_device_version_patch() const noexcept;
     std::string get_device_name() const noexcept;
     std::time_t get_device_created_time() const noexcept;
     std::time_t get_device_last_seen_time() const noexcept;

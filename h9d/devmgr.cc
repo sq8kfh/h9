@@ -3,7 +3,7 @@
  *
  * Created by SQ8KFH on 2020-11-19.
  *
- * Copyright (C) 2020 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2020-2021 Kamil Palkowski. All rights reserved.
  */
 
 #include "devmgr.h"
@@ -32,12 +32,24 @@ void DevMgr::devices_update_thread() {
         h9_log_debug2("Devices update thread: pop frame (remained %d)", remained_frame);
 
         if (frame.type == H9frame::Type::NODE_INFO) {
-            h9_log_notice("Dev discovered id: %d, type: %d, version: %d.%d", frame.source_id, frame.data[0] << 8 | frame.data[1], frame.data[2], frame.data[3]);
-            add_device(frame.source_id, frame.data[0] << 8 | frame.data[1], frame.data[2] << 8 | frame.data[3]);
+            uint16_t version_major = frame.data[2] << 8 | frame.data[3];
+            uint16_t version_minor = frame.data[4] << 8 | frame.data[5];
+            uint16_t version_patch = frame.data[6] << 8 | frame.data[7];
+            uint64_t version = version_major;
+            version = version << 16 | version_minor;
+            version = version << 16 | version_patch;
+            h9_log_notice("Dev discovered id: %d, type: %d, version: %hu.%hu.%hu", frame.source_id, frame.data[0] << 8 | frame.data[1], version_major, version_minor, version_patch);
+            add_device(frame.source_id, frame.data[0] << 8 | frame.data[1], version);
         }
         else if (frame.type == H9frame::Type::NODE_TURNED_ON) {
-            h9_log_notice("Dev turned on id: %d, type: %d, version: %d.%d", frame.source_id, frame.data[0] << 8 | frame.data[1], frame.data[2], frame.data[3]);
-            add_device(frame.source_id, frame.data[0] << 8 | frame.data[1], frame.data[2] << 8 | frame.data[3]);
+            uint16_t version_major = frame.data[2] << 8 | frame.data[3];
+            uint16_t version_minor = frame.data[4] << 8 | frame.data[5];
+            uint16_t version_patch = frame.data[6] << 8 | frame.data[7];
+            uint64_t version = version_major;
+            version = version << 16 | version_minor;
+            version = version << 16 | version_patch;
+            h9_log_notice("Dev turned on id: %d, type: %d, version: %d.%d.%d", frame.source_id, frame.data[0] << 8 | frame.data[1], version_major, version_minor, version_patch);
+            add_device(frame.source_id, frame.data[0] << 8 | frame.data[1], version);
         }
         //else if(frame.type >= H9frame::Type::SET_REG) { //SKIP BOOTLOADER FRAME
         else if(frame.type >= H9frame::Type::REG_EXTERNALLY_CHANGED) {
@@ -64,14 +76,14 @@ void DevMgr::devices_update_thread() {
     }
 }
 
-void DevMgr::add_device(std::uint16_t node_id, std::uint16_t node_type, std::uint16_t node_version) noexcept {
+void DevMgr::add_device(std::uint16_t node_id, std::uint16_t node_type, std::uint64_t node_version) noexcept {
     devices_map_mtx.lock();
     if (devices_map.count(node_id)) {
         if (devices_map[node_id]->get_device_type() != node_type || devices_map[node_id]->get_device_version() != node_version) {
-            h9_log_warn("Node %hu (type: %hu, version: %hhu.%hhu) exist, override by node type: %hu version: %hhu.%hhu",
-                    node_id, devices_map[node_id]->get_device_type(),
-                    devices_map[node_id]->get_device_version_major(), devices_map[node_id]->get_device_version_minor(),
-                    node_type, node_version >> 8, node_version);
+            h9_log_warn("Node %hu (type: %hu, version: %hu.%hu.%hu) exist, override by node type: %hu version: %hu.%hu.%hu",
+                    node_id, devices_map[node_id]->get_device_type(), devices_map[node_id]->get_device_version_major(),
+                    devices_map[node_id]->get_device_version_minor(), devices_map[node_id]->get_device_version_patch(),
+                    node_type, node_version >> 32, node_version >> 16, node_version);
             delete devices_map[node_id];
             devices_map[node_id] = Device::buildDevice(h9bus, node_id, node_type, node_version);
         }
@@ -133,7 +145,7 @@ std::vector<DevMgr::DeviceDsc> DevMgr::get_devices_list() noexcept {
     std::vector<DevMgr::DeviceDsc> ret;
 
     for (auto it: devices_map) {
-        ret.push_back({it.first, it.second->get_device_type(), it.second->get_device_version_major(), it.second->get_device_version_minor(),  it.second->get_device_name()});
+        ret.push_back({it.first, it.second->get_device_type(), it.second->get_device_version_major(), it.second->get_device_version_minor(), it.second->get_device_version_patch(), it.second->get_device_name()});
     }
 
     devices_map_mtx.unlock_shared();
