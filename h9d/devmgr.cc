@@ -277,6 +277,7 @@ int DevMgr::get_device_info(std::uint16_t dev_id, DevMgr::DeviceInfo &device_inf
         device_info.name = dev->get_device_name();
         device_info.version_major = dev->get_device_version_major();
         device_info.version_minor = dev->get_device_version_minor();
+        device_info.version_patch = dev->get_device_version_patch();
         device_info.created_time = dev->get_device_created_time();
         device_info.last_seen_time = dev->get_device_last_seen_time();
         device_info.description = dev->get_device_description();

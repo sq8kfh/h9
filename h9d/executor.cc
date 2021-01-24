@@ -3,7 +3,7 @@
  *
  * Created by SQ8KFH on 2020-11-21.
  *
- * Copyright (C) 2020 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2020-2021 Kamil Palkowski. All rights reserved.
  */
 
 #include "executor.h"
@@ -120,7 +120,7 @@ DeviceMethodResponseMsg Executor::execute_device_method(const TCPClientThread *c
         auto res = DeviceMethodResponseMsg(device_id, method_name);
         res.add_value("id", dev_info.id);
         res.add_value("type", dev_info.type);
-        res.add_value("version", std::to_string(dev_info.version_major) + "." + std::to_string(dev_info.version_minor));
+        res.add_value("version", std::to_string(dev_info.version_major) + "." + std::to_string(dev_info.version_minor) + "." + std::to_string(dev_info.version_patch));
         res.add_value("name", dev_info.name);
 
         char buf[sizeof "2016-06-30T17:26:29Z"];
