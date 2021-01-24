@@ -48,7 +48,7 @@ void DevMgr::devices_update_thread() {
             uint64_t version = version_major;
             version = version << 16 | version_minor;
             version = version << 16 | version_patch;
-            h9_log_notice("Dev turned on id: %d, type: %d, version: %d.%d.%d", frame.source_id, frame.data[0] << 8 | frame.data[1], version_major, version_minor, version_patch);
+            h9_log_notice("Dev turned on id: %d, type: %d, version: %hu.%hu.%hu", frame.source_id, frame.data[0] << 8 | frame.data[1], version_major, version_minor, version_patch);
             add_device(frame.source_id, frame.data[0] << 8 | frame.data[1], version);
         }
         //else if(frame.type >= H9frame::Type::SET_REG) { //SKIP BOOTLOADER FRAME
@@ -80,10 +80,13 @@ void DevMgr::add_device(std::uint16_t node_id, std::uint16_t node_type, std::uin
     devices_map_mtx.lock();
     if (devices_map.count(node_id)) {
         if (devices_map[node_id]->get_device_type() != node_type || devices_map[node_id]->get_device_version() != node_version) {
+            uint16_t major = static_cast<std::uint16_t>(node_version >> 32);
+            uint16_t minor = static_cast<std::uint16_t>(node_version >> 16);
+            uint16_t patch = static_cast<std::uint16_t>(node_version);
             h9_log_warn("Node %hu (type: %hu, version: %hu.%hu.%hu) exist, override by node type: %hu version: %hu.%hu.%hu",
                     node_id, devices_map[node_id]->get_device_type(), devices_map[node_id]->get_device_version_major(),
                     devices_map[node_id]->get_device_version_minor(), devices_map[node_id]->get_device_version_patch(),
-                    node_type, node_version >> 32, node_version >> 16, node_version);
+                    node_type, major, minor, patch);
             delete devices_map[node_id];
             devices_map[node_id] = Device::buildDevice(h9bus, node_id, node_type, node_version);
         }
