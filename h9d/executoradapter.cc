@@ -72,7 +72,7 @@ GenericMsg ExecutorAdapter::execute_method(ExecuteMethodMsg execmsg) {
                 auto desc = devices.add_dict();
                 desc.add_value("id", it.id);
                 desc.add_value("type", it.type);
-                desc.add_value("version", std::to_string(it.version_major) + "." + std::to_string(it.version_minor));
+                desc.add_value("version", std::to_string(it.version_major) + "." + std::to_string(it.version_minor) + "." + std::to_string(it.version_patch));
                 desc.add_value("name", it.name);
             }
 
