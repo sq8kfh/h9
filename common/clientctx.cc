@@ -67,34 +67,34 @@ void ClientCtx::load_configuration(const cxxopts::ParseResult& opts) {
         cfg_free(cfg);
         cfg = nullptr;
     }
+
+    if (opts.count("connect") == 1 && opts.count("port") == 1) {
+        h9bus_host = opts["connect"].as<std::string>();
+        h9bus_port = std::to_string(opts["port"].as<int>());
+    }
     else {
-        if (opts.count("connect") == 1 && opts.count("port") == 1) {
-            h9bus_host = opts["connect"].as<std::string>();
+        std::string tmp_host = "default";
+        h9bus_host = DEFAULT_H9BUS_HOST_FOR_CLIENT;
+        h9bus_port = std::to_string(H9BUS_DEFAULT_PORT);
+        if (opts.count("connect") == 1) {
+            tmp_host = opts["connect"].as<std::string>();
+            h9bus_host = tmp_host;
+        }
+        if (opts.count("port") == 1) {
             h9bus_port = std::to_string(opts["port"].as<int>());
         }
-        else {
-            std::string tmp_host = "default";
-            h9bus_host = DEFAULT_H9BUS_HOST_FOR_CLIENT;
-            h9bus_port = std::to_string(H9BUS_DEFAULT_PORT);
-            if (opts.count("connect") == 1) {
-                tmp_host = opts["connect"].as<std::string>();
-                h9bus_host = tmp_host;
-            }
-            if (opts.count("port") == 1) {
-                h9bus_port = std::to_string(opts["port"].as<int>());
-            }
+        else if (cfg) {
             for (int i = 0; i < cfg_size(cfg, "H9bus"); i++) {
                 cfg_t *h9bus_sec = cfg_getnsec(cfg, "H9bus", i);
                 if (tmp_host == cfg_title(h9bus_sec)) {
                     default_source_id = cfg_getint(h9bus_sec, "DefaultSourceID");
                     h9bus_host = cfg_getstr(h9bus_sec, "HostName");
-                    if (opts.count("port") == 0) {
-                        h9bus_port = std::to_string(cfg_getint(h9bus_sec, "Port"));
-                    }
+                    h9bus_port = std::to_string(cfg_getint(h9bus_sec, "Port"));
                 }
             }
         }
     }
+
     logger().set_to_stderr(true);
 }
 
