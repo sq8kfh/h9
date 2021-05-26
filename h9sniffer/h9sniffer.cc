@@ -71,7 +71,9 @@ void print_frame(const H9frame& frame) {
     }
     else if (frame.type == H9frame::Type::NODE_TURNED_ON || frame.type == H9frame::Type::NODE_INFO) {
         std::cout << "    node type: " << static_cast<unsigned int>(frame.data[0] << 8 | frame.data[1]) << std::endl;
-        std::cout << "    node firmware: " << static_cast<unsigned int>(frame.data[2]) << '.' << static_cast<unsigned int>(frame.data[3]) << std::endl;
+        std::cout << "    node firmware: " << static_cast<unsigned int>(frame.data[2] << 8 | frame.data[3])
+                                    << '.' << static_cast<unsigned int>(frame.data[4] << 8 | frame.data[5])
+                                    << '.' << static_cast<unsigned int>(frame.data[6] << 8 | frame.data[7]) << std::endl;
     }
     else if (frame.type == H9frame::Type::BOOTLOADER_TURNED_ON) {
         std::cout << "    bootloader version: " << static_cast<unsigned int>(frame.data[0]) << '.' << static_cast<unsigned int>(frame.data[1]) << std::endl;

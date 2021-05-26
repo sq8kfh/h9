@@ -86,7 +86,7 @@ Device::Device(Bus* bus, std::uint16_t node_id, std::uint16_t node_type, std::ui
     }
 
     register_map[1] = {1, "Node type", "uint", 16, true, false, {}, ""};
-    register_map[2] = {2, "Node version", "uint", 16, true, false, {}, ""};
+    register_map[2] = {2, "Node version", "uint", 48, true, false, {}, ""};
     register_map[3] = {3, "Build metadata", "char", 48, true, false, {}, ""};
     register_map[4] = {4, "Node id", "uint", 9, true, true, {}, ""};
     register_map[5] = {5, "MCU type", "uint", 8, true, false, {}, ""};
