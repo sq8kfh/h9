@@ -3,7 +3,7 @@
  *
  * Created by SQ8KFH on 2020-11-23.
  *
- * Copyright (C) 2020 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2020-2023 Kamil Palkowski. All rights reserved.
  */
 
 #ifndef H9_FRAMESUBJECT_H
@@ -14,7 +14,7 @@
 #include <mutex>
 #include <list>
 #include "frameobserver.h"
-#include "bus/h9framecomparator.h"
+#include "h9framecomparator.h"
 
 
 class FrameSubject {
@@ -28,7 +28,7 @@ private:
     void attach_frame_observer(FrameObserver *observer, H9FrameComparator comparator);
     void detach_frame_observer(FrameObserver *observer);
 protected:
-    void notify_frame_observer(const H9frame &frame);
+    void notify_frame_observer(const ExtH9Frame &frame);
 };
 
 

@@ -3,7 +3,7 @@
  *
  * Created by SQ8KFH on 2020-11-22.
  *
- * Copyright (C) 2020 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2020-2023 Kamil Palkowski. All rights reserved.
  */
 
 #include "kqueue.h"
@@ -53,7 +53,7 @@ void KQueue::attach_socket(int fd) {
 }
 
 int KQueue::wait() {
-    int ret = kevent(kq, NULL, 0, tevent, event_number, NULL);
+    int ret = kevent(kq, NULL, 0, tevent, event_queue_size, NULL);
     if	(ret ==	-1) {
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
@@ -75,11 +75,16 @@ void KQueue::trigger_async_event() {
     }
 }
 
-bool KQueue::is_socket_event(int event_num, int fd) {
-    if (fd == (int)tevent[event_num].ident) return true;
+bool KQueue::is_socket_event(int number_of_events, int fd) {
+    for (int i = 0; i < number_of_events; ++i) {
+        if (fd == (int) tevent[i].ident) return true;
+    }
     return false;
 }
 
-bool KQueue::is_async_event(int event_num) {
-    return tevent[event_num].filter == EVFILT_USER;
+bool KQueue::is_async_event(int number_of_events) {
+    for (int i = 0; i < number_of_events; ++i) {
+        if (tevent[i].filter == EVFILT_USER) return true;
+    }
+    return false;
 }

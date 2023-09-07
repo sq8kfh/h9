@@ -6,30 +6,32 @@
  * Copyright (C) 2018-2020 Kamil Palkowski. All rights reserved.
  */
 
-#ifndef _H9_SLCAN_H_
-#define _H9_SLCAN_H_
+#ifndef H9_SLCAN_DRIVER_H
+#define H9_SLCAN_DRIVER_H
 
-#include "h9bus/driver.h"
+#include "bus_driver.h"
 
 
-class Slcan: public Driver {
+class SlcanDriver: public BusDriver {
 private:
     const std::string _tty;
     bool noblock;
     std::string recv_buf;
 
-    const H9frame* last_send;
+    //TODO: Zmienic na kolejke
+    BusFrame* last_send;
 public:
-    Slcan(const std::string& name, TRecvFrameCallback recv_frame_callback, TSendFrameCallback send_frame_callback, const std::string& tty);
-    void open();
+    SlcanDriver(const std::string& name, const std::string& tty);
+    int open();
+
     static std::string build_slcan_msg(const H9frame& frame);
     static H9frame parse_slcan_msg(const std::string& slcan_data);
 private:
-    void recv_data();
-    void send_data(const H9frame& frame);
+    int recv_data(H9frame *frame);
+    int send_data(BusFrame *busframe);
     void parse_response(const std::string& response);
     void send_ack();
 };
 
 
-#endif //_H9_SLCAN_H_
+#endif //H9_SLCAN_DRIVER_H

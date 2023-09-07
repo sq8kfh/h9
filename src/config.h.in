@@ -3,7 +3,7 @@
  *
  * Created by SQ8KFH on 2017-12-07.
  *
- * Copyright (C) 2017-2020 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2017-2023 Kamil Palkowski. All rights reserved.
  */
 
 /* --------------------------------------------------------------------------- *
@@ -11,21 +11,20 @@
  * during the cmake configuration of your project. If you need to make changes *
  * edit the original file NOT THIS FILE.                                       *
  * --------------------------------------------------------------------------- */
-#ifndef _CONFIG_H_
-#define _CONFIG_H_
+#ifndef H9_CONFIG_H
+#define H9_CONFIG_H
 
 #define H9_CONFIG_PATH "@H9_CONFIG_PATH@"
 #define H9_USER_CONFIG_FILE "@H9_USER_CONFIG_FILE@"
 #define H9_VERSION "@H9_VERSION@"
 #cmakedefine H9_DEBUG
+#cmakedefine H9_SOCKETCAN_DRIVER
 
-#define H9BUS_DEFAULT_PORT 7878
 #define H9D_DEFAULT_PORT 7979
 
 #define DEFAULT_SOURCE_ID_FOR_CLIENT 510
-#define DEFAULT_H9BUS_HOST_FOR_CLIENT "127.0.0.1"
 
 #define DEFAULT_SEND_FRAME_TO_H9BUS_TIMEOUT 3
 #define DEFAULT_RECV_RESPONSE_FRAME_TIMEOUT 3
 
-#endif
+#endif //H9_CONFIG_H

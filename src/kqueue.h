@@ -3,7 +3,7 @@
  *
  * Created by SQ8KFH on 2020-11-22.
  *
- * Copyright (C) 2020 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2020-2023 Kamil Palkowski. All rights reserved.
  */
 
 #ifndef H9_KQUEUE_H
@@ -15,9 +15,9 @@
 
 class KQueue {
 private:
-    constexpr static int event_number = 2;
+    constexpr static int event_queue_size = 2;
     int kq;
-    struct kevent tevent[event_number];
+    struct kevent tevent[event_queue_size];
 public:
     KQueue();
     ~KQueue();
@@ -27,8 +27,8 @@ public:
 
     void trigger_async_event();
 
-    bool is_socket_event(int event_num, int fd);
-    bool is_async_event(int event_num);
+    bool is_socket_event(int number_of_events, int fd);
+    bool is_async_event(int number_of_events);
 };
 
 

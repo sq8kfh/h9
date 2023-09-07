@@ -10,7 +10,7 @@
 #define H9_H9FRAMECOMPARATOR_H
 
 #include "config.h"
-#include "h9frame.h"
+#include "ext_h9frame.h"
 
 
 class H9FrameComparator {
@@ -37,7 +37,7 @@ private:
 public:
     H9FrameComparator(void);
     H9FrameComparator(std::uint16_t source_id_v);
-    bool operator==(const H9frame &b) const;
+    bool operator==(const ExtH9Frame &b) const;
     bool operator<(const H9FrameComparator &b) const ;
     void set_priority(H9frame::Priority priority_v);
     void set_type(H9frame::Type type_v);

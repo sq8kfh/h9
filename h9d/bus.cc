@@ -16,6 +16,7 @@
 #include "protocol/sendframemsg.h"
 #include "protocol/executemethodmsg.h"
 #include "protocol/subscribemsg.h"
+#include "src/bus.h"
 
 
 void Bus::recv_thread() {
@@ -289,4 +290,8 @@ int Bus::send_node_discover(H9frame::Priority priority, std::uint8_t seqnum, std
 
     int ret = send_frame_sync(frame);
     return ret == Bus::OK ? frame.seqnum : ret;
+}
+
+void Bus::run() {
+
 }

@@ -3,14 +3,15 @@
  *
  * Created by SQ8KFH on 2020-11-11.
  *
- * Copyright (C) 2020 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2020-2023 Kamil Palkowski. All rights reserved.
  */
 
 #ifndef H9_FRAMEOBSERVER_H
 #define H9_FRAMEOBSERVER_H
 
 #include "config.h"
-#include "bus/h9framecomparator.h"
+#include "h9framecomparator.h"
+#include "ext_h9frame.h"
 
 
 class FrameSubject;
@@ -23,7 +24,7 @@ protected:
 
     FrameObserver(FrameSubject *subject, H9FrameComparator comparator);
     ~FrameObserver();
-    virtual void on_frame_recv(H9frame frame) = 0;
+    virtual void on_frame_recv(ExtH9Frame frame) = 0;
 };
 
 

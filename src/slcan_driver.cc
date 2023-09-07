@@ -3,41 +3,40 @@
  *
  * Created by SQ8KFH on 2019-04-28.
  *
- * Copyright (C) 2019-2020 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2019-2023 Kamil Palkowski. All rights reserved.
  */
 
-#include "slcan.h"
+#include "slcan_driver.h"
 
 #include <system_error>
 #include <sstream>
 #include <iomanip>
-//#include <iostream>
-
+#include <unistd.h>
 #include <fcntl.h>
 #include <termios.h>
 
-Slcan::Slcan(const std::string& name, TRecvFrameCallback recv_frame_callback, TSendFrameCallback send_frame_callback, const std::string& tty):
-        Driver(name, std::move(recv_frame_callback), std::move(send_frame_callback)),
+SlcanDriver::SlcanDriver(const std::string& name, const std::string& tty):
+        BusDriver(name),
         _tty(tty) {
     noblock = false;
     last_send = nullptr;
 }
 
-void Slcan::open() {
-    int fd = ::open(_tty.c_str(), O_RDWR | O_NOCTTY | O_NDELAY);
-    if (fd == -1) {
+int SlcanDriver::open() {
+    socket_fd = ::open(_tty.c_str(), O_RDWR | O_NOCTTY | O_NDELAY);
+    if (socket_fd == -1) {
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
     else {
         if (noblock)
-            fcntl(fd, F_SETFL, O_NONBLOCK);
+            fcntl(socket_fd, F_SETFL, O_NONBLOCK);
         else
-            fcntl(fd, F_SETFL, 0);
+            fcntl(socket_fd, F_SETFL, 0);
     }
 
     struct termios options;
 
-    tcgetattr(fd, &options);
+    tcgetattr(socket_fd, &options);
 
     cfsetispeed(&options, B115200);
     cfsetospeed(&options, B115200);
@@ -65,14 +64,14 @@ void Slcan::open() {
     options.c_cc[VMIN]  = noblock ? 0 : 1;
     options.c_cc[VTIME] = 1;
 
-    if (tcsetattr(fd, TCSANOW, &options) != 0) {
+    if (tcsetattr(socket_fd, TCSANOW, &options) != 0) {
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
 
-    set_socket(fd, true);
+    return socket_fd;
 }
 
-std::string Slcan::build_slcan_msg(const H9frame& frame) {
+std::string SlcanDriver::build_slcan_msg(const H9frame& frame) {
     uint32_t id = 0;
     id |= H9frame::to_underlying(frame.priority) & ((1<<H9frame::H9FRAME_PRIORITY_BIT_LENGTH) - 1);
     id <<= H9frame::H9FRAME_TYPE_BIT_LENGTH;
@@ -97,7 +96,7 @@ std::string Slcan::build_slcan_msg(const H9frame& frame) {
     return buf.str();
 }
 
-H9frame Slcan::parse_slcan_msg(const std::string& slcan_data) {
+H9frame SlcanDriver::parse_slcan_msg(const std::string& slcan_data) {
     H9frame res = H9frame();
 
     uint32_t id = std::stoi(slcan_data.substr(1, 8), nullptr, 16);
@@ -126,9 +125,9 @@ H9frame Slcan::parse_slcan_msg(const std::string& slcan_data) {
     return res;
 }
 
-void Slcan::recv_data() {
+int SlcanDriver::recv_data(H9frame *frame) {
     std::uint8_t buf[100];
-    ssize_t nbyte = read(get_socket(), buf, sizeof(buf)-1);
+    ssize_t nbyte = read(socket_fd, buf, sizeof(buf)-1);
     if (nbyte <= 0) {
         if (nbyte == 0 || errno == ENXIO) {
             close();
@@ -144,11 +143,13 @@ void Slcan::recv_data() {
             recv_buf.clear();
         }
     }
+
+    return nbyte;
 }
 
-void Slcan::send_data(const H9frame& frame) {
-    std::string buf = build_slcan_msg(frame);
-    ssize_t nbyte = write(get_socket(), buf.c_str(), buf.size());
+int SlcanDriver::send_data(BusFrame *busframe) {
+    std::string buf = build_slcan_msg(busframe->frame());
+    ssize_t nbyte = write(socket_fd, buf.c_str(), buf.size());
     //std::cout << "send raw: " << buf.c_str() << std::endl;
     if (nbyte <= 0) {
         if (nbyte == 0 || errno == ENXIO) {
@@ -156,31 +157,33 @@ void Slcan::send_data(const H9frame& frame) {
         }
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
-    last_send = &frame;
+    last_send = busframe;
+
+    return nbyte;
 }
 
-void Slcan::parse_response(const std::string& response) {
+void SlcanDriver::parse_response(const std::string& response) {
     switch (response[0]) {
         case '\r':
             //std::cout << "pare \\r" << std::endl;
             if (last_send) {
                 //const H9frame* tmp = last_send;
+                frame_sent_correctly(last_send);
                 last_send = nullptr;
                 //printf("debug: %p\n", tmp);
-                on_frame_send();
             }
 
             break;
-        case 'T':
+        /*case 'T':
             if (response.size() >= 10)
-                on_frame_recv(parse_slcan_msg(response));
+                on_frame_recv(parse_slcan_msg(response));*/
             //send_ack();
             break;
     }
 }
 
-void Slcan::send_ack() {
-    ssize_t nbyte = write(get_socket(), "\r", 1);
+void SlcanDriver::send_ack() {
+    ssize_t nbyte = write(socket_fd, "\r", 1);
     if (nbyte <= 0) {
         if (nbyte == 0 || errno == ENXIO) {
             close();

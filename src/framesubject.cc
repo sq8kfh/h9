@@ -3,7 +3,7 @@
  *
  * Created by SQ8KFH on 2020-11-23.
  *
- * Copyright (C) 2020 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2020-2023 Kamil Palkowski. All rights reserved.
  */
 
 #include "framesubject.h"
@@ -30,7 +30,7 @@ void FrameSubject::detach_frame_observer(FrameObserver *observer) {
     frame_observers_mtx.unlock();
 }
 
-void FrameSubject::notify_frame_observer(const H9frame &frame) {
+void FrameSubject::notify_frame_observer(const ExtH9Frame &frame) {
     frame_observers_mtx.lock();
     for (auto const& o : frame_observers) {
         if (o.first == frame) {

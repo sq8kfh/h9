@@ -3,7 +3,7 @@
  *
  * Created by SQ8KFH on 2019-04-28.
  *
- * Copyright (C) 2019-2021 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2019-2023 Kamil Palkowski. All rights reserved.
  */
 
 #include "h9frame.h"
@@ -23,6 +23,7 @@ std::ostream& operator<<(std::ostream& os, const H9frame& frame) {
     os << frame.source_id << " -> " << frame.destination_id
     << " priority: " << (frame.priority == H9frame::Priority::HIGH ? 'H' : 'L')
     << " type: " << std::setw(2) << static_cast<unsigned int>(H9frame::to_underlying(frame.type))
+    << " (" << H9frame::type_to_string(frame.type) << ")"
     << " seqnum: " << std::setw(2) << static_cast<unsigned int>(frame.seqnum)
     << " dlc: " << static_cast<unsigned int>(frame.dlc)
     << " data:";

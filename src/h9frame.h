@@ -3,19 +3,18 @@
  *
  * Created by SQ8KFH on 2019-04-28.
  *
- * Copyright (C) 2019-2021 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2019-2023 Kamil Palkowski. All rights reserved.
  */
 
-#ifndef _H9_H9FRAME_H_
-#define _H9_H9FRAME_H_
+#ifndef H9_H9FRAME_H
+#define H9_H9FRAME_H
 
 #include "config.h"
 #include <cstdint>
 #include <ostream>
 
 
-class H9frame {
-public:
+struct H9frame {
     enum class Priority : std::uint8_t { HIGH = 0, LOW = 1 };
     enum class Type : std::uint8_t {
         NOP = 0,
@@ -66,7 +65,7 @@ public:
     constexpr static int H9FRAME_SEQNUM_BIT_LENGTH = 5;
     constexpr static int H9FRAME_DESTINATION_ID_BIT_LENGTH = 9;
     constexpr static int H9FRAME_SOURCE_ID_BIT_LENGTH = 9;
-public:
+
     Priority priority;
     Type type;
     std::uint8_t seqnum: H9FRAME_SEQNUM_BIT_LENGTH;
@@ -99,4 +98,4 @@ public:
 
 std::ostream& operator<<(std::ostream& os, const H9frame& frame);
 
-#endif //_H9_H9FRAME_H_
+#endif //H9_H9FRAME_H
