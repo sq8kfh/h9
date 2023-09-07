@@ -47,7 +47,7 @@ void Epoll::attach_socket(int fd) {
 }
 
 int Epoll::wait() {
-    int ret = epoll_wait(epoll, tevent, event_number, -1);
+    int ret = epoll_wait(epoll, tevent, event_queue_size, -1);
     if	(ret ==	-1) {
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
