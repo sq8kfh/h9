@@ -16,7 +16,9 @@
 
 #include "bus.h"
 #include "loop_driver.h"
-#include "kqueue.h"
+#include "socketcan_driver.h"
+
+#include "epoll.h"
 
 #include "frameobserver.h"
 
@@ -62,8 +64,10 @@ public:
 int main(int argc, char **argv) {
     LoopDriver loop0 = LoopDriver("loop0");
     LoopDriver loop1 = LoopDriver("loop1");
-    Bus<KQueue> bus;
-    bus.add_driver(&loop0);
+    SocketCANDriver can0 = SocketCANDriver("can0", "can0");
+
+    Bus<Epoll> bus;
+    //bus.add_driver(&can0);
     bus.add_driver(&loop1);
 
     bus.activate();
@@ -75,7 +79,10 @@ int main(int argc, char **argv) {
         //bus.send();
         //sleep(5);
         ExtH9Frame h9frame;
-        h9frame.type(H9frame::Type::NODE_HEARTBEAT);
+        h9frame.type(H9frame::Type::DISCOVER);
+        h9frame.destination_id(H9frame::BROADCAST_ID);
+	h9frame.source_id(3);
+	h9frame.dlc(0);
         //auto frame = BusFrame(h9frame, "tcp", 0, 0);
         //loop.send_frame(frame);
         std::cout << "Sending...\n";

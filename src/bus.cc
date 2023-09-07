@@ -49,7 +49,7 @@ void Bus<IOEventQueue>::recv_thread() {
                 }
                 else
                     ++it;
-            }0
+            }
             send_orphans_mtx.unlock();
         }
         else {

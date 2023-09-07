@@ -32,7 +32,7 @@ int SocketCANDriver::open() {
     }
 
     strcpy(ifr.ifr_name, _interface.c_str());
-    if (ioctl(sockfd, SIOCGIFINDEX, &ifr) < 0) {
+    if (ioctl(socket_fd, SIOCGIFINDEX, &ifr) < 0) {
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__) + " '" + _interface + "'");
     }
 
@@ -50,7 +50,7 @@ int SocketCANDriver::open() {
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
 
-    return socket_fd
+    return socket_fd;
 }
 
 int SocketCANDriver::recv_data(H9frame *frame) {
@@ -84,7 +84,8 @@ int SocketCANDriver::recv_data(H9frame *frame) {
         res.data[i] = can_msg.data[i];
     }
 
-    on_frame_recv(res);
+    *frame = res;
+    //on_frame_recv(res);
 }
 
 int SocketCANDriver::send_data(BusFrame *busframe) {
