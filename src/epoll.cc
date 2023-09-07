@@ -3,7 +3,7 @@
  *
  * Created by SQ8KFH on 2020-11-22.
  *
- * Copyright (C) 2020 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2020-2023 Kamil Palkowski. All rights reserved.
  */
 
 #include "epoll.h"
@@ -60,12 +60,16 @@ void Epoll::trigger_async_event() {
     }
 }
 
-bool Epoll::is_socket_event(int event_num, int fd) {
-    if (fd == (int)tevent[event_num].data.fd) return true;
+bool Epoll::is_socket_event(int number_of_events, int fd) {
+    for (int i = 0; i < number_of_events; ++i) {
+        if (fd == (int) tevent[i].data.fd) return true;
+    }
     return false;
 }
 
-bool Epoll::is_async_event(int event_num) {
-    if (event_fd == (int)tevent[event_num].data.fd) return true;
+bool Epoll::is_async_event(int number_of_events) {
+    for (int i = 0; i < number_of_events; ++i) {
+        if (event_fd == (int)tevent[i].data.fd) return true;
+    }
     return false;
 }

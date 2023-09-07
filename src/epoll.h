@@ -15,9 +15,9 @@
 
 class Epoll {
 private:
-    constexpr static int event_number = 2;
+    constexpr static int event_queue_size = 2;
     int epoll;
-    struct epoll_event tevent[event_number];
+    struct epoll_event tevent[event_queue_size];
     int event_fd;
 public:
     Epoll();
@@ -28,8 +28,8 @@ public:
 
     void trigger_async_event();
 
-    bool is_socket_event(int event_num, int fd);
-    bool is_async_event(int event_num);
+    bool is_socket_event(int number_of_events, int fd);
+    bool is_async_event(int number_of_events);
 };
 
 
