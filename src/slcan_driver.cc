@@ -16,7 +16,7 @@
 #include <termios.h>
 
 SlcanDriver::SlcanDriver(const std::string& name, const std::string& tty):
-        BusDriver(name),
+        BusDriver(name, "SLCAN"),
         _tty(tty) {
     noblock = false;
     last_send = nullptr;

@@ -11,6 +11,7 @@
 
 #include "config.h"
 #include <string>
+#include <spdlog/spdlog.h>
 #include "busframe.h"
 #include "h9frame.h"
 
@@ -22,14 +23,17 @@ private:
 protected:
     int socket_fd;
 
+    std::shared_ptr<spdlog::logger> logger;
+
     virtual int recv_data(H9frame *frame) = 0;
     virtual int send_data(BusFrame *busframe) = 0;
 
     void frame_sent_correctly(BusFrame *busframe);
 public:
+    const std::string driver_name;
     const std::string name;
 
-    explicit BusDriver(const std::string& name);
+    explicit BusDriver(const std::string& name, const std::string& driver_name);
     virtual ~BusDriver();
 
     int get_scoket();

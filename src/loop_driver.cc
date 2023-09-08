@@ -13,7 +13,7 @@
 
 int LoopDriver::instance_counter = 0;
 
-LoopDriver::LoopDriver(const std::string& name): BusDriver(name) {
+LoopDriver::LoopDriver(const std::string& name): BusDriver(name, "loop") {
     bzero(&loopback_addr, sizeof(loopback_addr));
     loopback_addr.sin_family = AF_INET;
     loopback_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);

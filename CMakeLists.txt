@@ -11,6 +11,7 @@ set(H9_CONFIG_PATH "../conf/")
 set(H9_VERSION ${PROJECT_VERSION})
 
 find_package(PkgConfig REQUIRED)
+find_package(spdlog REQUIRED)
 #find_package(FLEX 2.6.1 REQUIRED)
 #find_package(BISON 3.3.2 REQUIRED)
 

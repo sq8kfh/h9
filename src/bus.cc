@@ -7,21 +7,21 @@
  */
 
 #include "bus.h"
-#include <iostream>
 #include <future>
+#include "h9d_configurator.h"
 
 
-template<class IOEventQueue>
-void Bus<IOEventQueue>::recv_thread() {
-    for (const auto& [socket, value] : bus) {
+void Bus::recv_thread() {
+    SPDLOG_LOGGER_INFO(logger, "Running the bus manager...");
+
+    for (const auto& [socket, driver] : bus) {
         event_notificator.attach_socket(socket);
     }
     while (run) {
         int number_of_events = event_notificator.wait();
         if (event_notificator.is_async_event(number_of_events)) {
-
             while (true) {
-                std::cout << "run" << std::endl;
+                SPDLOG_LOGGER_TRACE(logger, "Event queue loop");
                 BusFrame *bus_frame = nullptr;
 
                 send_queue_mtx.lock();
@@ -34,10 +34,13 @@ void Bus<IOEventQueue>::recv_thread() {
 
                 if (queue_empty) break;
 
-                std::cout << "run not empty" << std::endl;
+                //std::cout << "run not empty" << std::endl;
                 bus_frame->set_number_of_active_bus(bus.size());
                 for (const auto &[socket, bus_driver]: bus) {
                     bus_driver->send_frame(bus_frame);
+
+                    SPDLOG_LOGGER_DEBUG(frames_logger, "Send frame {}", *bus_frame);
+                    frames_sent_file_logger->info(SimpleJSONBusFrameWraper(bus_frame));
                 }
             }
 
@@ -58,6 +61,10 @@ void Bus<IOEventQueue>::recv_thread() {
 
                     BusFrame frame;
                     bus_driver->recv_frame(&frame);
+
+                    SPDLOG_LOGGER_DEBUG(frames_logger, "Recv frame {}", frame);
+                    frames_recv_file_logger->info(SimpleJSONBusFrameWraper(frame));
+
                     notify_frame_observer(frame);
                 }
             }
@@ -65,33 +72,38 @@ void Bus<IOEventQueue>::recv_thread() {
     }
 }
 
-template<class IOEventQueue>
-Bus<IOEventQueue>::Bus(): run(true) {
+Bus::Bus(): run(true) {
+    logger = spdlog::get(H9dConfigurator::bus_logger_name);
+    frames_logger = spdlog::get(H9dConfigurator::frames_logger_name);
+    frames_recv_file_logger = spdlog::get(H9dConfigurator::frames_recv_to_file_logger_name);
+    frames_sent_file_logger = spdlog::get(H9dConfigurator::frames_recv_to_file_logger_name);
 
+    SPDLOG_LOGGER_INFO(logger, "Created buses manager with '{}' I/O event notification mechanism.", IOEventQueue::notification_mechanism_name);
 }
 
-template<class IOEventQueue>
-Bus<IOEventQueue>::~Bus() {
+Bus::~Bus() {
     run = false;
 
     if (recv_thread_desc.joinable())
         recv_thread_desc.join();
+
+    for (const auto& [socket, driver] : bus) {
+        delete driver;
+    }
 }
 
-template<class IOEventQueue>
-void Bus<IOEventQueue>::add_driver(BusDriver *bus_driver) {
+void Bus::add_driver(BusDriver *bus_driver) {
+    SPDLOG_LOGGER_INFO(logger, "Adding a bus interface {} (driver: {})...", bus_driver->name, bus_driver->driver_name);
     bus[bus_driver->open()] = bus_driver;
 }
 
-template<class IOEventQueue>
-void Bus<IOEventQueue>::activate() {
+void Bus::activate() {
     recv_thread_desc = std::thread([this]() {
         this->recv_thread();
     });
 }
 
-template<class IOEventQueue>
-int Bus<IOEventQueue>::send_frame(ExtH9Frame frame) {
+int Bus::send_frame(ExtH9Frame frame) {
     BusFrame busframe = std::move(frame);
 
     std::future<int> send_future = busframe.get_send_promise().get_future();
@@ -108,8 +120,7 @@ int Bus<IOEventQueue>::send_frame(ExtH9Frame frame) {
     return send_future.get();
 }
 
-template<class IOEventQueue>
-int Bus<IOEventQueue>::send_frame_noblock(ExtH9Frame frame) {
+int Bus::send_frame_noblock(ExtH9Frame frame) {
     BusFrame *busframe = new BusFrame(std::move(frame));
 
     send_queue_mtx.lock();

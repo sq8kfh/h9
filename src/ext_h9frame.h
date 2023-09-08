@@ -44,6 +44,14 @@ public:
     void dlc(std::uint8_t dlc) { _frame.dlc = dlc; }
 
     const std::uint8_t* data() const { return _frame.data; };
+    void data(const std::vector<std::uint8_t>& data) {
+        int i = 0;
+        for (auto &d : data) {
+            _frame.data[i] = d;
+            ++i;
+            if (i > 8) break;
+        }
+    }
 };
 
 

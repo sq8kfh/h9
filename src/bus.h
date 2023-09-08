@@ -15,20 +15,35 @@
 #include <map>
 #include <queue>
 #include <thread>
+#include <spdlog/spdlog.h>
 #include "bus_driver.h"
 #include "h9framecomparator.h"
 #include "frameobserver.h"
 #include "framesubject.h"
+#ifdef H9D_EPOLL
+#include "epoll.h"
+#else
+#include "kqueue.h"
+#endif
 
-
-template<class IOEventQueue>
 class Bus: public FrameSubject {
 private:
+#ifdef H9D_EPOLL
+    using IOEventQueue = Epoll;
+#else
+    using IOEventQueue = KQueue;
+#endif
+
     struct BusFrameLess {
         bool operator() (const BusFrame *x, const BusFrame *y) const {
             return x->priority() > y->priority(); //HIGH = 0, LOW = 1
         }
     };
+
+    std::shared_ptr<spdlog::logger> logger;
+    std::shared_ptr<spdlog::logger> frames_logger;
+    std::shared_ptr<spdlog::logger> frames_recv_file_logger;
+    std::shared_ptr<spdlog::logger> frames_sent_file_logger;
 
     std::atomic_bool run;
     std::map<int, BusDriver*> bus;
@@ -57,7 +72,5 @@ public:
     int send_frame_noblock(ExtH9Frame frame);
 };
 
-
-#include "bus.cc"
 
 #endif //H9_BUS_H

@@ -19,7 +19,7 @@
 
 
 SocketCANDriver::SocketCANDriver(const std::string& name, const std::string& interface):
-        BusDriver(name), _interface(interface) {
+        BusDriver(name, "SocketCAN"), _interface(interface) {
 }
 
 int SocketCANDriver::open() {

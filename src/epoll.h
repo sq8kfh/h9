@@ -20,6 +20,8 @@ private:
     struct epoll_event tevent[event_queue_size];
     int event_fd;
 public:
+    constexpr static char notification_mechanism_name[] = "kqueue";
+
     Epoll();
     ~Epoll();
 

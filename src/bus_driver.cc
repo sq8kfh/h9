@@ -17,11 +17,14 @@ void BusDriver::frame_sent_correctly(BusFrame *busframe) {
     busframe->inc_send_counter();
 }
 
-BusDriver::BusDriver(const std::string& name):
+BusDriver::BusDriver(const std::string& name, const std::string& driver_name):
         name(name),
+        driver_name(driver_name),
         sent_frames_counter(0),
         received_frames_counter(0),
         socket_fd(-1) {
+
+    logger = spdlog::get("bus");
 }
 
 BusDriver::~BusDriver() {

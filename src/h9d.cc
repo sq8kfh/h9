@@ -8,86 +8,57 @@
 
 #include "config.h"
 #include <cstdlib>
-#include <cxxopts/cxxopts.hpp>
+
 
 #include <cstring>
 #include <thread>
 #include <unistd.h>
+#include <spdlog/spdlog.h>
+#include <spdlog/cfg/helpers.h>
+#include <spdlog/pattern_formatter.h>
+#include <spdlog/sinks/basic_file_sink.h>
+#include <spdlog/sinks/stdout_sinks.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
 
 #include "bus.h"
-#include "loop_driver.h"
-#include "socketcan_driver.h"
+#include "h9d_configurator.h"
 
-#include "epoll.h"
-
-#include "frameobserver.h"
-
-class test: public FrameObserver {
-public:
-    test(FrameSubject *s): FrameObserver(s, H9FrameComparator()) {};
-
-    void on_frame_recv(ExtH9Frame frame) {
-        std::cout << frame.frame() << std::endl;
-    }
-};
-
-/*void parse_arg(int argc, char **argv) {
-    cxxopts::Options options = {"h9d", "H9 daemon."};
-    options.add_options("other")
-#ifdef H9_DEBUG
-            ("d,debug", "Enable debugging")
-#endif
-            ("h,help", "Show help")
-            ("v,verbose", "Be more verbose")
-            ("V,version", "Show version")
-            ;
-    options.add_options("daemon")
-            ("c,config", "Config file", cxxopts::value<std::string>()->default_value(H9_CONFIG_PATH + _app_name + ".conf"))
-            ("D,daemonize", "Run in the background")
-            ("l,logfile", "Log file", cxxopts::value<std::string>())
-            ("p,pidfile", "PID file", cxxopts::value<std::string>())
-            ;
-
-    cxxopts::ParseResult result = options.parse(argc, argv);
-    if (result.count("help")) {
-        std::cerr << options.help({"", "daemon", "other"}) << std::endl;
-        exit(EXIT_SUCCESS);
-    }
-
-    if (result.count("version")) {
-        std::cerr << "h9d version " << H9_VERSION << " by crowx." << std::endl;
-        std::cerr << "Copyright (C) 2017-2023 Kamil Palkowski. All rights reserved." << std::endl;
-        exit(EXIT_SUCCESS);
-    }
-}*/
 
 int main(int argc, char **argv) {
-    LoopDriver loop0 = LoopDriver("loop0");
-    LoopDriver loop1 = LoopDriver("loop1");
-    SocketCANDriver can0 = SocketCANDriver("can0", "can0");
+    H9dConfigurator configurator;
 
-    Bus<Epoll> bus;
-    //bus.add_driver(&can0);
-    bus.add_driver(&loop1);
+    configurator.parse_command_line_arg(argc, argv);
+
+    configurator.logger_initial_setup();
+
+    SPDLOG_WARN("Starting h9d... Version: {}", H9_VERSION);
+
+    configurator.load_configuration();
+
+    configurator.logger_setup();
+
+    Bus bus;
+
+    configurator.configure_bus(&bus);
 
     bus.activate();
 
-    test t{&bus};
-
     while(1) {
-        sleep(2);
+        sleep(1);
         //bus.send();
         //sleep(5);
         ExtH9Frame h9frame;
         h9frame.type(H9frame::Type::DISCOVER);
         h9frame.destination_id(H9frame::BROADCAST_ID);
-	h9frame.source_id(3);
-	h9frame.dlc(0);
+	    h9frame.source_id(3);
+	    h9frame.dlc(0);
+        //h9frame.data({1,3,4});
+
         //auto frame = BusFrame(h9frame, "tcp", 0, 0);
         //loop.send_frame(frame);
-        std::cout << "Sending...\n";
+        //std::cout << "Sending...\n";
         bus.send_frame_noblock(h9frame);
-        std::cout << "Send all\n";
+        //std::cout << "Send all\n";
     }
     while(1);
 ;

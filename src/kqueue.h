@@ -19,6 +19,8 @@ private:
     int kq;
     struct kevent tevent[event_queue_size];
 public:
+    constexpr static char notification_mechanism_name[] = "kqueue";
+
     KQueue();
     ~KQueue();
 
