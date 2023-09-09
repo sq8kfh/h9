@@ -29,9 +29,12 @@ private:
 
     bool debug;
     int verbose;
+    bool override_daemonize;
+    bool foreground;
     std::string log_file;
     std::string logger_level_setting_string;
     std::string config_file;
+    std::string override_pid_file;
 
     cfg_t *cfg;
     spdlog::sink_ptr log_file_sink;
@@ -44,4 +47,8 @@ public:
     void load_configuration();
 
     void configure_bus(Bus *bus);
+
+    void daemonize();
+    void save_pid();
+    void drop_privileges();
 };

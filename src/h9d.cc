@@ -32,10 +32,17 @@ int main(int argc, char **argv) {
     configurator.logger_initial_setup();
 
     SPDLOG_WARN("Starting h9d... Version: {}", H9_VERSION);
+    //TODO: dodac wyswietlanie danych z gita, np. tag, dirty
 
     configurator.load_configuration();
 
     configurator.logger_setup();
+
+    configurator.daemonize();
+
+    configurator.save_pid();
+
+    configurator.drop_privileges();
 
     Bus bus;
 

@@ -4,6 +4,7 @@
 *.cbp
 *.pid
 *.out
+*.log
 Testing
 
 # CMake

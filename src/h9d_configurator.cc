@@ -9,6 +9,7 @@
 #include "h9d_configurator.h"
 #include <cxxopts/cxxopts.hpp>
 #include <iostream>
+#include <fstream>
 #include <stdarg.h>
 #include <spdlog/spdlog.h>
 #include <spdlog/cfg/helpers.h>
@@ -34,11 +35,14 @@ static void cfg_err_func(cfg_t *cfg, const char* fmt, va_list args) {
 
 H9dConfigurator::H9dConfigurator():
     log_file(""),
+    override_pid_file(""),
     config_file(default_config),
     cfg(nullptr),
     log_file_sink(nullptr),
+    debug(false),
     verbose(0),
-    debug(false) {
+    override_daemonize(false),
+    foreground(false) {
 
 }
 
@@ -59,6 +63,7 @@ void H9dConfigurator::parse_command_line_arg(int argc, char **argv) {
     options.add_options("daemon")
             ("c,config", "Config file", cxxopts::value<std::string>()->default_value(default_config))
             ("D,daemonize", "Run in the background")
+            ("f,foreground", "Prevent go in the background")
             ("l,logfile", "Log file", cxxopts::value<std::string>())
             ("L,logger_level", "Logger level modification (e.g. 'frame=debug,bus=trace')", cxxopts::value<std::string>())
             ("p,pidfile", "PID file", cxxopts::value<std::string>())
@@ -86,7 +91,13 @@ void H9dConfigurator::parse_command_line_arg(int argc, char **argv) {
             config_file = std::string(result["config"].as<std::string>());
         }
 
-        bool override_daemonize = result.count("daemonize");
+        if (result.count("daemonize")) {
+            override_daemonize = true;
+        }
+
+        if (result.count("foreground")) {
+            foreground = true;
+        }
 
         if (result.count("logfile")) {
             log_file = std::string(result["logfile"].as<std::string>());
@@ -96,6 +107,9 @@ void H9dConfigurator::parse_command_line_arg(int argc, char **argv) {
             logger_level_setting_string = result["logger_level"].as<std::string>();
         }
 
+        if (result.count("pidfile")) {
+            override_pid_file = std::string(result["pidfile"].as<std::string>());
+        }
     }
     catch (cxxopts::exceptions::parsing e) {
         std::cerr << e.what() << ". Try '-h' for more information." << std::endl;
@@ -247,6 +261,7 @@ void H9dConfigurator::load_configuration() {
     };
 
     cfg_opt_t cfg_log_sec[] = {
+            //TODO: dodac log level
             CFG_STR("frames_logfile", nullptr, CFGF_NONE),
             CFG_BOOL("disable_sent_frames", cfg_false, CFGF_NONE),
             CFG_BOOL("disable_recv_frames", cfg_false, CFGF_NONE),
@@ -311,7 +326,7 @@ void H9dConfigurator::configure_bus(Bus *bus) {
                     bus->add_driver(new SlcanDriver(bus_name, tty));
                 }
                 else {
-                    SPDLOG_ERROR("Missing option 'connection_string' for {}", cfg_title(bus_driver_section));
+                    SPDLOG_ERROR("Missing option 'connection_string' for {}.", cfg_title(bus_driver_section));
                 }
             }
 #ifdef H9_SOCKETCAN_DRIVER
@@ -322,7 +337,7 @@ void H9dConfigurator::configure_bus(Bus *bus) {
                     //SocketCANDriver("can0", "can0");
                 }
                 else {
-                    SPDLOG_ERROR("Missing option 'interface' for {}", cfg_title(bus_driver_section));
+                    SPDLOG_ERROR("Missing option 'interface' for {}.", cfg_title(bus_driver_section));
                 }
             }
 #endif
@@ -331,8 +346,81 @@ void H9dConfigurator::configure_bus(Bus *bus) {
             }
         }
         else {
-            SPDLOG_ERROR("Missing option 'driver' for {}", cfg_title(bus_driver_section));
+            SPDLOG_ERROR("Missing option 'driver' for {}.", cfg_title(bus_driver_section));
         }
         //}
+    }
+}
+
+void H9dConfigurator::daemonize() {
+    if (foreground) return;
+
+    cfg_t *cfg_process = cfg_getsec(cfg, "process");
+    if (override_daemonize || (cfg_process && cfg_getbool(cfg_process, "daemonize"))) {
+
+        if (daemon(1, 0) != 0) {
+            SPDLOG_CRITICAL("Unable to daemonize: %s.", strerror(errno));
+            exit(EXIT_FAILURE);
+        }
+        else {
+            SPDLOG_INFO("Going to background - be like the daemon.");
+        }
+    }
+}
+
+void H9dConfigurator::save_pid() {
+    std::string pid_file = "";
+    if (override_pid_file.empty()) {
+        cfg_t *cfg_process = cfg_getsec(cfg, "process");
+        if (cfg_process) {
+            char *ret = cfg_getstr(cfg_process, "pidfile");
+            pid_file = ret ? ret : "";
+        }
+    }
+    else {
+        pid_file = override_pid_file;
+    }
+    if (!pid_file.empty()) {
+        auto pid = getpid();
+        std::ofstream _pid_file;
+        _pid_file.open(pid_file, std::ofstream::out | std::ofstream::trunc);
+        if (_pid_file.is_open()) {
+            _pid_file << pid;
+            _pid_file.close();
+            SPDLOG_INFO("Saved PID ({}) in file: '{}'.", pid, pid_file);
+        }
+        else{
+            SPDLOG_ERROR("Unable to save a PID in file: '{}'.", pid_file);
+        }
+    }
+}
+
+void H9dConfigurator::drop_privileges() {
+    cfg_t *cfg_process = cfg_getsec(cfg, "process");
+    if (cfg_process) {
+        int uid = cfg_getint(cfg_process, "setuid");
+        int gid = cfg_getint(cfg_process, "setgid");
+
+        if (gid > 0) {
+            if (setgid(gid) != 0) {
+                SPDLOG_CRITICAL("Unable to drop group privileges to GID: {} - {}.", gid, strerror(errno));
+                exit(EXIT_FAILURE);
+            }
+            else {
+                SPDLOG_INFO("Dropped GID to: {}", gid);
+            }
+        }
+        if (uid > 0) {
+            if (getuid() != 0) {
+                SPDLOG_ERROR("Unable to drop user privileges to GID: {} - you UID ({}) is not 0.", uid, getuid());
+            }
+            else if (setuid(uid) != 0) {
+                SPDLOG_CRITICAL("Unable to drop user privileges to UID: {} - {}.", uid,strerror(errno));
+                exit(EXIT_FAILURE);
+            }
+            else {
+                SPDLOG_INFO("Dropped UID to: {}.", uid);
+            }
+        }
     }
 }

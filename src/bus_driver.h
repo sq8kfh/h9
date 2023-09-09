@@ -36,6 +36,8 @@ public:
     explicit BusDriver(const std::string& name, const std::string& driver_name);
     virtual ~BusDriver();
 
+    //TODO: uporzadowac zwracana wartosci i obsluge bledow - logowanie najlepiej wywalic na zewnatrz
+
     int get_scoket();
     virtual int open() = 0;
     virtual void close();
