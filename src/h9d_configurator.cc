@@ -358,7 +358,14 @@ void H9dConfigurator::daemonize() {
     cfg_t *cfg_process = cfg_getsec(cfg, "process");
     if (override_daemonize || (cfg_process && cfg_getbool(cfg_process, "daemonize"))) {
 
+#ifdef __APPLE__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated"
+#endif
         if (daemon(1, 0) != 0) {
+#ifdef __APPLE__
+#pragma GCC diagnostic pop
+#endif
             SPDLOG_CRITICAL("Unable to daemonize: %s.", strerror(errno));
             exit(EXIT_FAILURE);
         }
