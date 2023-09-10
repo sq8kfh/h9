@@ -10,11 +10,11 @@
 #define H9_H9FRAMECOMPARATOR_H
 
 #include "config.h"
+
 #include "ext_h9frame.h"
 
-
 class H9FrameComparator {
-private:
+  private:
     constexpr static std::uint8_t PRIORITY = 1;
     constexpr static std::uint8_t TYPE = 2;
     constexpr static std::uint8_t ALTERNATE_TYPE = 4;
@@ -34,20 +34,20 @@ private:
     std::uint8_t dlc;
     std::uint8_t data[8];
     std::uint8_t first_data_byte;
-public:
+
+  public:
     H9FrameComparator(void);
     H9FrameComparator(std::uint16_t source_id_v);
-    bool operator==(const ExtH9Frame &b) const;
-    bool operator<(const H9FrameComparator &b) const ;
+    bool operator==(const ExtH9Frame& b) const;
+    bool operator<(const H9FrameComparator& b) const;
     void set_priority(H9frame::Priority priority_v);
     void set_type(H9frame::Type type_v);
     void set_alternate_type(H9frame::Type type_v);
     void set_seqnum(std::uint8_t seqnum_v);
     void set_destination_id(std::uint16_t destination_id_v);
     void set_source_id(std::uint16_t source_id_v);
-    void set_data(std::uint8_t *data_v, std::size_t nbyte);
+    void set_data(std::uint8_t* data_v, std::size_t nbyte);
     void set_first_data_byte(std::uint8_t data0);
 };
 
-
-#endif //H9_H9FRAMECOMPARATOR_H
+#endif // H9_H9FRAMECOMPARATOR_H

@@ -6,14 +6,16 @@
  * Copyright (C) 2019-2023 Kamil Palkowski. All rights reserved.
  */
 
-#include <system_error>
+#include "loop_driver.h"
+
 #include <cstdlib>
 #include <cstring>
-#include "loop_driver.h"
+#include <system_error>
 
 int LoopDriver::instance_counter = 0;
 
-LoopDriver::LoopDriver(const std::string& name): BusDriver(name, "loop") {
+LoopDriver::LoopDriver(const std::string& name):
+    BusDriver(name, "loop") {
     bzero(&loopback_addr, sizeof(loopback_addr));
     loopback_addr.sin_family = AF_INET;
     loopback_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
@@ -22,22 +24,22 @@ LoopDriver::LoopDriver(const std::string& name): BusDriver(name, "loop") {
 }
 
 int LoopDriver::open() {
-    //TODO: rewite to socketpair
+    // TODO: rewite to socketpair
     socket_fd = socket(AF_INET, SOCK_DGRAM, 0);
 
-    if (bind(socket_fd, (const struct sockaddr *)&loopback_addr, sizeof(loopback_addr)) == -1) {
+    if (bind(socket_fd, (const struct sockaddr*)&loopback_addr, sizeof(loopback_addr)) == -1) {
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
 
     return socket_fd;
 }
 
-int LoopDriver::recv_data(H9frame *frame) {
+int LoopDriver::recv_data(H9frame* frame) {
     sockaddr_in tmp_addr;
     socklen_t len = sizeof(tmp_addr);
     bcopy(&loopback_addr, &tmp_addr, len);
 
-    return recvfrom(socket_fd, frame, sizeof(H9frame), 0, (struct sockaddr *)&tmp_addr, &len);
+    return recvfrom(socket_fd, frame, sizeof(H9frame), 0, (struct sockaddr*)&tmp_addr, &len);
     /*
     if ( == -1) {
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
@@ -47,8 +49,8 @@ int LoopDriver::recv_data(H9frame *frame) {
     }*/
 }
 
-int LoopDriver::send_data(BusFrame *busframe)  {
-    int ret = sendto(socket_fd, &busframe->frame(), sizeof(H9frame), 0, (const struct sockaddr *)&loopback_addr, sizeof(loopback_addr));
+int LoopDriver::send_data(BusFrame* busframe) {
+    int ret = sendto(socket_fd, &busframe->frame(), sizeof(H9frame), 0, (const struct sockaddr*)&loopback_addr, sizeof(loopback_addr));
 
     if (ret == -1) {
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));

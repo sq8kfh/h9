@@ -17,17 +17,17 @@
 
 #include "bus_driver.h"
 
-
 class SocketCANDriver: public BusDriver {
-private:
+  private:
     const std::string _interface;
-public:
+
+  public:
     explicit SocketCANDriver(const std::string& name, const std::string& interface);
     int open();
-private:
-    int recv_data(H9frame *frame);
-    int send_data(BusFrame *busframe);
+
+  private:
+    int recv_data(H9frame* frame);
+    int send_data(BusFrame* busframe);
 };
 
-
-#endif //H9_SOCKETCAN_DRIVER_H
+#endif // H9_SOCKETCAN_DRIVER_H

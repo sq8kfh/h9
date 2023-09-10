@@ -7,9 +7,10 @@
  */
 
 #include "bus.h"
-#include <future>
-#include "h9d_configurator.h"
 
+#include <future>
+
+#include "h9d_configurator.h"
 
 void Bus::recv_thread() {
     SPDLOG_LOGGER_INFO(logger, "Running the bus manager...");
@@ -22,7 +23,7 @@ void Bus::recv_thread() {
         if (event_notificator.is_async_event(number_of_events)) {
             while (true) {
                 SPDLOG_LOGGER_TRACE(logger, "Event queue loop");
-                BusFrame *bus_frame = nullptr;
+                BusFrame* bus_frame = nullptr;
 
                 send_queue_mtx.lock();
                 bool queue_empty = send_queue.empty();
@@ -32,11 +33,12 @@ void Bus::recv_thread() {
                 }
                 send_queue_mtx.unlock();
 
-                if (queue_empty) break;
+                if (queue_empty)
+                    break;
 
-                //std::cout << "run not empty" << std::endl;
+                // std::cout << "run not empty" << std::endl;
                 bus_frame->set_number_of_active_bus(bus.size());
-                for (const auto &[socket, bus_driver]: bus) {
+                for (const auto& [socket, bus_driver] : bus) {
                     bus_driver->send_frame(bus_frame);
 
                     SPDLOG_LOGGER_DEBUG(frames_logger, "Send frame {}", *bus_frame);
@@ -56,7 +58,7 @@ void Bus::recv_thread() {
             send_orphans_mtx.unlock();
         }
         else {
-            for (const auto &[socket, bus_driver]: bus) {
+            for (const auto& [socket, bus_driver] : bus) {
                 if (event_notificator.is_socket_event(number_of_events, socket)) {
 
                     BusFrame frame;
@@ -72,7 +74,8 @@ void Bus::recv_thread() {
     }
 }
 
-Bus::Bus(): run(true) {
+Bus::Bus():
+    run(true) {
     logger = spdlog::get(H9dConfigurator::bus_logger_name);
     frames_logger = spdlog::get(H9dConfigurator::frames_logger_name);
     frames_recv_file_logger = spdlog::get(H9dConfigurator::frames_recv_to_file_logger_name);
@@ -92,7 +95,7 @@ Bus::~Bus() {
     }
 }
 
-void Bus::add_driver(BusDriver *bus_driver) {
+void Bus::add_driver(BusDriver* bus_driver) {
     SPDLOG_LOGGER_INFO(logger, "Adding a bus interface {} (driver: {})...", bus_driver->name, bus_driver->driver_name);
     bus[bus_driver->open()] = bus_driver;
 }
@@ -121,7 +124,7 @@ int Bus::send_frame(ExtH9Frame frame) {
 }
 
 int Bus::send_frame_noblock(ExtH9Frame frame) {
-    BusFrame *busframe = new BusFrame(std::move(frame));
+    BusFrame* busframe = new BusFrame(std::move(frame));
 
     send_queue_mtx.lock();
     bool queue_empty = send_queue.empty();

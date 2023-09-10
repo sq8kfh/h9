@@ -7,12 +7,14 @@
  */
 
 #include "epoll.h"
-#include <system_error>
+
 #include <sys/eventfd.h>
+#include <system_error>
 #include <unistd.h>
 
-
-Epoll::Epoll(): epoll(-1), event_fd(-1) {
+Epoll::Epoll():
+    epoll(-1),
+    event_fd(-1) {
     epoll = epoll_create1(0);
     if (epoll == -1) {
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
@@ -28,10 +30,10 @@ Epoll::Epoll(): epoll(-1), event_fd(-1) {
 }
 
 Epoll::~Epoll() {
-    if (epoll > -1 ) {
+    if (epoll > -1) {
         close(epoll);
     }
-    if (event_fd > -1 ) {
+    if (event_fd > -1) {
         close(event_fd);
     }
 }
@@ -48,7 +50,7 @@ void Epoll::attach_socket(int fd) {
 
 int Epoll::wait() {
     int ret = epoll_wait(epoll, tevent, event_queue_size, -1);
-    if	(ret ==	-1) {
+    if (ret == -1) {
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
     return ret;
@@ -62,14 +64,16 @@ void Epoll::trigger_async_event() {
 
 bool Epoll::is_socket_event(int number_of_events, int fd) {
     for (int i = 0; i < number_of_events; ++i) {
-        if (fd == (int) tevent[i].data.fd) return true;
+        if (fd == (int)tevent[i].data.fd)
+            return true;
     }
     return false;
 }
 
 bool Epoll::is_async_event(int number_of_events) {
     for (int i = 0; i < number_of_events; ++i) {
-        if (event_fd == (int)tevent[i].data.fd) return true;
+        if (event_fd == (int)tevent[i].data.fd)
+            return true;
     }
     return false;
 }

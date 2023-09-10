@@ -7,15 +7,16 @@
  */
 
 #include "kqueue.h"
-#include <string>
+
 #include <stdexcept>
+#include <string>
 #include <system_error>
 #include <unistd.h>
 
-
-KQueue::KQueue(): kq(-1) {
+KQueue::KQueue():
+    kq(-1) {
     kq = kqueue();
-    if (kq	== -1) {
+    if (kq == -1) {
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
 
@@ -27,13 +28,13 @@ KQueue::KQueue(): kq(-1) {
     }
     if (event.flags & EV_ERROR) {
         throw std::runtime_error(
-                __FILE__ + std::string(":") + std::to_string(__LINE__) + std::string(" Event error: ") +
-                std::string(strerror(event.data)));
+            __FILE__ + std::string(":") + std::to_string(__LINE__) + std::string(" Event error: ") +
+            std::string(strerror(event.data)));
     }
 }
 
 KQueue::~KQueue() {
-    if (kq > -1 ) {
+    if (kq > -1) {
         close(kq);
     }
 }
@@ -47,14 +48,14 @@ void KQueue::attach_socket(int fd) {
     }
     if (event.flags & EV_ERROR) {
         throw std::runtime_error(
-                __FILE__ + std::string(":") + std::to_string(__LINE__) + std::string(" Event error: ") +
-                std::string(strerror(event.data)));
+            __FILE__ + std::string(":") + std::to_string(__LINE__) + std::string(" Event error: ") +
+            std::string(strerror(event.data)));
     }
 }
 
 int KQueue::wait() {
     int ret = kevent(kq, NULL, 0, tevent, event_queue_size, NULL);
-    if	(ret ==	-1) {
+    if (ret == -1) {
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
 
@@ -70,21 +71,23 @@ void KQueue::trigger_async_event() {
     }
     if (event.flags & EV_ERROR) {
         throw std::runtime_error(
-                __FILE__ + std::string(":") + std::to_string(__LINE__) + std::string(" Event error: ") +
-                std::string(strerror(event.data)));
+            __FILE__ + std::string(":") + std::to_string(__LINE__) + std::string(" Event error: ") +
+            std::string(strerror(event.data)));
     }
 }
 
 bool KQueue::is_socket_event(int number_of_events, int fd) {
     for (int i = 0; i < number_of_events; ++i) {
-        if (fd == (int) tevent[i].ident) return true;
+        if (fd == (int)tevent[i].ident)
+            return true;
     }
     return false;
 }
 
 bool KQueue::is_async_event(int number_of_events) {
     for (int i = 0; i < number_of_events; ++i) {
-        if (tevent[i].filter == EVFILT_USER) return true;
+        if (tevent[i].filter == EVFILT_USER)
+            return true;
     }
     return false;
 }

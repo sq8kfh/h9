@@ -10,15 +10,16 @@
 #define H9_KQUEUE_H
 
 #include "config.h"
+
 #include <sys/event.h>
 
-
 class KQueue {
-private:
+  private:
     constexpr static int event_queue_size = 2;
     int kq;
     struct kevent tevent[event_queue_size];
-public:
+
+  public:
     constexpr static char notification_mechanism_name[] = "kqueue";
 
     KQueue();
@@ -33,5 +34,4 @@ public:
     bool is_async_event(int number_of_events);
 };
 
-
-#endif //H9_KQUEUE_H
+#endif // H9_KQUEUE_H

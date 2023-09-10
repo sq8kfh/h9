@@ -11,5 +11,4 @@
 ExtH9Frame::ExtH9Frame(const H9frame& frame, const std::string& origin):
     _frame(frame),
     _origin(origin) {
-
 }

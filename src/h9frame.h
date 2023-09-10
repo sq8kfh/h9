@@ -10,12 +10,13 @@
 #define H9_H9FRAME_H
 
 #include "config.h"
+
 #include <cstdint>
 #include <ostream>
 
-
 struct H9frame {
-    enum class Priority : std::uint8_t { HIGH = 0, LOW = 1 };
+    enum class Priority : std::uint8_t { HIGH = 0,
+                                         LOW = 1 };
     enum class Type : std::uint8_t {
         NOP = 0,
         PAGE_START = 1,
@@ -82,12 +83,12 @@ struct H9frame {
         return static_cast<std::underlying_type_t<E>>(e);
     }*/
 
-    template <typename E, typename R = std::underlying_type_t<E>>
+    template<typename E, typename R = std::underlying_type_t<E>>
     static R to_underlying(E e) noexcept {
         return static_cast<R>(e);
     }
 
-    template <typename E>
+    template<typename E>
     static E from_underlying(std::underlying_type_t<E> e) noexcept {
         return static_cast<E>(e);
     }
@@ -98,4 +99,4 @@ struct H9frame {
 
 std::ostream& operator<<(std::ostream& os, const H9frame& frame);
 
-#endif //H9_H9FRAME_H
+#endif // H9_H9FRAME_H

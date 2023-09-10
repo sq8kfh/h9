@@ -7,26 +7,27 @@
  */
 
 #include "h9d_configurator.h"
+
 #include <cxxopts/cxxopts.hpp>
-#include <iostream>
 #include <fstream>
-#include <stdarg.h>
-#include <spdlog/spdlog.h>
+#include <iostream>
 #include <spdlog/cfg/helpers.h>
 #include <spdlog/pattern_formatter.h>
 #include <spdlog/sinks/basic_file_sink.h>
-#include <spdlog/sinks/stdout_sinks.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/sinks/stdout_sinks.h>
+#include <spdlog/spdlog.h>
+#include <stdarg.h>
+
 #include "loop_driver.h"
 #include "slcan_driver.h"
 #include "socketcan_driver.h"
 
-
 namespace {
-    std::string last_confuse_error_message = "";
+std::string last_confuse_error_message = "";
 }
 
-static void cfg_err_func(cfg_t *cfg, const char* fmt, va_list args) {
+static void cfg_err_func(cfg_t* cfg, const char* fmt, va_list args) {
     char msgbuf[1024];
     vsnprintf(msgbuf, sizeof(msgbuf), fmt, args);
     last_confuse_error_message = msgbuf;
@@ -43,15 +44,16 @@ H9dConfigurator::H9dConfigurator():
     verbose(0),
     override_daemonize(false),
     foreground(false) {
-
 }
 
 H9dConfigurator::~H9dConfigurator() {
-    if (cfg) cfg_free(cfg);
+    if (cfg)
+        cfg_free(cfg);
 }
 
-void H9dConfigurator::parse_command_line_arg(int argc, char **argv) {
+void H9dConfigurator::parse_command_line_arg(int argc, char** argv) {
     cxxopts::Options options("h9d", "H9 daemon.");
+    // clang-format off
     options.add_options("other")
 #ifdef H9_DEBUG
             ("d,debug", "Enable debugging")
@@ -68,7 +70,7 @@ void H9dConfigurator::parse_command_line_arg(int argc, char **argv) {
             ("L,logger_level", "Logger level modification (e.g. 'frame=debug,bus=trace')", cxxopts::value<std::string>())
             ("p,pidfile", "PID file", cxxopts::value<std::string>())
             ;
-
+    // clang-format on
     try {
         cxxopts::ParseResult result = options.parse(argc, argv);
 
@@ -140,8 +142,10 @@ void H9dConfigurator::logger_initial_setup() {
     }
     auto h9 = spdlog::get(default_logger_name);
 
-    if (debug) h9->set_pattern(log_debug_pattern);
-    else h9->set_pattern(log_pattern);
+    if (debug)
+        h9->set_pattern(log_debug_pattern);
+    else
+        h9->set_pattern(log_pattern);
 
     spdlog::set_default_logger(h9);
 
@@ -162,8 +166,10 @@ void H9dConfigurator::logger_setup() {
     }
 
     spdlog::apply_all([&](std::shared_ptr<spdlog::logger> l) {
-        if (debug) l->set_pattern(log_debug_pattern);
-        else l->set_pattern(log_pattern);
+        if (debug)
+            l->set_pattern(log_debug_pattern);
+        else
+            l->set_pattern(log_pattern);
 
         int tmp_level = l->level() - verbose;
         if (tmp_level < spdlog::level::trace)
@@ -174,11 +180,10 @@ void H9dConfigurator::logger_setup() {
 
     spdlog::cfg::helpers::load_levels(logger_level_setting_string);
 
-
-    cfg_t *cfg_log = cfg_getsec(cfg, "log");
+    cfg_t* cfg_log = cfg_getsec(cfg, "log");
     std::shared_ptr<spdlog::sinks::basic_file_sink<spdlog::details::null_mutex>> frames_file_sink = nullptr;
 
-    char *frames_logfile = nullptr;
+    char* frames_logfile = nullptr;
     if (cfg_log) {
         frames_logfile = cfg_getstr(cfg_log, "frames_logfile");
         if (frames_logfile) {
@@ -198,23 +203,20 @@ void H9dConfigurator::logger_setup() {
     frames_recv_file->flush_on(spdlog::level::info);
     frames_sent_file->flush_on(spdlog::level::info);
 
-    class frame_direction_flag : public spdlog::custom_flag_formatter
-    {
-    public:
-        void format(const spdlog::details::log_msg &msg, const std::tm &, spdlog::memory_buf_t &dest) override
-        {
+    class frame_direction_flag: public spdlog::custom_flag_formatter {
+      public:
+        void format(const spdlog::details::log_msg& msg, const std::tm&, spdlog::memory_buf_t& dest) override {
             std::string direction = "?";
             if (msg.logger_name == frames_recv_to_file_logger_name) {
                 direction = "in";
             }
-            else if(msg.logger_name == frames_sent_to_file_logger_name) {
+            else if (msg.logger_name == frames_sent_to_file_logger_name) {
                 direction = "out";
             }
             dest.append(direction.data(), direction.data() + direction.size());
         }
 
-        std::unique_ptr<custom_flag_formatter> clone() const override
-        {
+        std::unique_ptr<custom_flag_formatter> clone() const override {
             return spdlog::details::make_unique<frame_direction_flag>();
         }
     };
@@ -226,7 +228,7 @@ void H9dConfigurator::logger_setup() {
     else {
         auto formatter = std::make_unique<spdlog::pattern_formatter>();
         formatter->add_flag<frame_direction_flag>('*').set_pattern(
-                R"({"date": "%Y-%m-%dT%T.%e", "direction": "%*", %v})");
+            R"({"date": "%Y-%m-%dT%T.%e", "direction": "%*", %v})");
         frames_file_sink->set_formatter(std::move(formatter));
 
         if (cfg_getbool(cfg_log, "disable_recv_frames"))
@@ -248,40 +250,35 @@ void H9dConfigurator::load_configuration() {
     SPDLOG_INFO("Loading configuration from file '{}'...", config_file);
 
     cfg_opt_t cfg_process_sec[] = {
-            CFG_BOOL("daemonize", cfg_false, CFGF_NONE),
-            CFG_STR("pidfile", nullptr, CFGF_NONE),
-            CFG_INT("setuid", 0, CFGF_NONE),
-            CFG_INT("setgid", 0, CFGF_NONE),
-            CFG_END()
-    };
+        CFG_BOOL("daemonize", cfg_false, CFGF_NONE),
+        CFG_STR("pidfile", nullptr, CFGF_NONE),
+        CFG_INT("setuid", 0, CFGF_NONE),
+        CFG_INT("setgid", 0, CFGF_NONE),
+        CFG_END()};
 
     cfg_opt_t cfg_server_sec[] = {
-            CFG_INT("port", H9D_DEFAULT_PORT, CFGF_NONE),
-            CFG_END()
-    };
+        CFG_INT("port", H9D_DEFAULT_PORT, CFGF_NONE),
+        CFG_END()};
 
     cfg_opt_t cfg_log_sec[] = {
-            //TODO: dodac log level
-            CFG_STR("frames_logfile", nullptr, CFGF_NONE),
-            CFG_BOOL("disable_sent_frames", cfg_false, CFGF_NONE),
-            CFG_BOOL("disable_recv_frames", cfg_false, CFGF_NONE),
-            CFG_END()
-    };
+        // TODO: dodac log level
+        CFG_STR("frames_logfile", nullptr, CFGF_NONE),
+        CFG_BOOL("disable_sent_frames", cfg_false, CFGF_NONE),
+        CFG_BOOL("disable_recv_frames", cfg_false, CFGF_NONE),
+        CFG_END()};
 
     cfg_opt_t cfg_bus_sec[] = {
-            CFG_STR("driver", nullptr, CFGF_NONE),
-            CFG_STR("tty", nullptr, CFGF_NONE),
-            CFG_STR("interface", nullptr, CFGF_NONE),
-            CFG_END()
-    };
+        CFG_STR("driver", nullptr, CFGF_NONE),
+        CFG_STR("tty", nullptr, CFGF_NONE),
+        CFG_STR("interface", nullptr, CFGF_NONE),
+        CFG_END()};
 
     cfg_opt_t cfg_opts[] = {
-            CFG_SEC("process", cfg_process_sec, CFGF_NONE),
-            CFG_SEC("server", cfg_server_sec, CFGF_NONE),
-            CFG_SEC("bus", cfg_bus_sec, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
-            CFG_SEC("log", cfg_log_sec, CFGF_NONE),
-            CFG_END()
-    };
+        CFG_SEC("process", cfg_process_sec, CFGF_NONE),
+        CFG_SEC("server", cfg_server_sec, CFGF_NONE),
+        CFG_SEC("bus", cfg_bus_sec, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
+        CFG_SEC("log", cfg_log_sec, CFGF_NONE),
+        CFG_END()};
 
     cfg = cfg_init(cfg_opts, CFGF_NONE);
     cfg_set_error_function(cfg, cfg_err_func);
@@ -292,7 +289,8 @@ void H9dConfigurator::load_configuration() {
         cfg_free(cfg);
         cfg = nullptr;
         exit(EXIT_FAILURE);
-    } else if (ret == CFG_PARSE_ERROR) {
+    }
+    else if (ret == CFG_PARSE_ERROR) {
         SPDLOG_CRITICAL("Config file parse error: {}.", last_confuse_error_message);
         last_confuse_error_message = "";
         cfg_free(cfg);
@@ -301,19 +299,18 @@ void H9dConfigurator::load_configuration() {
     }
 }
 
-void H9dConfigurator::configure_bus(Bus *bus) {
-    //LoopDriver loop0 = LoopDriver("loop0");
-    //LoopDriver loop1 = LoopDriver("loop1");
-    //SocketCANDriver can0 = SocketCANDriver("can0", "can0");
+void H9dConfigurator::configure_bus(Bus* bus) {
+    // LoopDriver loop0 = LoopDriver("loop0");
+    // LoopDriver loop1 = LoopDriver("loop1");
+    // SocketCANDriver can0 = SocketCANDriver("can0", "can0");
 
-    //Bus<Epoll> bus;
-    //bus.add_driver(&can0);
-
+    // Bus<Epoll> bus;
+    // bus.add_driver(&can0);
 
     int n = cfg_size(cfg, "bus");
     for (int i = 0; i < n; i++) {
-        cfg_t *bus_driver_section = cfg_getnsec(cfg, "bus", i);
-        //if (bus_driver_section) {
+        cfg_t* bus_driver_section = cfg_getnsec(cfg, "bus", i);
+        // if (bus_driver_section) {
         std::string bus_name = cfg_title(bus_driver_section);
         if (cfg_getstr(bus_driver_section, "driver")) {
             std::string driver = cfg_getstr(bus_driver_section, "driver");
@@ -334,7 +331,7 @@ void H9dConfigurator::configure_bus(Bus *bus) {
                 if (cfg_getstr(bus_driver_section, "interface")) {
                     std::string interface = cfg_getstr(bus_driver_section, "interface");
                     bus->add_driver(new SocketCANDriver(bus_name, interface));
-                    //SocketCANDriver("can0", "can0");
+                    // SocketCANDriver("can0", "can0");
                 }
                 else {
                     SPDLOG_ERROR("Missing option 'interface' for {}.", cfg_title(bus_driver_section));
@@ -353,9 +350,10 @@ void H9dConfigurator::configure_bus(Bus *bus) {
 }
 
 void H9dConfigurator::daemonize() {
-    if (foreground) return;
+    if (foreground)
+        return;
 
-    cfg_t *cfg_process = cfg_getsec(cfg, "process");
+    cfg_t* cfg_process = cfg_getsec(cfg, "process");
     if (override_daemonize || (cfg_process && cfg_getbool(cfg_process, "daemonize"))) {
 
 #ifdef __APPLE__
@@ -378,9 +376,9 @@ void H9dConfigurator::daemonize() {
 void H9dConfigurator::save_pid() {
     std::string pid_file = "";
     if (override_pid_file.empty()) {
-        cfg_t *cfg_process = cfg_getsec(cfg, "process");
+        cfg_t* cfg_process = cfg_getsec(cfg, "process");
         if (cfg_process) {
-            char *ret = cfg_getstr(cfg_process, "pidfile");
+            char* ret = cfg_getstr(cfg_process, "pidfile");
             pid_file = ret ? ret : "";
         }
     }
@@ -396,14 +394,14 @@ void H9dConfigurator::save_pid() {
             _pid_file.close();
             SPDLOG_INFO("Saved PID ({}) in file: '{}'.", pid, pid_file);
         }
-        else{
+        else {
             SPDLOG_ERROR("Unable to save a PID in file: '{}'.", pid_file);
         }
     }
 }
 
 void H9dConfigurator::drop_privileges() {
-    cfg_t *cfg_process = cfg_getsec(cfg, "process");
+    cfg_t* cfg_process = cfg_getsec(cfg, "process");
     if (cfg_process) {
         int uid = cfg_getint(cfg_process, "setuid");
         int gid = cfg_getint(cfg_process, "setgid");
@@ -422,7 +420,7 @@ void H9dConfigurator::drop_privileges() {
                 SPDLOG_ERROR("Unable to drop user privileges to GID: {} - you UID ({}) is not 0.", uid, getuid());
             }
             else if (setuid(uid) != 0) {
-                SPDLOG_CRITICAL("Unable to drop user privileges to UID: {} - {}.", uid,strerror(errno));
+                SPDLOG_CRITICAL("Unable to drop user privileges to UID: {} - {}.", uid, strerror(errno));
                 exit(EXIT_FAILURE);
             }
             else {

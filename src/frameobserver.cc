@@ -7,10 +7,11 @@
  */
 
 #include "frameobserver.h"
+
 #include "framesubject.h"
 
-
-FrameObserver::FrameObserver(FrameSubject *subject, H9FrameComparator comparator): subject(subject) {
+FrameObserver::FrameObserver(FrameSubject* subject, H9FrameComparator comparator):
+    subject(subject) {
     subject->attach_frame_observer(this, comparator);
 }
 

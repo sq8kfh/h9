@@ -21,7 +21,7 @@ BusFrame::BusFrame(const H9frame& frame, const std::string& origin, std::uint64_
     _send_counter = 0;
 }
 
-BusFrame::BusFrame(ExtH9Frame && a) noexcept:
+BusFrame::BusFrame(ExtH9Frame&& a) noexcept:
     ExtH9Frame(std::move(a)) {
     _number_of_active_bus = 0;
     _send_counter = 0;
@@ -35,7 +35,7 @@ std::uint64_t BusFrame::get_orgin_msg_id(void) const {
     return orgin_msg_id;
 }
 
-std::promise<int> &BusFrame::get_send_promise() {
+std::promise<int>& BusFrame::get_send_promise() {
     return _send_promise;
 }
 

@@ -10,22 +10,22 @@
 #define H9_FRAMEOBSERVER_H
 
 #include "config.h"
-#include "h9framecomparator.h"
-#include "ext_h9frame.h"
 
+#include "ext_h9frame.h"
+#include "h9framecomparator.h"
 
 class FrameSubject;
 
 class FrameObserver {
-public:
+  public:
     FrameSubject* const subject;
-protected:
+
+  protected:
     friend class FrameSubject;
 
-    FrameObserver(FrameSubject *subject, H9FrameComparator comparator);
+    FrameObserver(FrameSubject* subject, H9FrameComparator comparator);
     ~FrameObserver();
     virtual void on_frame_recv(ExtH9Frame frame) = 0;
 };
 
-
-#endif //H9_FRAMEOBSERVER_H
+#endif // H9_FRAMEOBSERVER_H

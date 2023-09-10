@@ -7,16 +7,16 @@
  */
 
 #include "framesubject.h"
+
 #include "frameobserver.h"
 
-
-void FrameSubject::attach_frame_observer(FrameObserver *observer, H9FrameComparator comparator) {
+void FrameSubject::attach_frame_observer(FrameObserver* observer, H9FrameComparator comparator) {
     frame_observers_mtx.lock();
     frame_observers[comparator].push_back(observer);
     frame_observers_mtx.unlock();
 }
 
-void FrameSubject::detach_frame_observer(FrameObserver *observer) {
+void FrameSubject::detach_frame_observer(FrameObserver* observer) {
     frame_observers_mtx.lock();
     for (auto it = frame_observers.begin(); it != frame_observers.end();) {
         it->second.remove(observer);
@@ -30,7 +30,7 @@ void FrameSubject::detach_frame_observer(FrameObserver *observer) {
     frame_observers_mtx.unlock();
 }
 
-void FrameSubject::notify_frame_observer(const ExtH9Frame &frame) {
+void FrameSubject::notify_frame_observer(const ExtH9Frame& frame) {
     frame_observers_mtx.lock();
     for (auto const& o : frame_observers) {
         if (o.first == frame) {

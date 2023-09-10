@@ -8,21 +8,20 @@
 
 #include "bus_driver.h"
 
-#include <utility>
 #include <cstring>
 #include <unistd.h>
+#include <utility>
 
-
-void BusDriver::frame_sent_correctly(BusFrame *busframe) {
+void BusDriver::frame_sent_correctly(BusFrame* busframe) {
     busframe->inc_send_counter();
 }
 
 BusDriver::BusDriver(const std::string& name, const std::string& driver_name):
-        name(name),
-        driver_name(driver_name),
-        sent_frames_counter(0),
-        received_frames_counter(0),
-        socket_fd(-1) {
+    name(name),
+    driver_name(driver_name),
+    sent_frames_counter(0),
+    received_frames_counter(0),
+    socket_fd(-1) {
 
     logger = spdlog::get("bus");
 }
@@ -35,15 +34,16 @@ int BusDriver::get_scoket() {
 }
 
 void BusDriver::close() {
-    if (socket_fd >= 0) ::close(socket_fd);
+    if (socket_fd >= 0)
+        ::close(socket_fd);
 }
 
-int BusDriver::send_frame(BusFrame *busframe) {
+int BusDriver::send_frame(BusFrame* busframe) {
     ++sent_frames_counter;
     return send_data(busframe);
 }
 
-int BusDriver::recv_frame(BusFrame *busframe) {
+int BusDriver::recv_frame(BusFrame* busframe) {
     H9frame frame;
     int ret = recv_data(&frame);
 

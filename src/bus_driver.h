@@ -10,41 +10,43 @@
 #define H9_BUS_DRIVER_H
 
 #include "config.h"
-#include <string>
+
 #include <spdlog/spdlog.h>
+#include <string>
+
 #include "busframe.h"
 #include "h9frame.h"
 
-
 class BusDriver {
-private:
+  private:
     std::uint32_t sent_frames_counter;
     std::uint32_t received_frames_counter;
-protected:
+
+  protected:
     int socket_fd;
 
     std::shared_ptr<spdlog::logger> logger;
 
-    virtual int recv_data(H9frame *frame) = 0;
-    virtual int send_data(BusFrame *busframe) = 0;
+    virtual int recv_data(H9frame* frame) = 0;
+    virtual int send_data(BusFrame* busframe) = 0;
 
-    void frame_sent_correctly(BusFrame *busframe);
-public:
+    void frame_sent_correctly(BusFrame* busframe);
+
+  public:
     const std::string driver_name;
     const std::string name;
 
     explicit BusDriver(const std::string& name, const std::string& driver_name);
     virtual ~BusDriver();
 
-    //TODO: uporzadowac zwracana wartosci i obsluge bledow - logowanie najlepiej wywalic na zewnatrz
+    // TODO: uporzadowac zwracana wartosci i obsluge bledow - logowanie najlepiej wywalic na zewnatrz
 
     int get_scoket();
     virtual int open() = 0;
     virtual void close();
 
-    int send_frame(BusFrame *busframe);
-    int recv_frame(BusFrame *busframe);
+    int send_frame(BusFrame* busframe);
+    int recv_frame(BusFrame* busframe);
 };
 
-
-#endif //H9_BUS_DRIVER_H
+#endif // H9_BUS_DRIVER_H

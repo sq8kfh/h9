@@ -10,16 +10,17 @@
 #define H9_EPOLL_H
 
 #include "config.h"
+
 #include <sys/epoll.h>
 
-
 class Epoll {
-private:
+  private:
     constexpr static int event_queue_size = 2;
     int epoll;
     struct epoll_event tevent[event_queue_size];
     int event_fd;
-public:
+
+  public:
     constexpr static char notification_mechanism_name[] = "kqueue";
 
     Epoll();
@@ -34,5 +35,4 @@ public:
     bool is_async_event(int number_of_events);
 };
 
-
-#endif //H9_EPOLL_H
+#endif // H9_EPOLL_H
