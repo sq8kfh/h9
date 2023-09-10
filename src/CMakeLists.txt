@@ -33,10 +33,10 @@ set(SRC h9d.cc config.h
         frameobserver.cc frameobserver.h
         h9framecomparator.cc h9framecomparator.h)
 
-add_custom_command(OUTPUT git_version.h  COMMAND ${PROJECT_SOURCE_DIR}/scripts/generate_git_version_header.py > git_version.h DEPENDS ${SRC})
+add_custom_command(OUTPUT git_version.h  COMMAND ${Python_EXECUTABLE} ${PROJECT_SOURCE_DIR}/scripts/generate_git_version_header.py > git_version.h DEPENDS ${SRC})
 
 add_executable(h9d ${SRC} git_version.h)
-target_include_directories(h9d PUBLIC ${CONFUSE_INCLUDE_DIRS} ${LIBXML2_INCLUDE_DIRS})
-target_compile_options(h9d PUBLIC ${CONFUSE_CFLAGS_OTHER} ${LIBXML2_CFLAGS_OTHER})
-target_link_libraries(h9d ${CONFUSE_LIBRARIES} ${LIBXML2_LIBRARIES})
+target_include_directories(h9d PUBLIC ${CONFUSE_INCLUDE_DIRS})
+target_compile_options(h9d PUBLIC ${CONFUSE_CFLAGS_OTHER})
+target_link_libraries(h9d PUBLIC ${CONFUSE_LIBRARIES} PRIVATE nlohmann_json::nlohmann_json spdlog::spdlog)
 #target_link_libraries(example PRIVATE spdlog::spdlog $<$<BOOL:${MINGW}>:ws2_32>)

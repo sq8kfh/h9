@@ -18,6 +18,7 @@
 #include <spdlog/sinks/stdout_sinks.h>
 #include <spdlog/spdlog.h>
 #include <stdarg.h>
+#include <unistd.h>
 
 #include "loop_driver.h"
 #include "slcan_driver.h"
