@@ -6,8 +6,7 @@
  * Copyright (C) 2023 Kamil Palkowski. All rights reserved.
  */
 
-#ifndef H9_BUS_INTERFACE_H
-#define H9_BUS_INTERFACE_H
+#pragma once
 
 #include "busframe.h"
 
@@ -45,5 +44,3 @@ class BusInterface {
     // NODE_SPECIFIC_BULK6 = 30,
     // NODE_SPECIFIC_BULK7 = 31
 };
-
-#endif // H9_BUS_INTERFACE_H

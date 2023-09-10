@@ -43,7 +43,6 @@ if __name__ == "__main__":
 
 #pragma once
 
-
 """
 
     out = out + ("#define GITVERSION\n" if git_ok else "/* #define GITVERSION */\n")

@@ -6,8 +6,7 @@
  * Copyright (C) 2018-2023 Kamil Palkowski. All rights reserved.
  */
 
-#ifndef H9_LOOP_DRIVER_H
-#define H9_LOOP_DRIVER_H
+#pragma once
 
 #include <netinet/in.h>
 
@@ -28,5 +27,3 @@ class LoopDriver: public BusDriver {
     int recv_data(H9frame* frame);
     int send_data(BusFrame* busframe);
 };
-
-#endif // H9_LOOP_DRIVER_H

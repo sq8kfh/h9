@@ -6,8 +6,7 @@
  * Copyright (C) 2020 Kamil Palkowski. All rights reserved.
  */
 
-#ifndef H9_H9FRAMECOMPARATOR_H
-#define H9_H9FRAMECOMPARATOR_H
+#pragma once
 
 #include "config.h"
 
@@ -49,5 +48,3 @@ class H9FrameComparator {
     void set_data(std::uint8_t* data_v, std::size_t nbyte);
     void set_first_data_byte(std::uint8_t data0);
 };
-
-#endif // H9_H9FRAMECOMPARATOR_H

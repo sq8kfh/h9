@@ -6,8 +6,7 @@
  * Copyright (C) 2019-2023 Kamil Palkowski. All rights reserved.
  */
 
-#ifndef H9_H9FRAME_H
-#define H9_H9FRAME_H
+#pragma once
 
 #include "config.h"
 
@@ -98,5 +97,3 @@ struct H9frame {
 };
 
 std::ostream& operator<<(std::ostream& os, const H9frame& frame);
-
-#endif // H9_H9FRAME_H

@@ -6,8 +6,7 @@
  * Copyright (C) 2023 Kamil Palkowski. All rights reserved.
  */
 
-#ifndef H9_BUS_H
-#define H9_BUS_H
+#pragma once
 
 #include "config.h"
 
@@ -74,5 +73,3 @@ class Bus: public FrameSubject {
     int send_frame(ExtH9Frame frame);
     int send_frame_noblock(ExtH9Frame frame);
 };
-
-#endif // H9_BUS_H

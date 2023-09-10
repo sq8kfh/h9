@@ -6,8 +6,7 @@
  * Copyright (C) 2020-2023 Kamil Palkowski. All rights reserved.
  */
 
-#ifndef H9_KQUEUE_H
-#define H9_KQUEUE_H
+#pragma once
 
 #include "config.h"
 
@@ -33,5 +32,3 @@ class KQueue {
     bool is_socket_event(int number_of_events, int fd);
     bool is_async_event(int number_of_events);
 };
-
-#endif // H9_KQUEUE_H

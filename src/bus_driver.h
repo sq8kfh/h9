@@ -6,8 +6,7 @@
  * Copyright (C) 2019-2023 Kamil Palkowski. All rights reserved.
  */
 
-#ifndef H9_BUS_DRIVER_H
-#define H9_BUS_DRIVER_H
+#pragma once
 
 #include "config.h"
 
@@ -48,5 +47,3 @@ class BusDriver {
     int send_frame(BusFrame* busframe);
     int recv_frame(BusFrame* busframe);
 };
-
-#endif // H9_BUS_DRIVER_H

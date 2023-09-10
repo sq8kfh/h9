@@ -12,8 +12,7 @@
  *
  */
 
-#ifndef H9_SOCKETCAN_DRIVER_H
-#define H9_SOCKETCAN_DRIVER_H
+#pragma once
 
 #include "bus_driver.h"
 
@@ -29,5 +28,3 @@ class SocketCANDriver: public BusDriver {
     int recv_data(H9frame* frame);
     int send_data(BusFrame* busframe);
 };
-
-#endif // H9_SOCKETCAN_DRIVER_H

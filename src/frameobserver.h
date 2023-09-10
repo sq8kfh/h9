@@ -6,8 +6,7 @@
  * Copyright (C) 2020-2023 Kamil Palkowski. All rights reserved.
  */
 
-#ifndef H9_FRAMEOBSERVER_H
-#define H9_FRAMEOBSERVER_H
+#pragma once
 
 #include "config.h"
 
@@ -27,5 +26,3 @@ class FrameObserver {
     ~FrameObserver();
     virtual void on_frame_recv(ExtH9Frame frame) = 0;
 };
-
-#endif // H9_FRAMEOBSERVER_H

@@ -6,8 +6,7 @@
  * Copyright (C) 2020-2023 Kamil Palkowski. All rights reserved.
  */
 
-#ifndef H9_BUSFRAME_H
-#define H9_BUSFRAME_H
+#pragma once
 
 #include "config.h"
 
@@ -97,5 +96,3 @@ struct spdlog::fmt_lib::formatter<BusFrame>: spdlog::fmt_lib::formatter<std::str
                                           data_table.str());
     }
 };
-
-#endif // H9_BUSFRAME_H

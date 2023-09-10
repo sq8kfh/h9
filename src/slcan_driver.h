@@ -6,8 +6,7 @@
  * Copyright (C) 2018-2020 Kamil Palkowski. All rights reserved.
  */
 
-#ifndef H9_SLCAN_DRIVER_H
-#define H9_SLCAN_DRIVER_H
+#pragma once
 
 #include "bus_driver.h"
 
@@ -33,5 +32,3 @@ class SlcanDriver: public BusDriver {
     void parse_response(const std::string& response);
     void send_ack();
 };
-
-#endif // H9_SLCAN_DRIVER_H

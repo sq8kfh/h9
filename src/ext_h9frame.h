@@ -6,8 +6,7 @@
  * Copyright (C) 2023 Kamil Palkowski. All rights reserved.
  */
 
-#ifndef H9_EXT_H9FRAME_H
-#define H9_EXT_H9FRAME_H
+#pragma once
 
 #include <string>
 
@@ -64,5 +63,3 @@ class ExtH9Frame {
         }
     }
 };
-
-#endif // H9_EXT_H9FRAME_H

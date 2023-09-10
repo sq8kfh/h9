@@ -6,8 +6,7 @@
  * Copyright (C) 2020 Kamil Palkowski. All rights reserved.
  */
 
-#ifndef H9_EPOLL_H
-#define H9_EPOLL_H
+#pragma once
 
 #include "config.h"
 
@@ -34,5 +33,3 @@ class Epoll {
     bool is_socket_event(int number_of_events, int fd);
     bool is_async_event(int number_of_events);
 };
-
-#endif // H9_EPOLL_H

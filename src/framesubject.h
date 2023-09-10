@@ -6,8 +6,7 @@
  * Copyright (C) 2020-2023 Kamil Palkowski. All rights reserved.
  */
 
-#ifndef H9_FRAMESUBJECT_H
-#define H9_FRAMESUBJECT_H
+#pragma once
 
 #include "config.h"
 
@@ -32,5 +31,3 @@ class FrameSubject {
   protected:
     void notify_frame_observer(const ExtH9Frame& frame);
 };
-
-#endif // H9_FRAMESUBJECT_H
