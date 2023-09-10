@@ -21,6 +21,7 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 
 #include "bus.h"
+#include "git_version.h"
 #include "h9d_configurator.h"
 
 
@@ -31,8 +32,15 @@ int main(int argc, char **argv) {
 
     configurator.logger_initial_setup();
 
-    SPDLOG_WARN("Starting h9d... Version: {}", H9_VERSION);
-    //TODO: dodac wyswietlanie danych z gita, np. tag, dirty
+    SPDLOG_WARN("Starting h9d... Version: {}.", H9_VERSION);
+#ifdef GITVERSION_COMMIT_SHA
+#ifdef GITVERSION_DIRTY
+    constexpr char workdir[] = "dirty";
+#else
+    constexpr char workdir[] = "clean";
+#endif
+    SPDLOG_WARN("H9 git commit: {}, working directory {}.", GITVERSION_COMMIT_SHA, workdir);
+#endif
 
     configurator.load_configuration();
 
@@ -49,6 +57,7 @@ int main(int argc, char **argv) {
     configurator.configure_bus(&bus);
 
     bus.activate();
+
 
     while(1) {
         sleep(1);

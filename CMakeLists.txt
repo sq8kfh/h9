@@ -4,9 +4,6 @@ project(h9 VERSION 0.3.0)
 
 set(CMAKE_CXX_STANDARD 17)
 
-list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
-include(GitVersionDetect)
-
 option(H9_DEBUG "Enable debug")
 
 set(H9_USER_CONFIG_FILE "~/.h9")
