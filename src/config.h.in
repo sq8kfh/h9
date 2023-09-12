@@ -20,7 +20,6 @@
 #cmakedefine H9_DEBUG
 #cmakedefine H9_SOCKETCAN_DRIVER
 
-#cmakedefine H9D_EPOLL
 #cmakedefine H9_SOCKETCAN_DRIVER
 
 #define H9D_DEFAULT_PORT 7979

@@ -42,6 +42,7 @@ Makefile
 config.h
 git_version.h
 src/h9d
+src/h9sniffer
 h9msg.xsd.h
 h9bus/h9bus
 h9cli/h9cli

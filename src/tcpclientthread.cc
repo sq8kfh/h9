@@ -3,75 +3,108 @@
  *
  * Created by SQ8KFH on 2020-11-19.
  *
- * Copyright (C) 2020 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2020-2023 Kamil Palkowski. All rights reserved.
  */
 
 #include "tcpclientthread.h"
-#include <cassert>
-#include <sys/errno.h>
-#include "protocol/devicemethodresponsemsg.h"
-#include "protocol/executemethodmsg.h"
-#include "protocol/identificationmsg.h"
-#include "protocol/errormsg.h"
 
+#include <cassert>
+#include <memory>
+#include <spdlog/spdlog.h>
+#include <sys/errno.h>
+
+#include "h9d_configurator.h"
 
 void TCPClientThread::thread() {
     thread_running = true;
     int read_fd = h9socket.get_socket();
 
     event.attach_socket(read_fd);
-    //try {
-        while (running) {
-            int n = event.wait();
-            for (int i = 0; i < n; ++i) {
-                if (event.is_socket_event(i, read_fd)) thread_recv_msg();
-                else if (event.is_async_event(i)) thread_send_async_msg();
-            }
-        }
+    // try {
+    while (running) {
+        int n = event.wait();
+        if (event.is_socket_event(n, read_fd))
+            thread_recv_msg();
+        else if (event.is_async_event(n))
+            thread_send_async_msg();
+    }
     //}
-    //catch (...) {
+    // catch (...) {
     //    execadapter.cleanup_connection();
     //    thread_running = false;
     //    throw;
     //}
-    execadapter.cleanup_connection();
+    // execadapter.cleanup_connection();
+    SPDLOG_LOGGER_TRACE(logger, "Client ({}) thread finish.", get_client_idstring());
     thread_running = false;
+    server->cleanup_tcpclientthread(this);
 }
 
 void TCPClientThread::thread_recv_msg() {
-    GenericMsg msg;
-    int res = h9socket.recv_complete_msg(msg);
+    nlohmann::json json;
+
+    int res = h9socket.recv_complete_msg(json);
     if (res <= 0) {
-        if (res == 0 || errno == ECONNRESET) {  /*Connection reset by peer*/
+        if (res == 0 || errno == ECONNRESET) { // Connection reset by peer
+            SPDLOG_LOGGER_WARN(logger, "Connection reset by peer {}.", get_client_idstring().c_str());
             running = false;
             h9socket.close();
             return;
         }
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
-    if (msg.get_type() == GenericMsg::Type::IDENTIFICATION) {
-        IdentificationMsg ident_msg = std::move(msg);
-        entity = ident_msg.get_entity();
-    }
-    else if (msg.get_type() == GenericMsg::Type::EXECUTEMETHOD) {
-        ExecuteMethodMsg exec_msg = std::move(msg);
-        h9_log_info("Msg id %llu: execute method '%s' from client %s", exec_msg.get_id(), exec_msg.get_method_name().c_str(), get_client_idstring().c_str());
 
-        GenericMsg ret = execadapter.execute_method(std::move(exec_msg));
-        send(std::move(ret));
-    }
-    else if (msg.get_type() == GenericMsg::Type::EXECUTEDEVICEMETHOD) {
-        DeviceMethodResponseMsg devexec_msg = std::move(msg);
-        h9_log_info("Msg id %llu: execute device (%hu) method '%s' from client %s", devexec_msg.get_id(), devexec_msg.get_device_id(), devexec_msg.get_method_name().c_str(), get_client_idstring().c_str());
+    if (json.is_discarded()) {
+        SPDLOG_LOGGER_ERROR(logger, "Recv invalid JSON from client: {}.", get_client_idstring().c_str());
 
-        GenericMsg ret = execadapter.execute_device_method(std::move(devexec_msg));
-        send(std::move(ret));
+        h9socket.send(jsonrpcpp::ParseErrorException("").to_json());
+        return;
+    }
+
+    jsonrpcpp::Parser parser;
+    jsonrpcpp::entity_ptr msg = parser.parse_json(json);
+
+    if (msg && msg->is_request()) {
+        jsonrpcpp::request_ptr request = std::dynamic_pointer_cast<jsonrpcpp::Request>(msg);
+
+        SPDLOG_LOGGER_INFO(logger, "Recv request (id: {}) - execute method '{}' from client {}", request->id().int_id(), request->method(), get_client_idstring().c_str());
+
+        try {
+            jsonrpcpp::Response response = api->call(this, request);
+            h9socket.send(response.to_json());
+        }
+        catch (const jsonrpcpp::RequestException& e) {
+            h9socket.send(e.to_json());
+        }
+    }
+    else if (msg && msg->is_batch()) {
+        jsonrpcpp::batch_ptr batch = std::dynamic_pointer_cast<jsonrpcpp::Batch>(msg);
+        SPDLOG_LOGGER_INFO(logger, "Recv batch from client {}", get_client_idstring().c_str());
+
+        jsonrpcpp::Batch response_batch;
+        for (const auto& batch_entity : batch->entities) {
+            if (batch_entity->is_request()) {
+                jsonrpcpp::request_ptr request = std::dynamic_pointer_cast<jsonrpcpp::Request>(batch_entity);
+                try {
+                    jsonrpcpp::Response response = api->call(this, request);
+                    response_batch.add(response);
+                    h9socket.send(response.to_json());
+                }
+                catch (const jsonrpcpp::RequestException& e) {
+                    response_batch.add(e);
+                }
+            }
+        }
+
+        if (!response_batch.entities.empty()) {
+            h9socket.send(response_batch.to_json());
+        }
     }
     else {
-        h9_log_err("Msg id %llu: unknown type: %d from client: %s", msg.get_id(), msg.get_type(), get_client_idstring().c_str());
-        ErrorMsg err_msg = {ErrorMsg::ErrorNumber::UNSUPPORTED_MESSAGE_TYPE, "Unsupported message type"};
-        err_msg.set_request_id(msg.get_id());
-        send(std::move(err_msg));
+        SPDLOG_LOGGER_ERROR(logger, "Recv not supported JSON-RPC object from client: {}", get_client_idstring().c_str());
+        SPDLOG_LOGGER_DEBUG(logger, "Dump not supported JSON-RPC object: {}.", json.dump());
+
+        h9socket.send(jsonrpcpp::ParseErrorException("The JSON sent is not supported object.").to_json());
     }
 }
 
@@ -79,23 +112,24 @@ void TCPClientThread::thread_send_async_msg() {
     bool queue_empty = false;
     do {
         async_msg_queue_mtx.lock();
-        h9_log_debug("thread_send_async_msg", async_msg_queue.size());
+        SPDLOG_DEBUG("thread_send_async_msg", async_msg_queue.size());
 
         assert(!async_msg_queue.empty());
 
-        GenericMsg msg = async_msg_queue.front();
+        jsonrpcpp::entity_ptr msg = async_msg_queue.front();
         async_msg_queue.pop();
 
-        if (async_msg_queue.empty()) queue_empty = true;
+        if (async_msg_queue.empty())
+            queue_empty = true;
         async_msg_queue_mtx.unlock();
 
         send(std::move(msg));
     } while (!queue_empty);
 }
 
-void TCPClientThread::send(GenericMsg msg) {
-    int ret = h9socket.send(msg);
-    if (ret <=0) {
+void TCPClientThread::send(jsonrpcpp::entity_ptr msg) {
+    int ret = h9socket.send(msg->to_json());
+    if (ret <= 0) {
         if (ret == 0) {
             running = false;
             return;
@@ -104,8 +138,12 @@ void TCPClientThread::send(GenericMsg msg) {
     }
 }
 
-TCPClientThread::TCPClientThread(int sockfd, ExecutorAdapter execadapter): h9socket(sockfd), execadapter(execadapter) {
-    this->execadapter.set_client(this);
+TCPClientThread::TCPClientThread(int sockfd, API* api, TCPServer* server):
+    h9socket(sockfd),
+    api(api),
+    server(server),
+    _frame_observer(nullptr) {
+    logger = spdlog::get(H9dConfigurator::tcp_logger_name);
 
     running = true;
     client_thread_desc = std::thread([this]() {
@@ -114,10 +152,20 @@ TCPClientThread::TCPClientThread(int sockfd, ExecutorAdapter execadapter): h9soc
 }
 
 TCPClientThread::~TCPClientThread() {
+    SPDLOG_LOGGER_DEBUG(logger, "Cleaning client ({}) data...", get_client_idstring());
+    if (_frame_observer)
+        delete _frame_observer;
+
     close_connection();
     if (client_thread_desc.joinable())
         client_thread_desc.join();
     h9socket.close();
+}
+
+void TCPClientThread::set_frame_observer(ClientFrameObs* frame_observer) {
+    if (_frame_observer)
+        delete _frame_observer;
+    _frame_observer = frame_observer;
 }
 
 std::string TCPClientThread::get_remote_address() const noexcept {
@@ -145,7 +193,7 @@ void TCPClientThread::close_connection() {
     h9socket.shutdown_read();
 }
 
-void TCPClientThread::send_msg(GenericMsg msg) {
+void TCPClientThread::send_msg(jsonrpcpp::entity_ptr msg) {
     async_msg_queue_mtx.lock();
     async_msg_queue.push(std::move(msg));
     if (async_msg_queue.size() == 1) {

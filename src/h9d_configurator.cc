@@ -160,10 +160,12 @@ void H9dConfigurator::logger_initial_setup() {
 void H9dConfigurator::logger_setup() {
     auto bus = spdlog::stdout_color_mt(bus_logger_name);
     auto frame_console = spdlog::stdout_color_mt(frames_logger_name);
+    auto tcpserver_console = spdlog::stdout_color_mt(tcp_logger_name);
 
     if (log_file_sink) {
         bus->sinks().push_back(log_file_sink);
         frame_console->sinks().push_back(log_file_sink);
+        tcpserver_console->sinks().push_back(log_file_sink);
     }
 
     spdlog::apply_all([&](std::shared_ptr<spdlog::logger> l) {
@@ -300,56 +302,6 @@ void H9dConfigurator::load_configuration() {
     }
 }
 
-void H9dConfigurator::configure_bus(Bus* bus) {
-    // LoopDriver loop0 = LoopDriver("loop0");
-    // LoopDriver loop1 = LoopDriver("loop1");
-    // SocketCANDriver can0 = SocketCANDriver("can0", "can0");
-
-    // Bus<Epoll> bus;
-    // bus.add_driver(&can0);
-
-    int n = cfg_size(cfg, "bus");
-    for (int i = 0; i < n; i++) {
-        cfg_t* bus_driver_section = cfg_getnsec(cfg, "bus", i);
-        // if (bus_driver_section) {
-        std::string bus_name = cfg_title(bus_driver_section);
-        if (cfg_getstr(bus_driver_section, "driver")) {
-            std::string driver = cfg_getstr(bus_driver_section, "driver");
-            if (driver == "loop") {
-                bus->add_driver(new LoopDriver(bus_name));
-            }
-            else if (driver == "SLCAN") {
-                if (cfg_getstr(bus_driver_section, "tty")) {
-                    std::string tty = cfg_getstr(bus_driver_section, "tty");
-                    bus->add_driver(new SlcanDriver(bus_name, tty));
-                }
-                else {
-                    SPDLOG_ERROR("Missing option 'connection_string' for {}.", cfg_title(bus_driver_section));
-                }
-            }
-#ifdef H9_SOCKETCAN_DRIVER
-            else if (driver == "SocketCAN") {
-                if (cfg_getstr(bus_driver_section, "interface")) {
-                    std::string interface = cfg_getstr(bus_driver_section, "interface");
-                    bus->add_driver(new SocketCANDriver(bus_name, interface));
-                    // SocketCANDriver("can0", "can0");
-                }
-                else {
-                    SPDLOG_ERROR("Missing option 'interface' for {}.", cfg_title(bus_driver_section));
-                }
-            }
-#endif
-            else {
-                SPDLOG_ERROR("Unsupported driver: '{}' for '{}' bus.", driver, bus_name);
-            }
-        }
-        else {
-            SPDLOG_ERROR("Missing option 'driver' for {}.", cfg_title(bus_driver_section));
-        }
-        //}
-    }
-}
-
 void H9dConfigurator::daemonize() {
     if (foreground)
         return;
@@ -428,5 +380,56 @@ void H9dConfigurator::drop_privileges() {
                 SPDLOG_INFO("Dropped UID to: {}.", uid);
             }
         }
+    }
+}
+
+void H9dConfigurator::configure_bus(Bus* bus) {
+    int n = cfg_size(cfg, "bus");
+    for (int i = 0; i < n; i++) {
+        cfg_t* bus_driver_section = cfg_getnsec(cfg, "bus", i);
+        // if (bus_driver_section) {
+        std::string bus_name = cfg_title(bus_driver_section);
+        if (cfg_getstr(bus_driver_section, "driver")) {
+            std::string driver = cfg_getstr(bus_driver_section, "driver");
+            if (driver == "loop") {
+                bus->add_driver(new LoopDriver(bus_name));
+            }
+            else if (driver == "SLCAN") {
+                if (cfg_getstr(bus_driver_section, "tty")) {
+                    std::string tty = cfg_getstr(bus_driver_section, "tty");
+                    bus->add_driver(new SlcanDriver(bus_name, tty));
+                }
+                else {
+                    SPDLOG_ERROR("Missing option 'connection_string' for {}.", cfg_title(bus_driver_section));
+                }
+            }
+#ifdef H9_SOCKETCAN_DRIVER
+                else if (driver == "SocketCAN") {
+                if (cfg_getstr(bus_driver_section, "interface")) {
+                    std::string interface = cfg_getstr(bus_driver_section, "interface");
+                    bus->add_driver(new SocketCANDriver(bus_name, interface));
+                    // SocketCANDriver("can0", "can0");
+                }
+                else {
+                    SPDLOG_ERROR("Missing option 'interface' for {}.", cfg_title(bus_driver_section));
+                }
+            }
+#endif
+            else {
+                SPDLOG_ERROR("Unsupported driver: '{}' for '{}' bus.", driver, bus_name);
+            }
+        }
+        else {
+            SPDLOG_ERROR("Missing option 'driver' for {}.", cfg_title(bus_driver_section));
+        }
+        //}
+    }
+}
+
+void H9dConfigurator::configure_tcpserver(TCPServer* server) {
+    cfg_t* cfg_server = cfg_getsec(cfg, "server");
+    if (cfg_server) {
+        std::uint16_t port = cfg_getint(cfg_server, "port");
+        server->set_server_port(port);
     }
 }

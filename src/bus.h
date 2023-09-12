@@ -21,18 +21,18 @@
 #include "frameobserver.h"
 #include "framesubject.h"
 #include "h9framecomparator.h"
-#ifdef H9D_EPOLL
-#include "epoll.h"
-#else
+#if (defined(__unix__) && defined(BSD)) || defined(__APPLE__) && defined(__MACH__)
 #include "kqueue.h"
+#elif defined(__linux__)
+#include "epoll.h"
 #endif
 
 class Bus: public FrameSubject {
   private:
-#ifdef H9D_EPOLL
-    using IOEventQueue = Epoll;
-#else
+#if (defined(__unix__) && defined(BSD)) || (defined(__APPLE__) && defined(__MACH__))
     using IOEventQueue = KQueue;
+#else
+    using IOEventQueue = Epoll;
 #endif
 
     struct BusFrameLess {

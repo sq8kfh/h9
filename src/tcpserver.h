@@ -3,20 +3,20 @@
  *
  * Created by SQ8KFH on 2020-11-19.
  *
- * Copyright (C) 2020 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2020-2023 Kamil Palkowski. All rights reserved.
  */
 
-#ifndef H9_TCPSERVER_H
-#define H9_TCPSERVER_H
+#pragma once
 
 #include "config.h"
-#include <mutex>
+
 #include <list>
-#include <sys/socket.h>
+#include <mutex>
 #include <netinet/in.h>
-#include "common/logger.h"
-#include "dctx.h"
-#include "executoradapter.h"
+#include <spdlog/spdlog.h>
+#include <sys/socket.h>
+
+#include "api.h"
 #include "tcpclientthread.h"
 #if (defined(__unix__) && defined(BSD)) || (defined(__APPLE__) && defined(__MACH__))
 #include "kqueue.h"
@@ -24,38 +24,36 @@
 #include "epoll.h"
 #endif
 
-
 class TCPServer {
-private:
+  private:
     std::uint16_t server_port;
     int sockfd;
 
 #if (defined(__unix__) && defined(BSD)) || (defined(__APPLE__) && defined(__MACH__))
-    KQueue event;
+    using IOEventQueue = KQueue;
 #elif defined(__linux__)
-    Epoll event;
+    using IOEventQueue = Epoll;
 #endif
 
-    Executor *executor;
+    IOEventQueue event;
+    std::shared_ptr<spdlog::logger> logger;
+
+    API* api;
 
     std::mutex tcpclientthread_list_mtx;
     std::list<TCPClientThread*> tcpclientthread_list;
 
     void listen();
-    void *get_in_addr(struct sockaddr *sa);
-    in_port_t get_in_port(struct sockaddr *sa);
+    void* get_in_addr(struct sockaddr* sa);
+    in_port_t get_in_port(struct sockaddr* sa);
 
-    friend void ExecutorAdapter::cleanup_connection();
-    void cleanup_tcpclientthread(TCPClientThread* client);
-public:
-    explicit TCPServer(Executor *executor) noexcept;
-    TCPServer(const TCPServer &a) = delete;
+    // friend void ExecutorAdapter::cleanup_connection();
+  public:
+    explicit TCPServer(API* api) noexcept;
+    TCPServer(const TCPServer& a) = delete;
     ~TCPServer();
-    void load_config(DCtx *ctx);
+    void set_server_port(std::uint16_t port);
     void run();
-
+    void cleanup_tcpclientthread(TCPClientThread* client);
     int connected_clients_count();
 };
-
-
-#endif //H9_TCPSERVER_H

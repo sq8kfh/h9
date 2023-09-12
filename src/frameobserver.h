@@ -24,5 +24,5 @@ class FrameObserver {
 
     FrameObserver(FrameSubject* subject, H9FrameComparator comparator);
     ~FrameObserver();
-    virtual void on_frame_recv(ExtH9Frame frame) = 0;
+    virtual void on_frame_recv(const ExtH9Frame& frame) = 0;
 };

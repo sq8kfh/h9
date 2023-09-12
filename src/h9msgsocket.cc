@@ -12,7 +12,7 @@
 #include <sys/socket.h>
 
 
-H9MsgSocket::H9MsgSocket(int socket) noexcept: H9Socket(socket), next_msg_id(0)  {
+H9MsgSocket::H9MsgSocket(int socket): H9Socket(socket), next_msg_id(0)  {
     if (connect() < 0) //this should never happen if yes something is wrong with socket
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
 }
@@ -25,36 +25,30 @@ int H9MsgSocket::get_socket() noexcept {
 }
 
 int H9MsgSocket::authentication(const std::string& entity) noexcept {
-    IdentificationMsg ident_msg(entity);
-    if (send(ident_msg) <= 0) {
-        return -1;
-    }
+    //IdentificationMsg ident_msg(entity);
+//    if (send(ident_msg) <= 0) {
+//        return -1;
+//    }
     //return 0; //authentication fail
     return 1; //if ok
 }
 
-int H9MsgSocket::send(GenericMsg &msg) noexcept {
-    return send(msg, get_next_id());
+int H9MsgSocket::send(const nlohmann::json& json) noexcept {
+    return H9Socket::send(json.dump());
 }
 
-int H9MsgSocket::send(GenericMsg &msg, std::uint64_t id) noexcept {
-    msg.set_id(id);
-    std::string raw_msg = msg.serialize();
-    return H9Socket::send(raw_msg);
-}
-
-int H9MsgSocket::recv(GenericMsg &msg, int timeout_in_seconds) noexcept {
-    std::string raw_msg;
-    int res = H9Socket::recv(raw_msg, timeout_in_seconds);
+int H9MsgSocket::recv(nlohmann::json &json, int timeout_in_seconds) noexcept {
+    std::string raw_str;
+    int res = H9Socket::recv(raw_str, timeout_in_seconds);
     if (res > 0) {
-        msg = std::move(GenericMsg(raw_msg));
+        json = std::move(nlohmann::json::parse(std::move(raw_str), nullptr, false));
     }
     return res;
 }
 
-int H9MsgSocket::recv_complete_msg(GenericMsg &msg) noexcept {
+int H9MsgSocket::recv_complete_msg(nlohmann::json &json) noexcept {
     while (true) {
-        int res = recv(msg, 0);
+        int res = recv(json, 0);
         if (res < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
             continue;
         }

@@ -3,38 +3,48 @@
  *
  * Created by SQ8KFH on 2020-11-19.
  *
- * Copyright (C) 2020 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2020-2023 Kamil Palkowski. All rights reserved.
  */
 
-#ifndef H9_TCPCLIENTTHREAD_H
-#define H9_TCPCLIENTTHREAD_H
+#pragma once
 
 #include "config.h"
+
+#include <jsonrpcpp/jsonrpcpp.hpp>
 #include <mutex>
 #include <queue>
+#include <spdlog/spdlog.h>
 #include <string>
 #include <thread>
-#include "executoradapter.h"
-#include "protocol/executemethodmsg.h"
-#include "protocol/genericmsg.h"
-#include "protocol/h9msgsocket.h"
+
+#include "api.h"
+#include "client_frame_obs.h"
+#include "h9msgsocket.h"
 #if (defined(__unix__) && defined(BSD)) || defined(__APPLE__) && defined(__MACH__)
 #include "kqueue.h"
 #elif defined(__linux__)
 #include "epoll.h"
 #endif
 
+class API;
+class ClientFrameObs;
+class TCPServer;
 
 class TCPClientThread {
-private:
+  private:
+    std::shared_ptr<spdlog::logger> logger;
     H9MsgSocket h9socket;
-    ExecutorAdapter execadapter;
+
+    API* api;
+    TCPServer* server;
 
 #if (defined(__unix__) && defined(BSD)) || (defined(__APPLE__) && defined(__MACH__))
-    KQueue event;
-#elif defined(__linux__)
-    Epoll event;
+    using IOEventQueue = KQueue;
+#else
+    using IOEventQueue = Epoll;
 #endif
+
+    IOEventQueue event;
 
     std::thread client_thread_desc;
     std::atomic_bool running;
@@ -42,18 +52,22 @@ private:
 
     std::string entity;
 
+    ClientFrameObs* _frame_observer;
     std::mutex async_msg_queue_mtx;
-    std::queue<GenericMsg> async_msg_queue;
+    std::queue<jsonrpcpp::entity_ptr> async_msg_queue;
 
     void thread();
     void thread_recv_msg();
     void thread_send_async_msg();
-    void send(GenericMsg msg);
+    void send(jsonrpcpp::entity_ptr msg);
     void close_connection();
-public:
-    TCPClientThread(int sockfd, ExecutorAdapter execadapter);
-    TCPClientThread(const TCPClientThread &a) = delete;
+
+  public:
+    TCPClientThread(int sockfd, API* api, TCPServer* server);
+    TCPClientThread(const TCPClientThread& a) = delete;
     ~TCPClientThread();
+
+    void set_frame_observer(ClientFrameObs* frame_observer);
 
     std::string get_remote_address() const noexcept;
     std::string get_remote_port() const noexcept;
@@ -61,8 +75,5 @@ public:
     std::string get_client_idstring() const noexcept;
 
     bool is_running();
-    void send_msg(GenericMsg msg);
+    void send_msg(jsonrpcpp::entity_ptr msg);
 };
-
-
-#endif //H9_TCPCLIENTTHREAD_H

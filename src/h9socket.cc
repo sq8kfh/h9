@@ -3,7 +3,7 @@
  *
  * Created by SQ8KFH on 2019-07-01.
  *
- * Copyright (C) 2019-2020 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2019-2023 Kamil Palkowski. All rights reserved.
  */
 
 #include "h9socket.h"
@@ -18,8 +18,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
-
-#include "common/logger.h"
+#include <spdlog/spdlog.h>
 
 
 H9Socket::H9Socket() noexcept {
@@ -81,7 +80,7 @@ int H9Socket::connect() noexcept {
 
         ret = getaddrinfo(_hostname.c_str(), _port.c_str(), &hints, &servinfo);
         if (ret != 0) {
-            h9_log_debug("H9Connector: getaddrinfo: %s", gai_strerror(ret));
+            SPDLOG_DEBUG("H9Connector: getaddrinfo: %s", gai_strerror(ret));
             return -1;
         }
 
@@ -98,7 +97,7 @@ int H9Socket::connect() noexcept {
         }
 
         if (p == nullptr) {
-            h9_log_err("connect to '%s' port %s: %s", _hostname.c_str(), _port.c_str(), strerror(errno));
+            SPDLOG_ERROR("connect to '%s' port %s: %s", _hostname.c_str(), _port.c_str(), strerror(errno));
             return -1;
         }
         freeaddrinfo(servinfo);
@@ -134,12 +133,11 @@ int H9Socket::recv(std::string& buf, int timeout_in_seconds) noexcept {
     if (recv_bytes < 4) { //header
         ssize_t nbyte = ::recv(_socket, reinterpret_cast<char *>(&header_buf) + recv_bytes,
                 sizeof(header_buf) - recv_bytes, recv_flags);
-
         recv_flags |= MSG_DONTWAIT;
 
         if (nbyte <= 0) {
             if (nbyte == 0) {
-                h9_log_debug("close connection during recv header");
+                SPDLOG_DEBUG("close connection during recv header.");
             }
             return nbyte;
         }
@@ -161,7 +159,7 @@ int H9Socket::recv(std::string& buf, int timeout_in_seconds) noexcept {
         ssize_t nbyte = ::recv(_socket, &data_buf[recv_bytes - sizeof(header_buf)], tmp_to_recv, recv_flags);
         if (nbyte <= 0) {
             if (nbyte == 0) {
-                h9_log_debug("close connection during recv data");
+                SPDLOG_DEBUG("close connection during recv data.");
             }
             return nbyte;
         }
@@ -199,7 +197,7 @@ int H9Socket::send(const std::string& buf) noexcept {
         return nbyte;
     }
     else if (nbyte != buf.size()) {
-        h9_log_err("sent incomplete msg");
+        SPDLOG_ERROR("sent incomplete msg");
         return -1;
     }
     return nbyte + sizeof(header);

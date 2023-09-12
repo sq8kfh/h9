@@ -14,6 +14,7 @@
 #include <string>
 
 #include "bus.h"
+#include "tcpserver.h"
 
 class H9dConfigurator {
   public:
@@ -22,10 +23,11 @@ class H9dConfigurator {
     constexpr static char frames_logger_name[] = "frame";
     constexpr static char frames_recv_to_file_logger_name[] = "frames_recv_to_file";
     constexpr static char frames_sent_to_file_logger_name[] = "frames_sent_to_file";
+    constexpr static char tcp_logger_name[] = "tcp";
 
   private:
-    constexpr static char log_debug_pattern[] = "%^[%L %T.%e] [%n] [%s:%#]%$ %v";
-    constexpr static char log_pattern[] = "%^[%L %T.%e] [%n]%$ %v";
+    constexpr static char log_debug_pattern[] = "%^[%L %T.%e] [%n:%t] [%s:%#]%$ %v";
+    constexpr static char log_pattern[] = "%^[%L %T.%e] [%n:%t]%$ %v";
 
     constexpr static char default_config[] = H9_CONFIG_PATH "h9d.conf";
 
@@ -49,9 +51,10 @@ class H9dConfigurator {
     void logger_setup();
     void load_configuration();
 
-    void configure_bus(Bus* bus);
-
     void daemonize();
     void save_pid();
     void drop_privileges();
+
+    void configure_bus(Bus* bus);
+    void configure_tcpserver(TCPServer* server);
 };

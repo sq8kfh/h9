@@ -3,37 +3,37 @@
  *
  * Created by SQ8KFH on 2019-04-09.
  *
- * Copyright (C) 2019-2020 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2019-2023 Kamil Palkowski. All rights reserved.
  */
 
 #include "config.h"
-#include <iomanip>
-#include <cstdlib>
 
-#include "protocol/h9connector.h"
-#include "protocol/subscribemsg.h"
-#include "protocol/executemethodmsg.h"
-#include "protocol/framemsg.h"
-#include "common/clientctx.h"
+#include <cstdlib>
+#include <iomanip>
+#include <iostream>
+#include <memory>
+
+#include "ext_h9frame.h"
+#include "h9connector.h"
 
 void print_reg_value(const H9frame& frame) {
     if (frame.dlc > 1) {
         std::cout << "    value: ";
         switch (frame.dlc) {
-            case 2:
-                std::cout << static_cast<int>(frame.data[1]);
-                break;
-            case 3:
-                std::cout << static_cast<int>((frame.data[1] << 8) | frame.data[2]);
-                break;
-            case 5:
-                std::cout << static_cast<int>((frame.data[1] << 24) | (frame.data[2] << 16) | (frame.data[3] << 8) | frame.data[4]);
-                break;
+        case 2:
+            std::cout << static_cast<int>(frame.data[1]);
+            break;
+        case 3:
+            std::cout << static_cast<int>((frame.data[1] << 8) | frame.data[2]);
+            break;
+        case 5:
+            std::cout << static_cast<int>((frame.data[1] << 24) | (frame.data[2] << 16) | (frame.data[3] << 8) | frame.data[4]);
+            break;
         }
         char buf[8] = {'\0'};
         for (int i = frame.dlc - 1; i > 0; --i) {
             if (isprint(frame.data[i])) {
-                buf[i-1] = frame.data[i];
+                buf[i - 1] = frame.data[i];
             }
             else {
                 break;
@@ -72,8 +72,8 @@ void print_frame(const H9frame& frame) {
     else if (frame.type == H9frame::Type::NODE_TURNED_ON || frame.type == H9frame::Type::NODE_INFO) {
         std::cout << "    node type: " << static_cast<unsigned int>(frame.data[0] << 8 | frame.data[1]) << std::endl;
         std::cout << "    node firmware: " << static_cast<unsigned int>(frame.data[2] << 8 | frame.data[3])
-                                    << '.' << static_cast<unsigned int>(frame.data[4] << 8 | frame.data[5])
-                                    << '.' << static_cast<unsigned int>(frame.data[6] << 8 | frame.data[7]) << std::endl;
+                  << '.' << static_cast<unsigned int>(frame.data[4] << 8 | frame.data[5])
+                  << '.' << static_cast<unsigned int>(frame.data[6] << 8 | frame.data[7]) << std::endl;
     }
     else if (frame.type == H9frame::Type::BOOTLOADER_TURNED_ON) {
         std::cout << "    bootloader version: " << static_cast<unsigned int>(frame.data[0]) << '.' << static_cast<unsigned int>(frame.data[1]) << std::endl;
@@ -86,74 +86,87 @@ void print_frame(const H9frame& frame) {
     }
 }
 
-int main(int argc, char **argv)
-{
-    ClientCtx ctx = ClientCtx("h9sniffer", "The H9 bus packets sniffer.");
+int main(int argc, char** argv) {
+    /*ClientCtx ctx = ClientCtx("h9sniffer", "The H9 bus packets sniffer.");
 
     ctx.add_options("e,extended", "Extended output");
     ctx.add_options("s,simple", "Simple output");
 
     auto res = ctx.parse_options(argc, argv);
-    ctx.load_configuration(res);
+    ctx.load_configuration(res);*/
 
-    H9Connector h9_connector = {ctx.get_h9bus_host(), ctx.get_h9bus_port()};
+    H9Connector h9_connector = {"127.0.0.1", "7979"};
 
     try {
-        h9_connector.connect(ctx.get_app_name());
+        h9_connector.connect("h9sniffer");
     }
-    catch (std::system_error &e) {
-        h9_log_stderr("Can not connect to h9bus %s:%s: %s", ctx.get_h9bus_host().c_str(), ctx.get_h9bus_port().c_str(), e.code().message().c_str());
+    catch (std::system_error& e) {
+        //        h9_log_stderr("Can not connect to h9bus %s:%s: %s", ctx.get_h9bus_host().c_str(), ctx.get_h9bus_port().c_str(), e.code().message().c_str());
         exit(EXIT_FAILURE);
     }
-    catch (std::runtime_error &e) {
-        h9_log_stderr("Can not connect to h9bus %s:%s: authentication fail", ctx.get_h9bus_host().c_str(), ctx.get_h9bus_port().c_str());
+    catch (std::runtime_error& e) {
+        //        h9_log_stderr("Can not connect to h9bus %s:%s: authentication fail", ctx.get_h9bus_host().c_str(), ctx.get_h9bus_port().c_str());
         exit(EXIT_FAILURE);
     }
 
-    h9_connector.send(ExecuteMethodMsg("subscribe").add_value("event", "frame"));
-    //h9_connector.send(SubscribeMsg(SubscribeMsg::Content::FRAME));
+    jsonrpcpp::Id id(1);
 
-    int output = 1;
-    if (res.count("simple") == 1 && res.count("extended") ==0) {
-        output = 0;
-        std::cout << "source_id,destination_id,priority,type,seqnum,dlc,data\n";
-    }
-    if (res.count("extended") == 1 && res.count("simple") ==0) {
-        output = 2;
-    }
+    ExtH9Frame fr;
+    fr.dlc(4);
+    fr.data({1,2,3,4});
+    jsonrpcpp::Request r(id, "send_frame", nlohmann::json({{"frame", std::move(fr)}}));
+    h9_connector.send(std::make_shared<jsonrpcpp::Request>(r));
 
+    id = jsonrpcpp::Id(2);
+
+    jsonrpcpp::Request r2(id, "subscribe", nlohmann::json({{"event", "frame"}}));
+    h9_connector.send(std::make_shared<jsonrpcpp::Request>(r2));
+
+    //std::cout << r.to_json().dump() << std::endl;
+        int output = 1;
+        /*
+        if (res.count("simple") == 1 && res.count("extended") ==0) {
+            output = 0;
+            std::cout << "source_id,destination_id,priority,type,seqnum,dlc,data\n";
+        }
+        if (res.count("extended") == 1 && res.count("simple") ==0) {
+            output = 2;
+        }
+*/
     while (true) {
-        GenericMsg raw_msg = h9_connector.recv();
-        if (raw_msg.get_type() == GenericMsg::Type::FRAME) {
-            FrameMsg msg = std::move(raw_msg);
+        jsonrpcpp::entity_ptr raw_msg = h9_connector.recv();
 
-            H9frame frame = msg.get_frame();
+        if (raw_msg->is_notification()) {
+            jsonrpcpp::notification_ptr notification = std::dynamic_pointer_cast<jsonrpcpp::Notification>(raw_msg);
+            if (notification->method() == "on_frame") {
+                ExtH9Frame frame = std::move(notification->params().param_map.at("frame").get<ExtH9Frame>());
 
-            if (output == 0) {
-                std::cout << frame.source_id << ","
-                          << frame.destination_id << ","
-                          << (frame.priority == H9frame::Priority::HIGH ? 'H' : 'L') << ","
-                          << static_cast<unsigned int>(H9frame::to_underlying(frame.type)) << ','
-                          << static_cast<unsigned int>(frame.seqnum) << ","
-                          << static_cast<unsigned int>(frame.dlc) << ",";
-                std::ios oldState(nullptr);
-                oldState.copyfmt(std::cout);
+                    if (output == 0) {
+                        std::cout << frame.source_id() << ","
+                                  << frame.destination_id() << ","
+                                  << (frame.priority() == H9frame::Priority::HIGH ? 'H' : 'L') << ","
+                                  << static_cast<unsigned int>(H9frame::to_underlying(frame.type())) << ','
+                                  << static_cast<unsigned int>(frame.seqnum()) << ","
+                                  << static_cast<unsigned int>(frame.dlc()) << ",";
+                        std::ios oldState(nullptr);
+                        oldState.copyfmt(std::cout);
 
-                for (int i = 0; i < frame.dlc; ++i) {
-                    std::cout << std::setfill('0') << std::hex << std::setw(2) << static_cast<unsigned int>(frame.data[i]);
-                }
-                std::cout.copyfmt(oldState);
-                std::cout << std::endl;
-            }
-            else {
-                std::cout << frame << std::endl;
-                if (output == 2) {
-                    print_frame(frame);
-                }
+                        for (int i = 0; i < frame.dlc(); ++i) {
+                            std::cout << std::setfill('0') << std::hex << std::setw(2) << static_cast<unsigned int>(frame.data()[i]);
+                        }
+                        std::cout.copyfmt(oldState);
+                        std::cout << std::endl;
+                    }
+                    else {
+                        std::cout << frame.frame() << std::endl;
+                        if (output == 2) {
+                            print_frame(frame.frame());
+                        }
+                    }
             }
         }
         else {
-            h9_log_info(" recv msg: [%s]", raw_msg.serialize().c_str());
+            // h9_log_info(" recv msg: [%s]", raw_msg.serialize().c_str());
         }
     }
     return EXIT_SUCCESS;

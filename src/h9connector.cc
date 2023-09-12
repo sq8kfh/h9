@@ -3,7 +3,7 @@
  *
  * Created by SQ8KFH on 2019-05-16.
  *
- * Copyright (C) 2019-2020 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2019-2023 Kamil Palkowski. All rights reserved.
  */
 
 #include "h9connector.h"
@@ -40,27 +40,29 @@ void H9Connector::shutdown_read() noexcept {
     h9socket.shutdown_read();
 }
 
-GenericMsg H9Connector::recv() {
-    GenericMsg msg;
-    int res = h9socket.recv_complete_msg(msg);
+jsonrpcpp::entity_ptr  H9Connector::recv() {
+    nlohmann::json json;
+    int res = h9socket.recv_complete_msg(json);
     if (res <= 0) {
         throw std::system_error(errno, std::system_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
+
+    if (json.is_discarded()) {
+
+        h9socket.send(jsonrpcpp::ParseErrorException("").to_json());
+        return nullptr;
+    }
+
+    jsonrpcpp::Parser parser;
+    jsonrpcpp::entity_ptr msg = parser.parse_json(json);
+
     return std::move(msg);
 }
 
-std::uint64_t H9Connector::send(GenericMsg msg) {
-    if (h9socket.send(msg) <=0) {
+void H9Connector::send(jsonrpcpp::entity_ptr msg) {
+    if (h9socket.send(msg->to_json()) <=0) {
         throw std::system_error(errno, std::system_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
-    return msg.get_id();
-}
-
-std::uint64_t H9Connector::send(GenericMsg msg, std::uint64_t id) {
-    if (h9socket.send(msg, id) <=0) {
-        throw std::system_error(errno, std::system_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
-    }
-    return id;
 }
 
 std::uint64_t H9Connector::get_next_id() noexcept {

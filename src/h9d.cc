@@ -10,6 +10,7 @@
 
 #include <cstdlib>
 #include <cstring>
+#include <jsonrpcpp/jsonrpcpp.hpp>
 #include <spdlog/cfg/helpers.h>
 #include <spdlog/pattern_formatter.h>
 #include <spdlog/sinks/basic_file_sink.h>
@@ -19,15 +20,16 @@
 #include <thread>
 #include <unistd.h>
 
+#include "api.h"
 #include "bus.h"
 #include "git_version.h"
 #include "h9d_configurator.h"
+#include "tcpserver.h"
 
 int main(int argc, char** argv) {
     H9dConfigurator configurator;
 
     configurator.parse_command_line_arg(argc, argv);
-
     configurator.logger_initial_setup();
 
     SPDLOG_WARN("Starting h9d... Version: {}.", H9_VERSION);
@@ -41,52 +43,40 @@ int main(int argc, char** argv) {
 #endif
 
     configurator.load_configuration();
-
     configurator.logger_setup();
-
     configurator.daemonize();
-
     configurator.save_pid();
-
     configurator.drop_privileges();
 
     Bus bus;
-
     configurator.configure_bus(&bus);
-
     bus.activate();
 
-    while (1) {
-        sleep(1);
-        // bus.send();
-        // sleep(5);
-        ExtH9Frame h9frame;
-        h9frame.type(H9frame::Type::DISCOVER);
-        h9frame.destination_id(H9frame::BROADCAST_ID);
-        h9frame.source_id(3);
-        h9frame.dlc(0);
-        // h9frame.data({1,3,4});
+    API api(&bus);
 
-        // auto frame = BusFrame(h9frame, "tcp", 0, 0);
-        // loop.send_frame(frame);
-        // std::cout << "Sending...\n";
-        bus.send_frame_noblock(h9frame);
-        // std::cout << "Send all\n";
-    }
-    while (1)
-        ;
-    ;
-    /*loop.open();
+    TCPServer server(&api);
+    configurator.configure_tcpserver(&server);
+    server.run();
 
-    H9frame h9frame = H9frame();
-    h9frame.type = H9frame::Type::NODE_HEARTBEAT;
+    jsonrpcpp::Parser parser;
+    jsonrpcpp::entity_ptr entity = parser.parse(R"({"jsonrpc": "2.0", "method": "sum", "params": [1, 2, 3, 4, 5], "id": 1})");
+    entity->to_json();
+    jsonrpcpp::entity_ptr y;
 
-    auto frame = BusFrame(h9frame, "tcp", 0 , 0);
-    loop.send_frame(frame);
-    BusFrame buf;
-    loop.recv_frame(&buf);
+    //    std::cout << entity->is_request() << std::endl;
 
-    std::cout << buf.get_frame() << std::endl;*/
+    /* while (1) {
+         sleep(1);
+         // bus.send();
+         // sleep(5);
+         ExtH9Frame h9frame;
+         h9frame.type(H9frame::Type::DISCOVER);
+         h9frame.destination_id(H9frame::BROADCAST_ID);
+         h9frame.source_id(3);
+         h9frame.dlc(0);
+         // h9frame.data({1,3,4});
 
-    return EXIT_SUCCESS;
+     }*/
+
+    return EXIT_FAILURE;
 }

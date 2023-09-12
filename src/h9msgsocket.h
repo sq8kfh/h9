@@ -6,20 +6,18 @@
  * Copyright (C) 2020 Kamil Palkowski. All rights reserved.
  */
 
-#ifndef H9_H9MSGSOCKET_H
-#define H9_H9MSGSOCKET_H
+#pragma once
 
 #include "config.h"
 #include <string>
 #include "h9socket.h"
-#include "genericmsg.h"
-#include "protocol/identificationmsg.h"
+#include <nlohmann/json.hpp>
 
 
 class H9MsgSocket: protected H9Socket {
     std::uint64_t next_msg_id;
 public:
-    explicit H9MsgSocket(int socket) noexcept;
+    explicit H9MsgSocket(int socket);
     H9MsgSocket(std::string hostname, std::string port) noexcept;
 
     int get_socket() noexcept;
@@ -27,10 +25,20 @@ public:
     using H9Socket::connect;
     int authentication(const std::string& entity) noexcept;
 
-    int send(GenericMsg &msg) noexcept;
-    int send(GenericMsg &msg, std::uint64_t id) noexcept;
-    int recv(GenericMsg &msg, int timeout_in_seconds = 0) noexcept;
-    int recv_complete_msg(GenericMsg &msg) noexcept;
+    int send(const nlohmann::json &json) noexcept;
+
+    /// @param[out] json Recv json object, if incorrect json.is_discarded() return true
+    /// @param[in] timeout_in_seconds If >0 set recv timeout
+    /// @retval -1 an error occurred and the global variable 'errno' is set to indicate the error.
+    /// @retval 0 an connection closed
+    /// @retval 1 on successful
+    int recv(nlohmann::json &json, int timeout_in_seconds = 0) noexcept;
+
+    /// @param[out] json Recv json object, if incorrect json.is_discarded() return true
+    /// @retval -1 an error occurred and the global variable 'errno' is set to indicate the error.
+    /// @retval 0 an connection closed
+    /// @retval 1 on successful
+    int recv_complete_msg(nlohmann::json &json) noexcept;
 
     using H9Socket::close;
     void shutdown_read() noexcept;
@@ -39,6 +47,3 @@ public:
     using H9Socket::get_remote_address;
     using H9Socket::get_remote_port;
 };
-
-
-#endif //H9_H9MSGSOCKET_H

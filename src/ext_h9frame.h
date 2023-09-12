@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <nlohmann/json.hpp>
 #include <string>
 
 #include "h9frame.h"
@@ -34,6 +35,7 @@ class ExtH9Frame {
     H9frame::Type type() const { return _frame.type; }
 
     void type(H9frame::Type type) { _frame.type = type; }
+    void type(std::uint8_t type) { _frame.set_type_from_underlying(type); }
 
     std::uint8_t seqnum() const { return _frame.seqnum; }
 
@@ -49,7 +51,7 @@ class ExtH9Frame {
 
     std::uint8_t dlc() const { return _frame.dlc; }
 
-    void dlc(std::uint8_t dlc) { _frame.dlc = dlc; }
+    void dlc(std::uint8_t dlc) { _frame.dlc = dlc <= 8 ? dlc : 8; }
 
     const std::uint8_t* data() const { return _frame.data; };
 
@@ -63,3 +65,6 @@ class ExtH9Frame {
         }
     }
 };
+
+void to_json(nlohmann::json& j, const ExtH9Frame& f);
+void from_json(const nlohmann::json& j, ExtH9Frame& f);
