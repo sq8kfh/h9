@@ -19,7 +19,7 @@ void to_json(nlohmann::json& j, const ExtH9Frame& f) {
                        {"priority", f.priority() == H9frame::Priority::HIGH ? "H" : "L"},
                        {"type", H9frame::to_underlying(f.type())},
                        {"seqnum", f.seqnum()},
-                       {"destination_id", f.seqnum()},
+                       {"destination_id", f.destination_id()},
                        {"source_id", f.source_id()},
                        {"dlc", f.dlc()},
                        {"data", data}};

@@ -23,6 +23,7 @@
 #include "loop_driver.h"
 #include "slcan_driver.h"
 #include "socketcan_driver.h"
+#include "git_version.h"
 
 namespace {
 std::string last_confuse_error_message = "";
@@ -84,6 +85,14 @@ void H9dConfigurator::parse_command_line_arg(int argc, char** argv) {
 
         if (result.count("version")) {
             std::cerr << "h9d version " << H9_VERSION << " by crowx." << std::endl;
+#ifdef GITVERSION_COMMIT_SHA
+#ifdef GITVERSION_DIRTY
+            constexpr char workdir[] = "dirty";
+#else
+            constexpr char workdir[] = "clean";
+#endif
+            std::cerr << "H9 git commit: " << GITVERSION_COMMIT_SHA << ", working directory " << GITVERSION_COMMIT_SHA << "." << std::endl;
+#endif
             std::cerr << "Copyright (C) 2017-2023 Kamil Palkowski. All rights reserved." << std::endl;
             exit(EXIT_SUCCESS);
         }

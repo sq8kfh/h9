@@ -42,7 +42,16 @@ set(H9SNIFFER_SRC h9sniffer.cc config.h
         ext_h9frame.cc ext_h9frame.h
         h9socket.cc h9socket.h
         h9msgsocket.cc h9msgsocket.h
-        h9connector.cc h9connector.h)
+        h9connector.cc h9connector.h
+        h9_configurator.cc h9_configurator.h)
+
+set(H9SEND_SRC h9send.cc config.h
+        h9frame.cc h9frame.h
+        ext_h9frame.cc ext_h9frame.h
+        h9socket.cc h9socket.h
+        h9msgsocket.cc h9msgsocket.h
+        h9connector.cc h9connector.h
+        h9_configurator.cc h9_configurator.h)
 
 add_custom_command(OUTPUT git_version.h COMMAND ${Python_EXECUTABLE} ${PROJECT_SOURCE_DIR}/scripts/generate_git_version_header.py > git_version.h DEPENDS ${H9D_SRC})
 
@@ -55,3 +64,8 @@ add_executable(h9sniffer ${H9SNIFFER_SRC} git_version.h)
 target_include_directories(h9sniffer PUBLIC ${CONFUSE_INCLUDE_DIRS})
 target_compile_options(h9sniffer PUBLIC ${CONFUSE_CFLAGS_OTHER})
 target_link_libraries(h9sniffer PUBLIC ${CONFUSE_LIBRARIES} PRIVATE nlohmann_json::nlohmann_json spdlog::spdlog)
+
+add_executable(h9send ${H9SEND_SRC} git_version.h)
+target_include_directories(h9send PUBLIC ${CONFUSE_INCLUDE_DIRS})
+target_compile_options(h9send PUBLIC ${CONFUSE_CFLAGS_OTHER})
+target_link_libraries(h9send PUBLIC ${CONFUSE_LIBRARIES} PRIVATE nlohmann_json::nlohmann_json spdlog::spdlog)

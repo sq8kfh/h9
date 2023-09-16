@@ -14,7 +14,32 @@
 #include <memory>
 
 #include "ext_h9frame.h"
+#include "h9_configurator.h"
 #include "h9connector.h"
+
+namespace {
+
+class H9SnifferConfigurator: public H9Configurator {
+  private:
+    void add_app_specific_opt() {
+        // clang-format off
+        options.add_options("")
+                ("e,extended", "Extended output")
+                ("s,simple", "Simple output")
+                ;
+        // clang-format on
+    }
+    void parse_app_specific_opt(const cxxopts::ParseResult& result) {
+        extended = result.count("extended");
+        simple = result.count("simple");
+    }
+  public:
+    bool extended;
+    bool simple;
+    H9SnifferConfigurator(): H9Configurator("h9sniffer", "The H9 bus packets sniffer.") {}
+};
+
+}
 
 void print_reg_value(const H9frame& frame) {
     if (frame.dlc > 1) {
@@ -87,15 +112,11 @@ void print_frame(const H9frame& frame) {
 }
 
 int main(int argc, char** argv) {
-    /*ClientCtx ctx = ClientCtx("h9sniffer", "The H9 bus packets sniffer.");
+    H9SnifferConfigurator h9;
+    h9.parse_command_line_arg(argc, argv);
+    h9.load_configuration();
 
-    ctx.add_options("e,extended", "Extended output");
-    ctx.add_options("s,simple", "Simple output");
-
-    auto res = ctx.parse_options(argc, argv);
-    ctx.load_configuration(res);*/
-
-    H9Connector h9_connector = {"127.0.0.1", "7979"};
+    H9Connector h9_connector = h9.get_connector();
 
     try {
         h9_connector.connect("h9sniffer");
@@ -113,7 +134,7 @@ int main(int argc, char** argv) {
 
     ExtH9Frame fr;
     fr.dlc(4);
-    fr.data({1,2,3,4});
+    fr.data({1, 2, 3, 4});
     jsonrpcpp::Request r(id, "send_frame", nlohmann::json({{"frame", std::move(fr)}}));
     h9_connector.send(std::make_shared<jsonrpcpp::Request>(r));
 
@@ -122,17 +143,17 @@ int main(int argc, char** argv) {
     jsonrpcpp::Request r2(id, "subscribe", nlohmann::json({{"event", "frame"}}));
     h9_connector.send(std::make_shared<jsonrpcpp::Request>(r2));
 
-    //std::cout << r.to_json().dump() << std::endl;
-        int output = 1;
-        /*
-        if (res.count("simple") == 1 && res.count("extended") ==0) {
-            output = 0;
-            std::cout << "source_id,destination_id,priority,type,seqnum,dlc,data\n";
-        }
-        if (res.count("extended") == 1 && res.count("simple") ==0) {
-            output = 2;
-        }
-*/
+    // std::cout << r.to_json().dump() << std::endl;
+    int output = 1;
+
+    if (h9.simple && !h9.extended) {
+        output = 0;
+        std::cout << "source_id,destination_id,priority,type,seqnum,dlc,data\n";
+    }
+    if (h9.extended && !h9.simple) {
+        output = 2;
+    }
+
     while (true) {
         jsonrpcpp::entity_ptr raw_msg = h9_connector.recv();
 
@@ -141,28 +162,28 @@ int main(int argc, char** argv) {
             if (notification->method() == "on_frame") {
                 ExtH9Frame frame = std::move(notification->params().param_map.at("frame").get<ExtH9Frame>());
 
-                    if (output == 0) {
-                        std::cout << frame.source_id() << ","
-                                  << frame.destination_id() << ","
-                                  << (frame.priority() == H9frame::Priority::HIGH ? 'H' : 'L') << ","
-                                  << static_cast<unsigned int>(H9frame::to_underlying(frame.type())) << ','
-                                  << static_cast<unsigned int>(frame.seqnum()) << ","
-                                  << static_cast<unsigned int>(frame.dlc()) << ",";
-                        std::ios oldState(nullptr);
-                        oldState.copyfmt(std::cout);
+                if (output == 0) {
+                    std::cout << frame.source_id() << ","
+                              << frame.destination_id() << ","
+                              << (frame.priority() == H9frame::Priority::HIGH ? 'H' : 'L') << ","
+                              << static_cast<unsigned int>(H9frame::to_underlying(frame.type())) << ','
+                              << static_cast<unsigned int>(frame.seqnum()) << ","
+                              << static_cast<unsigned int>(frame.dlc()) << ",";
+                    std::ios oldState(nullptr);
+                    oldState.copyfmt(std::cout);
 
-                        for (int i = 0; i < frame.dlc(); ++i) {
-                            std::cout << std::setfill('0') << std::hex << std::setw(2) << static_cast<unsigned int>(frame.data()[i]);
-                        }
-                        std::cout.copyfmt(oldState);
-                        std::cout << std::endl;
+                    for (int i = 0; i < frame.dlc(); ++i) {
+                        std::cout << std::setfill('0') << std::hex << std::setw(2) << static_cast<unsigned int>(frame.data()[i]);
                     }
-                    else {
-                        std::cout << frame.frame() << std::endl;
-                        if (output == 2) {
-                            print_frame(frame.frame());
-                        }
+                    std::cout.copyfmt(oldState);
+                    std::cout << std::endl;
+                }
+                else {
+                    std::cout << frame.frame() << std::endl;
+                    if (output == 2) {
+                        print_frame(frame.frame());
                     }
+                }
             }
         }
         else {

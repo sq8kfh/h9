@@ -20,6 +20,10 @@ public:
     explicit H9MsgSocket(int socket);
     H9MsgSocket(std::string hostname, std::string port) noexcept;
 
+    H9MsgSocket(const H9MsgSocket&) = delete;
+    H9MsgSocket(H9MsgSocket&&) = delete;
+    H9MsgSocket &operator=(const H9MsgSocket&) = delete;
+
     int get_socket() noexcept;
 
     using H9Socket::connect;

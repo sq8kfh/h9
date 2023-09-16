@@ -30,6 +30,7 @@ class H9Socket {
     explicit H9Socket(int socket) noexcept;
     H9Socket(std::string hostname, std::string port) noexcept;
     H9Socket(const H9Socket& a) = delete;
+
     ~H9Socket() noexcept;
     int connect() noexcept;
     void close() noexcept;
