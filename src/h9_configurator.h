@@ -16,6 +16,9 @@ class H9Configurator {
   private:
     constexpr static char default_config[] = H9_CONFIG_PATH "h9.conf";
     constexpr static char default_user_config[] = H9_CONFIG_PATH "~/.h9";
+    constexpr static char default_h9d_host[] = "localhost";
+    constexpr static int default_h9d_port = H9D_DEFAULT_PORT;
+    constexpr static int default_source_id = DEFAULT_SOURCE_ID_FOR_CLIENT;
   protected:
     cfg_t* cfg;
     cxxopts::Options options;
@@ -25,9 +28,10 @@ class H9Configurator {
 
     bool debug;
     int verbose;
-    std::string override_connect;
-    std::string override_port;
+    std::string host;
+    std::string port;
     std::string config_file;
+    int source_id;
 
     virtual void add_app_specific_opt() {}
     virtual void parse_app_specific_opt(const cxxopts::ParseResult& result) {}
@@ -38,4 +42,7 @@ class H9Configurator {
 
     H9Connector get_connector();
     std::uint16_t get_default_source_id();
+
+    std::string get_host() const;
+    std::string get_port() const;
 };

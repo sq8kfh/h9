@@ -91,7 +91,7 @@ void H9dConfigurator::parse_command_line_arg(int argc, char** argv) {
 #else
             constexpr char workdir[] = "clean";
 #endif
-            std::cerr << "H9 git commit: " << GITVERSION_COMMIT_SHA << ", working directory " << GITVERSION_COMMIT_SHA << "." << std::endl;
+            std::cerr << "H9 git commit: " << GITVERSION_COMMIT_SHA << ", working directory " << workdir << "." << std::endl;
 #endif
             std::cerr << "Copyright (C) 2017-2023 Kamil Palkowski. All rights reserved." << std::endl;
             exit(EXIT_SUCCESS);

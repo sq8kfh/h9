@@ -12,6 +12,7 @@
 #include <iomanip>
 #include <iostream>
 #include <memory>
+#include <spdlog/spdlog.h>
 
 #include "ext_h9frame.h"
 #include "h9_configurator.h"
@@ -29,17 +30,21 @@ class H9SnifferConfigurator: public H9Configurator {
                 ;
         // clang-format on
     }
+
     void parse_app_specific_opt(const cxxopts::ParseResult& result) {
         extended = result.count("extended");
         simple = result.count("simple");
     }
+
   public:
     bool extended;
     bool simple;
-    H9SnifferConfigurator(): H9Configurator("h9sniffer", "The H9 bus packets sniffer.") {}
+
+    H9SnifferConfigurator():
+        H9Configurator("h9sniffer", "The H9 bus packets sniffer.") {}
 };
 
-}
+} // namespace
 
 void print_reg_value(const H9frame& frame) {
     if (frame.dlc > 1) {
@@ -122,7 +127,7 @@ int main(int argc, char** argv) {
         h9_connector.connect("h9sniffer");
     }
     catch (std::system_error& e) {
-        //        h9_log_stderr("Can not connect to h9bus %s:%s: %s", ctx.get_h9bus_host().c_str(), ctx.get_h9bus_port().c_str(), e.code().message().c_str());
+        SPDLOG_ERROR("Can not connect to h9bus {}:{}: {}", h9.get_host(), h9.get_port(), e.code().message());
         exit(EXIT_FAILURE);
     }
     catch (std::runtime_error& e) {

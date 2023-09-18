@@ -60,7 +60,9 @@ void TCPClientThread::thread_recv_msg() {
         h9socket.send(jsonrpcpp::ParseErrorException("").to_json());
         return;
     }
-
+    else {
+        SPDLOG_LOGGER_TRACE(logger, "Recv JSON from client: {}: {}.", get_client_idstring().c_str(), json.dump());
+    }
     jsonrpcpp::Parser parser;
     jsonrpcpp::entity_ptr msg = parser.parse_json(json);
 

@@ -35,8 +35,8 @@ void from_json(const nlohmann::json& j, ExtH9Frame& f) {
     }
     f.type(j.at("type").get<std::uint8_t>());
     f.seqnum(j.at("seqnum").get<std::uint8_t>());
-    f.destination_id(j.at("destination_id").get<std::uint8_t>());
-    f.source_id(j.at("source_id").get<std::uint8_t>());
+    f.destination_id(j.at("destination_id").get<std::uint16_t>());
+    f.source_id(j.at("source_id").get<std::uint16_t>());
     f.dlc(j.at("dlc").get<std::uint8_t>());
     f.data(j.at("data").get<std::vector<std::uint8_t>>());
 }
