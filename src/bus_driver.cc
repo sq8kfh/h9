@@ -19,8 +19,8 @@ void BusDriver::frame_sent_correctly(BusFrame* busframe) {
 BusDriver::BusDriver(const std::string& name, const std::string& driver_name):
     name(name),
     driver_name(driver_name),
-    sent_frames_counter(0),
-    received_frames_counter(0),
+    sent_frames_counter(MetricsCollector::make_counter("bus.endpoints[name=" + name + "].send_frames")),
+    received_frames_counter(MetricsCollector::make_counter("bus.endpoints[name=" + name + "].received_frames")),
     socket_fd(-1) {
 
     logger = spdlog::get("bus");

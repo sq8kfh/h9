@@ -39,10 +39,12 @@ class H9Configurator {
     H9Configurator(const std::string& app_name, const std::string& app_desc);
     cxxopts::ParseResult parse_command_line_arg(int argc, char** argv);
     void load_configuration();
+    void logger_setup();
 
     H9Connector get_connector();
     std::uint16_t get_default_source_id();
 
     std::string get_host() const;
     std::string get_port() const;
+    bool get_debug() const;
 };

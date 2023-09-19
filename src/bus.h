@@ -21,6 +21,7 @@
 #include "frameobserver.h"
 #include "framesubject.h"
 #include "h9framecomparator.h"
+#include "metrics_collector.h"
 #if (defined(__unix__) && defined(BSD)) || defined(__APPLE__) && defined(__MACH__)
 #include "kqueue.h"
 #elif defined(__linux__)
@@ -58,6 +59,12 @@ class Bus: public FrameSubject {
     std::list<BusFrame*> send_orphans;
     std::mutex send_orphans_mtx;
 
+    MetricsCollector::counter_t& sent_frames_counter;
+    MetricsCollector::counter_t& received_frames_counter;
+
+    constexpr static int number_of_frame_types = 1 << H9frame::H9FRAME_TYPE_BIT_LENGTH;
+    MetricsCollector::counter_t* sent_frames_counter_by_type[number_of_frame_types];
+    MetricsCollector::counter_t* received_frames_counter_by_type[number_of_frame_types];
     void recv_thread();
 
   public:

@@ -15,11 +15,12 @@
 
 #include "busframe.h"
 #include "h9frame.h"
+#include "metrics_collector.h"
 
 class BusDriver {
   private:
-    std::uint32_t sent_frames_counter;
-    std::uint32_t received_frames_counter;
+    MetricsCollector::counter_t& sent_frames_counter;
+    MetricsCollector::counter_t& received_frames_counter;
 
   protected:
     int socket_fd;

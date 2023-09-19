@@ -10,7 +10,7 @@
 
 #include <iostream>
 #include <spdlog/spdlog.h>
-
+#include <spdlog/sinks/stdout_color_sinks.h>
 #include "git_version.h"
 
 namespace {
@@ -154,6 +154,11 @@ void H9Configurator::load_configuration() {
     }
 }
 
+void H9Configurator::logger_setup() {
+    auto h9 = spdlog::stderr_color_st("stderr");
+    spdlog::set_default_logger(h9);
+}
+
 H9Connector H9Configurator::get_connector() {
     return H9Connector(host, port);
 }
@@ -168,4 +173,8 @@ std::string H9Configurator::get_host() const {
 
 std::string H9Configurator::get_port() const {
     return port;
+}
+
+bool H9Configurator::get_debug() const {
+    return debug;
 }

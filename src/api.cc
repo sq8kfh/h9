@@ -87,11 +87,16 @@ nlohmann::json API::send_frame(TCPClientThread* client_thread, const jsonrpcpp::
     }
 }
 
+nlohmann::json API::get_stats(TCPClientThread* client_thread, const jsonrpcpp::Id& id, const jsonrpcpp::Parameter& params) {
+    return std::move(MetricsCollector::metrics_to_json());
+}
+
 API::API(Bus* bus): bus(bus) {
     api_methods["get_version"] = &API::get_version;
     api_methods["get_methods_list"] = &API::get_methods_list;
     api_methods["subscribe"] = &API::subscribe;
     api_methods["send_frame"] = &API::send_frame;
+    api_methods["get_stats"] = &API::get_stats;
 }
 
 jsonrpcpp::Response API::call(TCPClientThread* client_thread, jsonrpcpp::request_ptr request) {

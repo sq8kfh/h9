@@ -35,7 +35,8 @@ set(H9D_SRC h9d.cc config.h
         h9socket.cc h9socket.h
         h9msgsocket.cc h9msgsocket.h
         api.cc api.h
-        client_frame_obs.cc client_frame_obs.h)
+        client_frame_obs.cc client_frame_obs.h
+        metrics_collector.cc metrics_collector.h)
 
 set(H9SNIFFER_SRC h9sniffer.cc config.h
         h9frame.cc h9frame.h
@@ -46,6 +47,14 @@ set(H9SNIFFER_SRC h9sniffer.cc config.h
         h9_configurator.cc h9_configurator.h)
 
 set(H9SEND_SRC h9send.cc config.h
+        h9frame.cc h9frame.h
+        ext_h9frame.cc ext_h9frame.h
+        h9socket.cc h9socket.h
+        h9msgsocket.cc h9msgsocket.h
+        h9connector.cc h9connector.h
+        h9_configurator.cc h9_configurator.h)
+
+set(H9STATS_SRC h9stats.cc config.h
         h9frame.cc h9frame.h
         ext_h9frame.cc ext_h9frame.h
         h9socket.cc h9socket.h
@@ -69,3 +78,8 @@ add_executable(h9send ${H9SEND_SRC} git_version.h)
 target_include_directories(h9send PUBLIC ${CONFUSE_INCLUDE_DIRS})
 target_compile_options(h9send PUBLIC ${CONFUSE_CFLAGS_OTHER})
 target_link_libraries(h9send PUBLIC ${CONFUSE_LIBRARIES} PRIVATE nlohmann_json::nlohmann_json spdlog::spdlog)
+
+add_executable(h9stats ${H9STATS_SRC} git_version.h)
+target_include_directories(h9stats PUBLIC ${CONFUSE_INCLUDE_DIRS})
+target_compile_options(h9stats PUBLIC ${CONFUSE_CFLAGS_OTHER})
+target_link_libraries(h9stats PUBLIC ${CONFUSE_LIBRARIES} PRIVATE nlohmann_json::nlohmann_json spdlog::spdlog)

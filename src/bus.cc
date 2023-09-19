@@ -36,12 +36,14 @@ void Bus::recv_thread() {
                 if (queue_empty)
                     break;
 
-                // std::cout << "run not empty" << std::endl;
                 bus_frame->set_number_of_active_bus(bus.size());
+                ++sent_frames_counter;
+                ++(*sent_frames_counter_by_type[H9frame::to_underlying(bus_frame->type())]);
+
                 for (const auto& [socket, bus_driver] : bus) {
                     bus_driver->send_frame(bus_frame);
 
-                    SPDLOG_LOGGER_DEBUG(frames_logger, "Send frame {}", *bus_frame);
+                    SPDLOG_LOGGER_DEBUG(frames_logger, "Send frame {} to {}.", *bus_frame, bus_driver->name);
                     frames_sent_file_logger->info(SimpleJSONBusFrameWraper(bus_frame));
                 }
             }
@@ -63,8 +65,10 @@ void Bus::recv_thread() {
 
                     BusFrame frame;
                     bus_driver->recv_frame(&frame);
+                    ++received_frames_counter;
+                    ++(*received_frames_counter_by_type[H9frame::to_underlying(frame.type())]);
 
-                    SPDLOG_LOGGER_DEBUG(frames_logger, "Recv frame {}", frame);
+                    SPDLOG_LOGGER_DEBUG(frames_logger, "Recv frame {} from {}.", frame, bus_driver->name);
                     frames_recv_file_logger->info(SimpleJSONBusFrameWraper(frame));
 
                     notify_frame_observer(frame);
@@ -75,11 +79,18 @@ void Bus::recv_thread() {
 }
 
 Bus::Bus():
-    run(true) {
+    run(true),
+    sent_frames_counter(MetricsCollector::make_counter("bus.send_frames")),
+    received_frames_counter(MetricsCollector::make_counter("bus.received_frames")) {
     logger = spdlog::get(H9dConfigurator::bus_logger_name);
     frames_logger = spdlog::get(H9dConfigurator::frames_logger_name);
     frames_recv_file_logger = spdlog::get(H9dConfigurator::frames_recv_to_file_logger_name);
     frames_sent_file_logger = spdlog::get(H9dConfigurator::frames_recv_to_file_logger_name);
+
+    for (int i =0; i < number_of_frame_types; ++i) {
+        sent_frames_counter_by_type[i] = MetricsCollector::make_counter_ptr("bus.frames[type=" + std::string(H9frame::type_to_string(H9frame::from_underlying<H9frame::Type>(i))) + "].send");
+        received_frames_counter_by_type[i]= MetricsCollector::make_counter_ptr("bus.frames[type=" + std::string(H9frame::type_to_string(H9frame::from_underlying<H9frame::Type>(i))) + "].received");
+    }
 
     SPDLOG_LOGGER_INFO(logger, "Created buses manager with '{}' I/O event notification mechanism.", IOEventQueue::notification_mechanism_name);
 }

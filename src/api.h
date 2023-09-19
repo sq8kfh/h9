@@ -28,6 +28,7 @@ class API {
     nlohmann::json get_methods_list(TCPClientThread* client_thread, const jsonrpcpp::Id& id, const jsonrpcpp::Parameter& params);
     nlohmann::json subscribe(TCPClientThread* client_thread, const jsonrpcpp::Id& id, const jsonrpcpp::Parameter& params);
     nlohmann::json send_frame(TCPClientThread* client_thread, const jsonrpcpp::Id& id, const jsonrpcpp::Parameter& params);
+    nlohmann::json get_stats(TCPClientThread* client_thread, const jsonrpcpp::Id& id, const jsonrpcpp::Parameter& params);
   public:
     API(Bus* bus);
     jsonrpcpp::Response call(TCPClientThread* client_thread, jsonrpcpp::request_ptr request);

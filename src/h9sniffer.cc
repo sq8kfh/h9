@@ -118,6 +118,7 @@ void print_frame(const H9frame& frame) {
 
 int main(int argc, char** argv) {
     H9SnifferConfigurator h9;
+    h9.logger_setup();
     h9.parse_command_line_arg(argc, argv);
     h9.load_configuration();
 
@@ -131,7 +132,7 @@ int main(int argc, char** argv) {
         exit(EXIT_FAILURE);
     }
     catch (std::runtime_error& e) {
-        //        h9_log_stderr("Can not connect to h9bus %s:%s: authentication fail", ctx.get_h9bus_host().c_str(), ctx.get_h9bus_port().c_str());
+        SPDLOG_ERROR("Can not connect to h9bus {}:{}: authentication fail", h9.get_host(), h9.get_port());
         exit(EXIT_FAILURE);
     }
 

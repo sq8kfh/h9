@@ -25,6 +25,7 @@
 #include "git_version.h"
 #include "h9d_configurator.h"
 #include "tcpserver.h"
+#include "metrics_collector.h"
 
 int main(int argc, char** argv) {
     H9dConfigurator configurator;
@@ -48,12 +49,19 @@ int main(int argc, char** argv) {
     configurator.save_pid();
     configurator.drop_privileges();
 
+    //MetricsCollector mc;
+    MetricsCollector::counter_t& test_cnt = MetricsCollector::make_counter("test");
+    test_cnt++;
+    ++test_cnt;
+    test_cnt += 10;
+    SPDLOG_WARN("test: {}", MetricsCollector::metrics_to_json().dump());
+
     Bus bus;
     configurator.configure_bus(&bus);
     bus.activate();
 
     API api(&bus);
-
+    SPDLOG_WARN("test: {}", MetricsCollector::metrics_to_json().dump());
     TCPServer server(&api);
     configurator.configure_tcpserver(&server);
     server.run();

@@ -9,8 +9,8 @@
 #include "config.h"
 
 #include <cstdlib>
-#include <iostream>
 #include <nlohmann/json.hpp>
+#include <spdlog/spdlog.h>
 #include <unistd.h>
 
 #include "ext_h9frame.h"
@@ -56,6 +56,7 @@ class H9SendConfigurator: public H9Configurator {
 
 int main(int argc, char* argv[]) {
     H9SendConfigurator h9;
+    h9.logger_setup();
     cxxopts::ParseResult res = h9.parse_command_line_arg(argc, argv);
     h9.load_configuration();
     /*
@@ -112,15 +113,15 @@ int main(int argc, char* argv[]) {
         h9_connector.connect("h9send");
     }
     catch (std::system_error& e) {
-        // h9_log_stderr("Can not connect to h9bus %s:%s: %s", ctx.get_h9bus_host().c_str(), ctx.get_h9bus_port().c_str(), e.code().message().c_str());
+        SPDLOG_ERROR("Can not connect to h9bus {}:{}: {}", h9.get_host(), h9.get_port(), e.code().message());
         exit(EXIT_FAILURE);
     }
     catch (std::runtime_error& e) {
-        // h9_log_stderr("Can not connect to h9bus %s:%s: authentication fail", ctx.get_h9bus_host().c_str(), ctx.get_h9bus_port().c_str());
+        SPDLOG_ERROR("Can not connect to h9bus {}:{}: authentication fail", h9.get_host(), h9.get_port());
         exit(EXIT_FAILURE);
     }
 
-    //std::cout << frame << std::endl;
+    // std::cout << frame << std::endl;
 
     if (res.count("repeat")) {
         unsigned int sleep_time = res["repeat"].as<unsigned int>();
