@@ -12,13 +12,17 @@
 #include <unistd.h>
 #include <utility>
 
-void BusDriver::frame_sent_correctly(BusFrame* busframe) {
+void BusDriver::frame_sent_correctly(std::shared_ptr<BusFrame> busframe) {
     busframe->inc_send_counter();
 }
 
-BusDriver::BusDriver(const std::string& name, const std::string& driver_name):
+void BusDriver::frame_sent_incorrectly(std::shared_ptr<BusFrame> busframe) {
+    busframe->inc_send_fail_counter();
+}
+
+BusDriver::BusDriver(const std::string& name, std::string driver_name):
     name(name),
-    driver_name(driver_name),
+    driver_name(std::move(driver_name)),
     sent_frames_counter(MetricsCollector::make_counter("bus.endpoints[name=" + name + "].send_frames")),
     received_frames_counter(MetricsCollector::make_counter("bus.endpoints[name=" + name + "].received_frames")),
     socket_fd(-1) {
@@ -38,7 +42,7 @@ void BusDriver::close() {
         ::close(socket_fd);
 }
 
-int BusDriver::send_frame(BusFrame* busframe) {
+int BusDriver::send_frame(std::shared_ptr<BusFrame> busframe) {
     ++sent_frames_counter;
     return send_data(busframe);
 }

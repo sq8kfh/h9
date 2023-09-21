@@ -37,7 +37,7 @@ class Bus: public FrameSubject {
 #endif
 
     struct BusFrameLess {
-        bool operator()(const BusFrame* x, const BusFrame* y) const {
+        bool operator()(std::shared_ptr<BusFrame> x, std::shared_ptr<BusFrame> y) const {
             return x->priority() > y->priority(); // HIGH = 0, LOW = 1
         }
     };
@@ -47,20 +47,21 @@ class Bus: public FrameSubject {
     std::shared_ptr<spdlog::logger> frames_recv_file_logger;
     std::shared_ptr<spdlog::logger> frames_sent_file_logger;
 
+    std::uint8_t next_seqnum;
+    std::uint16_t _bus_id;
+
     std::atomic_bool run;
     std::map<int, BusDriver*> bus;
 
     IOEventQueue event_notificator;
     std::thread recv_thread_desc;
 
-    std::priority_queue<BusFrame*, std::vector<BusFrame*>, BusFrameLess> send_queue;
+    std::priority_queue<std::shared_ptr<BusFrame>, std::vector<std::shared_ptr<BusFrame>>, BusFrameLess> send_queue;
     std::mutex send_queue_mtx;
-
-    std::list<BusFrame*> send_orphans;
-    std::mutex send_orphans_mtx;
 
     MetricsCollector::counter_t& sent_frames_counter;
     MetricsCollector::counter_t& received_frames_counter;
+    //MetricsCollector::counter_t& size_of_send_queue;
 
     constexpr static int number_of_frame_types = 1 << H9frame::H9FRAME_TYPE_BIT_LENGTH;
     MetricsCollector::counter_t* sent_frames_counter_by_type[number_of_frame_types];
@@ -73,10 +74,15 @@ class Bus: public FrameSubject {
     Bus& operator=(const Bus&) = delete;
     ~Bus();
 
+    void bus_id(std::uint16_t bus_id);
+
     void add_driver(BusDriver* bus_driver);
     void activate();
 
-    /// @return number
-    int send_frame(ExtH9Frame frame);
-    int send_frame_noblock(ExtH9Frame frame);
+    /// Send frame to the bus.
+    /// @param[in] frame to sent
+    /// @param[in] raw is true Bus don't set source_id and seqnum
+    /// @return seqnum of the sent frame
+    int send_frame(ExtH9Frame frame, bool raw = false);
+    std::future<SendFrameResult> send_frame_noblock(ExtH9Frame frame, bool raw = false);
 };

@@ -17,7 +17,7 @@ class SlcanDriver: public BusDriver {
     std::string recv_buf;
 
     // TODO: Zmienic na kolejke
-    BusFrame* last_send;
+    std::shared_ptr<BusFrame> last_send;
 
   public:
     SlcanDriver(const std::string& name, const std::string& tty);
@@ -28,7 +28,7 @@ class SlcanDriver: public BusDriver {
 
   private:
     int recv_data(H9frame* frame);
-    int send_data(BusFrame* busframe);
+    int send_data(std::shared_ptr<BusFrame> busframe);
     void parse_response(const std::string& response);
     void send_ack();
 };

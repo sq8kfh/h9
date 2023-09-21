@@ -22,9 +22,9 @@
 
 #include "api.h"
 #include "bus.h"
-#include "git_version.h"
 #include "h9d_configurator.h"
 #include "tcpserver.h"
+#include "node_mgr.h"
 #include "metrics_collector.h"
 
 int main(int argc, char** argv) {
@@ -33,15 +33,7 @@ int main(int argc, char** argv) {
     configurator.parse_command_line_arg(argc, argv);
     configurator.logger_initial_setup();
 
-    SPDLOG_WARN("Starting h9d... Version: {}.", H9_VERSION);
-#ifdef GITVERSION_COMMIT_SHA
-#ifdef GITVERSION_DIRTY
-    constexpr char workdir[] = "dirty";
-#else
-    constexpr char workdir[] = "clean";
-#endif
-    SPDLOG_WARN("H9 git commit: {}, working directory {}.", GITVERSION_COMMIT_SHA, workdir);
-#endif
+    SPDLOG_WARN("Starting h9d... Version: {}.", configurator.version_string());
 
     configurator.load_configuration();
     configurator.logger_setup();
@@ -49,27 +41,21 @@ int main(int argc, char** argv) {
     configurator.save_pid();
     configurator.drop_privileges();
 
-    //MetricsCollector mc;
-    MetricsCollector::counter_t& test_cnt = MetricsCollector::make_counter("test");
-    test_cnt++;
-    ++test_cnt;
-    test_cnt += 10;
-    SPDLOG_WARN("test: {}", MetricsCollector::metrics_to_json().dump());
-
     Bus bus;
     configurator.configure_bus(&bus);
     bus.activate();
 
-    API api(&bus);
-    SPDLOG_WARN("test: {}", MetricsCollector::metrics_to_json().dump());
+    NodeMgr node_mgr(&bus);
+    configurator.configure_node_mgr(&node_mgr);
+    //Node a = node_mgr.node(12);
+
+    //Node b(std::move(a));
+
+    API api(&bus, &node_mgr);
+
     TCPServer server(&api);
     configurator.configure_tcpserver(&server);
     server.run();
-
-    jsonrpcpp::Parser parser;
-    jsonrpcpp::entity_ptr entity = parser.parse(R"({"jsonrpc": "2.0", "method": "sum", "params": [1, 2, 3, 4, 5], "id": 1})");
-    entity->to_json();
-    jsonrpcpp::entity_ptr y;
 
     //    std::cout << entity->is_request() << std::endl;
 

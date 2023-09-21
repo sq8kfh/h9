@@ -36,7 +36,10 @@ set(H9D_SRC h9d.cc config.h
         h9msgsocket.cc h9msgsocket.h
         api.cc api.h
         client_frame_obs.cc client_frame_obs.h
-        metrics_collector.cc metrics_collector.h)
+        metrics_collector.cc metrics_collector.h
+        node_mgr.cc node_mgr.h
+        node.cc node.h
+        send_frame_result.h)
 
 set(H9SNIFFER_SRC h9sniffer.cc config.h
         h9frame.cc h9frame.h
@@ -62,7 +65,9 @@ set(H9STATS_SRC h9stats.cc config.h
         h9connector.cc h9connector.h
         h9_configurator.cc h9_configurator.h)
 
-add_custom_command(OUTPUT git_version.h COMMAND ${Python_EXECUTABLE} ${PROJECT_SOURCE_DIR}/scripts/generate_git_version_header.py > git_version.h DEPENDS ${H9D_SRC})
+add_custom_command(OUTPUT git_version.h
+                  COMMAND ${Python_EXECUTABLE} ${PROJECT_SOURCE_DIR}/scripts/generate_git_version_header.py > git_version.h~
+                  COMMAND /bin/sh -c 'diff git_version.h~ git_version.h 2> /dev/null || { cp git_version.h~ git_version.h\; }' DEPENDS ${H9D_SRC})
 
 add_executable(h9d ${H9D_SRC} git_version.h)
 target_include_directories(h9d PUBLIC ${CONFUSE_INCLUDE_DIRS})

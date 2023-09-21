@@ -145,7 +145,7 @@ int SlcanDriver::recv_data(H9frame* frame) {
     return nbyte;
 }
 
-int SlcanDriver::send_data(BusFrame* busframe) {
+int SlcanDriver::send_data(std::shared_ptr<BusFrame> busframe) {
     std::string buf = build_slcan_msg(busframe->frame());
     ssize_t nbyte = write(socket_fd, buf.c_str(), buf.size());
     // std::cout << "send raw: " << buf.c_str() << std::endl;

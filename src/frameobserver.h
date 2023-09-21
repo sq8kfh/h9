@@ -16,13 +16,13 @@
 class FrameSubject;
 
 class FrameObserver {
-  public:
+  private:
     FrameSubject* const subject;
-
   protected:
     friend class FrameSubject;
 
     FrameObserver(FrameSubject* subject, H9FrameComparator comparator);
+    FrameObserver(const FrameObserver&) = delete;
     ~FrameObserver();
     virtual void on_frame_recv(const ExtH9Frame& frame) = 0;
 };

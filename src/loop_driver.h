@@ -25,5 +25,5 @@ class LoopDriver: public BusDriver {
 
   private:
     int recv_data(H9frame* frame);
-    int send_data(BusFrame* busframe);
+    int send_data(std::shared_ptr<BusFrame> busframe);
 };

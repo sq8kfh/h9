@@ -24,8 +24,9 @@ class H9SendConfigurator: public H9Configurator {
     void add_app_specific_opt() {
         // clang-format off
         options.add_options("")
-                ("s,src_id", "Source id", cxxopts::value<std::uint16_t>())
-                ("i,dst_id", "Destination id", cxxopts::value<std::uint16_t>())
+                ("s,src_id", "Source id, if set, a raw frame will be sent", cxxopts::value<std::uint16_t>())
+                ("d,dst_id", "Destination id", cxxopts::value<std::uint16_t>())
+                ("S,seqnum", "Seqnum, if set, a raw frame will be sent", cxxopts::value<std::uint8_t>())
                 ("H,high_priority", "High priority")
                 ("t,type", "Frame type", cxxopts::value<std::underlying_type_t<H9frame::Type >>())
                 ("r,repeat", "Repeat the frame every given time in seconds", cxxopts::value<unsigned int>())
@@ -72,12 +73,19 @@ int main(int argc, char* argv[]) {
         ctx.load_configuration(res);
     */
     ExtH9Frame frame;
+    bool raw = false;
 
     if (res.count("src_id")) {
         frame.source_id(res["src_id"].as<std::uint16_t>());
+        raw = true;
     }
     else {
         frame.source_id(h9.get_default_source_id());
+    }
+
+    if (res.count("seqnum")) {
+        frame.seqnum(res["seqnum"].as<std::uint8_t>());
+        raw = true;
     }
 
     if (res.count("dst_id")) {
@@ -130,7 +138,7 @@ int main(int argc, char* argv[]) {
         while (true) {
             jsonrpcpp::Id id(c);
             frame.seqnum(c);
-            jsonrpcpp::Request rf(std::move(id), "send_frame", nlohmann::json({{"frame", frame}}));
+            jsonrpcpp::Request rf(std::move(id), "send_frame", nlohmann::json({{"frame", frame}, {"raw", raw}}));
             h9_connector.send(std::make_shared<jsonrpcpp::Request>(std::move(rf)));
 
             ++c;
@@ -139,7 +147,7 @@ int main(int argc, char* argv[]) {
     }
     else {
         jsonrpcpp::Id id(1);
-        jsonrpcpp::Request rf(id, "send_frame", nlohmann::json({{"frame", frame}}));
+        jsonrpcpp::Request rf(id, "send_frame", nlohmann::json({{"frame", frame}, {"raw", raw}}));
         h9_connector.send(std::make_shared<jsonrpcpp::Request>(std::move(rf)));
     }
     return EXIT_SUCCESS;

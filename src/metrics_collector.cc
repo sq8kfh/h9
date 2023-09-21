@@ -16,8 +16,6 @@ void to_json(nlohmann::json& j, const MetricsCollector::counter_t& f) {
 MetricsCollector MetricsCollector::_this;
 
 MetricsCollector::MetricsCollector(): start_time(std::time(nullptr)) {
-    std::cout << test_counter.is_lock_free() << std::endl;
-    std::cout << test_counter.is_always_lock_free << std::endl;
 }
 
 nlohmann::json MetricsCollector::metrics_to_json() {

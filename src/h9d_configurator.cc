@@ -58,7 +58,7 @@ void H9dConfigurator::parse_command_line_arg(int argc, char** argv) {
     // clang-format off
     options.add_options("other")
 #ifdef H9_DEBUG
-            ("d,debug", "Enable debugging")
+            ("D,debug", "Enable debugging")
 #endif
             ("h,help", "Show help")
             ("v,verbose", "Be more verbose")
@@ -66,7 +66,7 @@ void H9dConfigurator::parse_command_line_arg(int argc, char** argv) {
             ;
     options.add_options("daemon")
             ("c,config", "Config file", cxxopts::value<std::string>()->default_value(default_config))
-            ("D,daemonize", "Run in the background")
+            ("d,daemonize", "Run in the background")
             ("f,foreground", "Prevent go in the background")
             ("l,logfile", "Log file", cxxopts::value<std::string>())
             ("L,logger_level", "Logger level modification (e.g. 'frame=debug,bus=trace')", cxxopts::value<std::string>())
@@ -84,15 +84,7 @@ void H9dConfigurator::parse_command_line_arg(int argc, char** argv) {
         }
 
         if (result.count("version")) {
-            std::cerr << "h9d version " << H9_VERSION << " by crowx." << std::endl;
-#ifdef GITVERSION_COMMIT_SHA
-#ifdef GITVERSION_DIRTY
-            constexpr char workdir[] = "dirty";
-#else
-            constexpr char workdir[] = "clean";
-#endif
-            std::cerr << "H9 git commit: " << GITVERSION_COMMIT_SHA << ", working directory " << workdir << "." << std::endl;
-#endif
+            std::cerr << "h9d version " << version_string() << " by crowx." << std::endl;
             std::cerr << "Copyright (C) 2017-2023 Kamil Palkowski. All rights reserved." << std::endl;
             exit(EXIT_SUCCESS);
         }
@@ -279,7 +271,12 @@ void H9dConfigurator::load_configuration() {
         CFG_BOOL("disable_recv_frames", cfg_false, CFGF_NONE),
         CFG_END()};
 
-    cfg_opt_t cfg_bus_sec[] = {
+    cfg_opt_t cfg_bus_opts[] = {
+        CFG_INT("source_id", default_source_id, CFGF_NONE),
+        CFG_INT("response_timeout_duration", default_response_timeout_duration, CFGF_NONE),
+        CFG_END()};
+
+    cfg_opt_t cfg_endpoint_sec[] = {
         CFG_STR("driver", nullptr, CFGF_NONE),
         CFG_STR("tty", nullptr, CFGF_NONE),
         CFG_STR("interface", nullptr, CFGF_NONE),
@@ -288,7 +285,8 @@ void H9dConfigurator::load_configuration() {
     cfg_opt_t cfg_opts[] = {
         CFG_SEC("process", cfg_process_sec, CFGF_NONE),
         CFG_SEC("server", cfg_server_sec, CFGF_NONE),
-        CFG_SEC("bus", cfg_bus_sec, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
+        CFG_SEC("bus", cfg_bus_opts, CFGF_NONE),
+        CFG_SEC("endpoint", cfg_endpoint_sec, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
         CFG_SEC("log", cfg_log_sec, CFGF_NONE),
         CFG_END()};
 
@@ -393,23 +391,26 @@ void H9dConfigurator::drop_privileges() {
 }
 
 void H9dConfigurator::configure_bus(Bus* bus) {
-    int n = cfg_size(cfg, "bus");
+    cfg_t* cfg_bus= cfg_getsec(cfg, "bus");
+    bus->bus_id(cfg_getint(cfg_bus, "source_id"));
+
+    int n = cfg_size(cfg, "endpoint");
     for (int i = 0; i < n; i++) {
-        cfg_t* bus_driver_section = cfg_getnsec(cfg, "bus", i);
+        cfg_t* endpoint_section = cfg_getnsec(cfg, "endpoint", i);
         // if (bus_driver_section) {
-        std::string bus_name = cfg_title(bus_driver_section);
-        if (cfg_getstr(bus_driver_section, "driver")) {
-            std::string driver = cfg_getstr(bus_driver_section, "driver");
+        std::string endpoint_name = cfg_title(endpoint_section);
+        if (cfg_getstr(endpoint_section, "driver")) {
+            std::string driver = cfg_getstr(endpoint_section, "driver");
             if (driver == "loop") {
-                bus->add_driver(new LoopDriver(bus_name));
+                bus->add_driver(new LoopDriver(endpoint_name));
             }
             else if (driver == "SLCAN") {
-                if (cfg_getstr(bus_driver_section, "tty")) {
-                    std::string tty = cfg_getstr(bus_driver_section, "tty");
-                    bus->add_driver(new SlcanDriver(bus_name, tty));
+                if (cfg_getstr(endpoint_section, "tty")) {
+                    std::string tty = cfg_getstr(endpoint_section, "tty");
+                    bus->add_driver(new SlcanDriver(endpoint_name, tty));
                 }
                 else {
-                    SPDLOG_ERROR("Missing option 'connection_string' for {}.", cfg_title(bus_driver_section));
+                    SPDLOG_ERROR("Missing option 'connection_string' for {}.", cfg_title(endpoint_section));
                 }
             }
 #ifdef H9_SOCKETCAN_DRIVER
@@ -425,14 +426,19 @@ void H9dConfigurator::configure_bus(Bus* bus) {
             }
 #endif
             else {
-                SPDLOG_ERROR("Unsupported driver: '{}' for '{}' bus.", driver, bus_name);
+                SPDLOG_ERROR("Unsupported driver: '{}' for '{}' bus.", driver, endpoint_name);
             }
         }
         else {
-            SPDLOG_ERROR("Missing option 'driver' for {}.", cfg_title(bus_driver_section));
+            SPDLOG_ERROR("Missing option 'driver' for {}.", cfg_title(endpoint_section));
         }
         //}
     }
+}
+
+void H9dConfigurator::configure_node_mgr(NodeMgr* node_mgr) {
+    cfg_t* cfg_bus= cfg_getsec(cfg, "bus");
+    node_mgr->response_timeout_duration(cfg_getint(cfg_bus, "response_timeout_duration"));
 }
 
 void H9dConfigurator::configure_tcpserver(TCPServer* server) {
@@ -441,4 +447,34 @@ void H9dConfigurator::configure_tcpserver(TCPServer* server) {
         std::uint16_t port = cfg_getint(cfg_server, "port");
         server->set_server_port(port);
     }
+}
+
+std::string H9dConfigurator::version_string() {
+    std::string ret = H9_VERSION;
+#ifdef GITVERSION_COMMIT_SHA
+    ret += "-" + std::string(GITVERSION_COMMIT_SHA);
+#ifdef GITVERSION_DIRTY
+    ret += "-dirty";
+    constexpr char workdir[] = "dirty";
+#endif
+#endif
+    return std::move(ret);
+}
+
+std::string H9dConfigurator::version() {
+    return std::move(std::string(H9_VERSION));
+}
+
+std::string H9dConfigurator::version_commit_sha() {
+#ifdef GITVERSION_COMMIT_SHA
+    return std::move(std::string(GITVERSION_COMMIT_SHA));
+#endif
+    return std::move(std::string(""));
+}
+
+bool H9dConfigurator::version_dirty() {
+#ifdef GITVERSION_DIRTY
+    return true;
+#endif
+    return false;
 }

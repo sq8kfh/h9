@@ -28,15 +28,15 @@ class BusDriver {
     std::shared_ptr<spdlog::logger> logger;
 
     virtual int recv_data(H9frame* frame) = 0;
-    virtual int send_data(BusFrame* busframe) = 0;
+    virtual int send_data(std::shared_ptr<BusFrame> busframe) = 0;
 
-    void frame_sent_correctly(BusFrame* busframe);
-
+    void frame_sent_correctly(std::shared_ptr<BusFrame> busframe);
+    void frame_sent_incorrectly(std::shared_ptr<BusFrame> busframe);
   public:
     const std::string driver_name;
     const std::string name;
 
-    explicit BusDriver(const std::string& name, const std::string& driver_name);
+    explicit BusDriver(const std::string& name, std::string driver_name);
     virtual ~BusDriver();
 
     // TODO: uporzadowac zwracana wartosci i obsluge bledow - logowanie najlepiej wywalic na zewnatrz
@@ -45,6 +45,6 @@ class BusDriver {
     virtual int open() = 0;
     virtual void close();
 
-    int send_frame(BusFrame* busframe);
+    int send_frame(std::shared_ptr<BusFrame> busframe);
     int recv_frame(BusFrame* busframe);
 };

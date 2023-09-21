@@ -36,7 +36,7 @@ cxxopts::ParseResult H9Configurator::parse_command_line_arg(int argc, char** arg
     // clang-format off
     options.add_options("other")
 #ifdef H9_DEBUG
-            ("d,debug", "Enable debugging")
+            ("D,debug", "Enable debugging")
 #endif
             ("h,help", "Show help")
             ("v,verbose", "Be more verbose")

@@ -87,7 +87,7 @@ int SocketCANDriver::recv_data(H9frame* frame) {
     // on_frame_recv(res);
 }
 
-int SocketCANDriver::send_data(BusFrame* busframe) {
+int SocketCANDriver::send_data(std::shared_ptr<BusFrame> busframe) {
     struct can_frame can_msg;
     memset(&can_msg, 0, sizeof(struct can_frame));
 

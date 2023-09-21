@@ -15,30 +15,39 @@
 #include <sstream>
 
 #include "ext_h9frame.h"
+#include "send_frame_result.h"
 
 class BusFrame: public ExtH9Frame {
   private:
     std::uint64_t orgin_client_id;
     std::uint64_t orgin_msg_id;
 
-    std::promise<int> _send_promise;
+    std::promise<SendFrameResult> _send_promise;
     unsigned int _number_of_active_bus;
     unsigned int _send_counter;
+    unsigned int _send_fail_counter;
 
+    bool _raw;
   public:
     BusFrame();
     // BusFrame(const BusFrame&) = delete;
     // BusFrame& operator=(const BusFrame&) = delete;
     BusFrame(const H9frame& frame, const std::string& origin, std::uint64_t orgin_client_id, std::uint64_t orgin_msg_id);
-    BusFrame(ExtH9Frame&& a) noexcept;
+    BusFrame(ExtH9Frame&& a, bool raw) noexcept;
+    BusFrame& operator=(BusFrame&& a) = default;
+
+    ~BusFrame();
+
+    bool raw();
 
     std::uint64_t get_orgin_client_id(void) const;
     std::uint64_t get_orgin_msg_id(void) const;
 
-    std::promise<int>& get_send_promise();
+    std::promise<SendFrameResult>& get_send_promise();
     void set_number_of_active_bus(unsigned int v);
     bool is_sent_finish();
     void inc_send_counter();
+    void inc_send_fail_counter();
 };
 
 class SimpleJSONBusFrameWraper {

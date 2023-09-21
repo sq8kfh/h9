@@ -49,7 +49,7 @@ int LoopDriver::recv_data(H9frame* frame) {
     }*/
 }
 
-int LoopDriver::send_data(BusFrame* busframe) {
+int LoopDriver::send_data(std::shared_ptr<BusFrame> busframe) {
     int ret = sendto(socket_fd, &busframe->frame(), sizeof(H9frame), 0, (const struct sockaddr*)&loopback_addr, sizeof(loopback_addr));
 
     if (ret == -1) {

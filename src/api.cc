@@ -9,20 +9,18 @@
 #include "api.h"
 
 #include "config.h"
+
 #include <spdlog/spdlog.h>
-#include "git_version.h"
+
+#include "h9d_configurator.h"
 
 nlohmann::json API::get_version(TCPClientThread* client_thread, const jsonrpcpp::Id& id, const jsonrpcpp::Parameter& params) {
-    nlohmann::json r = {
-        {"version", H9_VERSION},
-#ifdef GITVERSION_COMMIT_SHA
-        {"commit_sha", GITVERSION_COMMIT_SHA},
-#ifdef GITVERSION_DIRTY
-        {"dirty", true},
-#endif
-#endif
-    };
+    nlohmann::json r({{"version", H9dConfigurator::version()}});
 
+    if (!H9dConfigurator::version_commit_sha().empty())
+        r["commit_sha"] = H9dConfigurator::version_commit_sha();
+    if (H9dConfigurator::version_dirty())
+        r["dirty"] = H9dConfigurator::version_dirty();
     return std::move(r);
 }
 
@@ -65,10 +63,14 @@ nlohmann::json API::subscribe(TCPClientThread* client_thread, const jsonrpcpp::I
 
 nlohmann::json API::send_frame(TCPClientThread* client_thread, const jsonrpcpp::Id& id, const jsonrpcpp::Parameter& params) {
     try {
+        bool raw = false;
+        if (params.param_map.count("raw") && params.param_map.at("raw").get<bool>()) {
+            raw = true;
+        }
         ExtH9Frame frame = params.param_map.at("frame").get<ExtH9Frame>();
 
         frame.origin(client_thread->get_client_idstring());
-        int ret = bus->send_frame(std::move(frame));
+        int ret = bus->send_frame(std::move(frame), raw);
 
         nlohmann::json r = {{"return", ret}};
 
@@ -88,10 +90,15 @@ nlohmann::json API::send_frame(TCPClientThread* client_thread, const jsonrpcpp::
 }
 
 nlohmann::json API::get_stats(TCPClientThread* client_thread, const jsonrpcpp::Id& id, const jsonrpcpp::Parameter& params) {
+    std::uint32_t d = 256;
+    node_mgr->node(16).reset(client_thread->get_client_idstring());
+    //node_mgr->node(16).set_reg(client_thread->get_client_idstring(), 12, d);
     return std::move(MetricsCollector::metrics_to_json());
 }
 
-API::API(Bus* bus): bus(bus) {
+API::API(Bus* bus, NodeMgr* node_mgr):
+    bus(bus),
+    node_mgr(node_mgr) {
     api_methods["get_version"] = &API::get_version;
     api_methods["get_methods_list"] = &API::get_methods_list;
     api_methods["subscribe"] = &API::subscribe;

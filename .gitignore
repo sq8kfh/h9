@@ -41,6 +41,7 @@ Makefile
 # Project
 config.h
 git_version.h
+git_version.h~
 src/h9d
 src/h9sniffer
 src/h9send

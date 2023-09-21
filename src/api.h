@@ -11,7 +11,9 @@
 #include <jsonrpcpp/jsonrpcpp.hpp>
 #include <map>
 #include <nlohmann/json.hpp>
+
 #include "bus.h"
+#include "node_mgr.h"
 #include "tcpclientthread.h"
 
 class TCPClientThread;
@@ -21,6 +23,7 @@ class API {
     using api_method = nlohmann::json (API::*)(TCPClientThread* client_thread, const jsonrpcpp::Id&, const jsonrpcpp::Parameter&);
 
     Bus* const bus;
+    NodeMgr* const node_mgr;
 
     std::map<std::string, api_method> api_methods;
 
@@ -29,7 +32,8 @@ class API {
     nlohmann::json subscribe(TCPClientThread* client_thread, const jsonrpcpp::Id& id, const jsonrpcpp::Parameter& params);
     nlohmann::json send_frame(TCPClientThread* client_thread, const jsonrpcpp::Id& id, const jsonrpcpp::Parameter& params);
     nlohmann::json get_stats(TCPClientThread* client_thread, const jsonrpcpp::Id& id, const jsonrpcpp::Parameter& params);
+
   public:
-    API(Bus* bus);
+    API(Bus* bus, NodeMgr* node_mgr);
     jsonrpcpp::Response call(TCPClientThread* client_thread, jsonrpcpp::request_ptr request);
 };

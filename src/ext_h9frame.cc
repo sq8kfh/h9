@@ -13,6 +13,19 @@ ExtH9Frame::ExtH9Frame(const H9frame& frame, const std::string& origin):
     _origin(origin) {
 }
 
+ExtH9Frame::ExtH9Frame(const std::string& origin, H9frame::Type type, std::uint16_t dst, std::uint8_t dlc, const std::vector<std::uint8_t>& data):
+    ExtH9Frame(origin, H9frame::Priority::LOW, type, dst, dlc, data) {
+}
+
+ExtH9Frame::ExtH9Frame(std::string origin, H9frame::Priority priority, H9frame::Type type, std::uint16_t dst, std::uint8_t dlc, const std::vector<std::uint8_t>& data):
+    _origin(std::move(origin)) {
+    _frame.priority = priority;
+    _frame.type = type;
+    _frame.destination_id = dst;
+    this->dlc(dlc);
+    this->data(data);
+}
+
 void to_json(nlohmann::json& j, const ExtH9Frame& f) {
     std::vector<std::uint8_t> data(f.data(), f.data() + f.dlc());
     j = nlohmann::json{{"origin", f.origin()},
