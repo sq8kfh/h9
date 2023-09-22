@@ -61,18 +61,7 @@ int main(int argc, char* argv[]) {
     cxxopts::ParseResult res = h9.parse_command_line_arg(argc, argv);
     h9.logger_setup();
     h9.load_configuration();
-    /*
-        ctx.add_options("s,src_id", "Source id", cxxopts::value<std::uint16_t>());
-        ctx.add_options("i,dst_id", "Destination id", cxxopts::value<std::uint16_t>());
-        ctx.add_options("H,high_priority", "High priority");
-        ctx.add_options("t,type", "Frame type", cxxopts::value<std::underlying_type_t<H9frame::Type >>());
-        ctx.add_options("r,repeat", "Repeat the frame every given time in seconds", cxxopts::value<unsigned int>());
-        ctx.add_positional_options_list("data", "[hex data]", "");
 
-        auto res = ctx.parse_options(argc, argv);
-
-        ctx.load_configuration(res);
-    */
     ExtH9Frame frame;
     bool raw = false;
 
@@ -122,11 +111,11 @@ int main(int argc, char* argv[]) {
         h9_connector.connect("h9send");
     }
     catch (std::system_error& e) {
-        SPDLOG_ERROR("Can not connect to h9bus {}:{}: {}", h9.get_host(), h9.get_port(), e.code().message());
+        SPDLOG_ERROR("Can not connect to h9bus {}:{}: {}.", h9.get_host(), h9.get_port(), e.code().message());
         exit(EXIT_FAILURE);
     }
     catch (std::runtime_error& e) {
-        SPDLOG_ERROR("Can not connect to h9bus {}:{}: authentication fail", h9.get_host(), h9.get_port());
+        SPDLOG_ERROR("Can not connect to h9bus {}:{}: {}.", h9.get_host(), h9.get_port(), e.what());
         exit(EXIT_FAILURE);
     }
 
@@ -135,21 +124,40 @@ int main(int argc, char* argv[]) {
     if (res.count("repeat")) {
         unsigned int sleep_time = res["repeat"].as<unsigned int>();
 
-        int c = 0;
         while (true) {
-            jsonrpcpp::Id id(c);
-            frame.seqnum(c);
+            jsonrpcpp::Id id(h9_connector.get_next_id());
+            frame.seqnum(frame.seqnum() + 1);
             jsonrpcpp::Request rf(std::move(id), "send_frame", nlohmann::json({{"frame", frame}, {"raw", raw}}));
-            h9_connector.send(std::make_shared<jsonrpcpp::Request>(std::move(rf)));
 
-            ++c;
+            try {
+                h9_connector.send(std::make_shared<jsonrpcpp::Request>(std::move(rf)));
+            }
+            catch (std::system_error& e) {
+                SPDLOG_ERROR("Can not send message: {}.", e.code().message());
+                exit(EXIT_FAILURE);
+            }
+            catch (std::runtime_error& e) {
+                SPDLOG_ERROR("Can not send message: {}.", e.what());
+                exit(EXIT_FAILURE);
+            }
+
             sleep(sleep_time);
         }
     }
     else {
-        jsonrpcpp::Id id(1);
+        jsonrpcpp::Id id(h9_connector.get_next_id());
         jsonrpcpp::Request rf(id, "send_frame", nlohmann::json({{"frame", frame}, {"raw", raw}}));
-        h9_connector.send(std::make_shared<jsonrpcpp::Request>(std::move(rf)));
+        try {
+            h9_connector.send(std::make_shared<jsonrpcpp::Request>(std::move(rf)));
+        }
+        catch (std::system_error& e) {
+            SPDLOG_ERROR("Can not send message: {}.", e.code().message());
+            exit(EXIT_FAILURE);
+        }
+        catch (std::runtime_error& e) {
+            SPDLOG_ERROR("Can not send message: {}.", e.what());
+            exit(EXIT_FAILURE);
+        }
     }
     return EXIT_SUCCESS;
 }

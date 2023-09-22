@@ -18,7 +18,7 @@
 class H9Connector {
   private:
     H9MsgSocket h9socket;
-
+    int next_msg_id;
   public:
     H9Connector(std::string hostname, std::string port) noexcept;
     ~H9Connector() noexcept;
@@ -34,5 +34,5 @@ class H9Connector {
 
     void send(jsonrpcpp::entity_ptr msg);
 
-    std::uint64_t get_next_id() noexcept;
+    int get_next_id() noexcept;
 };

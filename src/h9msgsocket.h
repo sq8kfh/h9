@@ -3,7 +3,7 @@
  *
  * Created by SQ8KFH on 2020-11-20.
  *
- * Copyright (C) 2020 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2020-2023 Kamil Palkowski. All rights reserved.
  */
 
 #pragma once
@@ -15,7 +15,8 @@
 
 
 class H9MsgSocket: protected H9Socket {
-    std::uint64_t next_msg_id;
+    //TODO: zmienic nazwe na json_socket, ogarnac bledy, szczegolnie z parsowaniem jsona
+    //TODO: H9MsgSocket i authentication moga zrzucac wyjatki, moze przerobic to na retval? albo dedykowany typ bo moga am byc wyjatki z parsera jsona (authentication)
 public:
     explicit H9MsgSocket(int socket);
     H9MsgSocket(std::string hostname, std::string port) noexcept;
@@ -47,7 +48,6 @@ public:
     using H9Socket::close;
     void shutdown_read() noexcept;
 
-    std::uint64_t get_next_id() noexcept;
     using H9Socket::get_remote_address;
     using H9Socket::get_remote_port;
 };

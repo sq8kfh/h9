@@ -85,25 +85,44 @@ int main(int argc, char** argv) {
         h9_connector.connect("h9stat");
     }
     catch (std::system_error& e) {
-        SPDLOG_ERROR("Can not connect to h9bus {}:{}: {}", h9.get_host(), h9.get_port(), e.code().message());
+        SPDLOG_ERROR("Can not connect to h9bus {}:{}: {}.", h9.get_host(), h9.get_port(), e.code().message());
         exit(EXIT_FAILURE);
     }
     catch (std::runtime_error& e) {
-        SPDLOG_ERROR("Can not connect to h9bus {}:{}: authentication fail", h9.get_host(), h9.get_port());
+        SPDLOG_ERROR("Can not connect to h9bus {}:{}: {}.", h9.get_host(), h9.get_port(), e.what());
         exit(EXIT_FAILURE);
     }
 
-    int id_i = 0;
-
     std::string h9d_version = "";
     if (!h9.json && !h9.oneshot) {
-        jsonrpcpp::Id id(id_i);
-        ++id_i;
+        jsonrpcpp::Id id(h9_connector.get_next_id());
 
         jsonrpcpp::Request r(id, "get_version");
-        h9_connector.send(std::make_shared<jsonrpcpp::Request>(r));
 
-        jsonrpcpp::entity_ptr raw_msg = h9_connector.recv();
+        try {
+            h9_connector.send(std::make_shared<jsonrpcpp::Request>(r));
+        }
+        catch (std::system_error& e) {
+            SPDLOG_ERROR("Can not send request: {}.", e.code().message());
+            exit(EXIT_FAILURE);
+        }
+        catch (std::runtime_error& e) {
+            SPDLOG_ERROR("Can not send request: {}.", e.what());
+            exit(EXIT_FAILURE);
+        }
+
+        jsonrpcpp::entity_ptr raw_msg;
+        try {
+            raw_msg = h9_connector.recv();
+        }
+        catch (std::system_error& e) {
+            SPDLOG_ERROR("Error during message received: {}.", e.code().message());
+            exit(EXIT_FAILURE);
+        }
+        catch (std::runtime_error& e) {
+            SPDLOG_ERROR("Error during message received: {}.",  e.what());
+            exit(EXIT_FAILURE);
+        }
 
         if (raw_msg->is_response()) {
             jsonrpcpp::response_ptr msg = std::dynamic_pointer_cast<jsonrpcpp::Response>(raw_msg);
@@ -124,13 +143,34 @@ int main(int argc, char** argv) {
     std::map<std::string, std::uint64_t> last_frames_received;
 
     do {
-        jsonrpcpp::Id id(id_i);
-        ++id_i;
+        jsonrpcpp::Id id(h9_connector.get_next_id());
 
         jsonrpcpp::Request r(id, "get_stats");
-        h9_connector.send(std::make_shared<jsonrpcpp::Request>(r));
 
-        jsonrpcpp::entity_ptr raw_msg = h9_connector.recv();
+        try {
+            h9_connector.send(std::make_shared<jsonrpcpp::Request>(r));
+        }
+        catch (std::system_error& e) {
+            SPDLOG_ERROR("Can not send request: {}.", e.code().message());
+            exit(EXIT_FAILURE);
+        }
+        catch (std::runtime_error& e) {
+            SPDLOG_ERROR("Can not send request: {}.", e.what());
+            exit(EXIT_FAILURE);
+        }
+
+        jsonrpcpp::entity_ptr raw_msg;
+        try {
+            raw_msg = h9_connector.recv();
+        }
+        catch (std::system_error& e) {
+            SPDLOG_ERROR("Messages receiving error: {}.", e.code().message());
+            exit(EXIT_FAILURE);
+        }
+        catch (std::runtime_error& e) {
+            SPDLOG_ERROR("Messages receiving error: {}.", e.what());
+            exit(EXIT_FAILURE);
+        }
 
         if (raw_msg->is_response()) {
             jsonrpcpp::response_ptr msg = std::dynamic_pointer_cast<jsonrpcpp::Response>(raw_msg);

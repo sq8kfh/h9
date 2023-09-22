@@ -3,7 +3,7 @@
  *
  * Created by SQ8KFH on 2020-11-20.
  *
- * Copyright (C) 2020 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2020-2023 Kamil Palkowski. All rights reserved.
  */
 
 #include "h9msgsocket.h"
@@ -15,15 +15,13 @@
 #include <system_error>
 
 H9MsgSocket::H9MsgSocket(int socket):
-    H9Socket(socket),
-    next_msg_id(0) {
+    H9Socket(socket) {
     if (connect() < 0)
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
 }
 
 H9MsgSocket::H9MsgSocket(std::string hostname, std::string port) noexcept:
-    H9Socket(std::move(hostname), std::move(port)),
-    next_msg_id(0) {
+    H9Socket(std::move(hostname), std::move(port)) {
 }
 
 int H9MsgSocket::get_socket() noexcept {
@@ -35,20 +33,20 @@ int H9MsgSocket::authentication(const std::string& entity) {
 
     jsonrpcpp::Request r(id, "authenticate", nlohmann::json({{"entity", entity}}));
     if (send(r.to_json()) <= 0) {
-        SPDLOG_ERROR("Authentication failed: {}.", std::strerror(errno));
+        //SPDLOG_ERROR("Authentication failed: {}.", std::strerror(errno));
         throw std::system_error(errno, std::system_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
 
     nlohmann::json json;
     int res = recv_complete_msg(json);
     if (res <= 0) {
-        SPDLOG_ERROR("Authentication failed: {}.", std::strerror(errno));
+        //SPDLOG_ERROR("Authentication failed: {}.", std::strerror(errno));
         throw std::system_error(errno, std::system_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
 
     if (json.is_discarded()) {
-        SPDLOG_ERROR("Authentication failed: invalid JSON.");
-        return 0;
+        //SPDLOG_ERROR("Authentication failed: invalid JSON.");
+        throw std::runtime_error("Invalid JSON");
     }
 
     jsonrpcpp::Parser parser;
@@ -92,12 +90,4 @@ int H9MsgSocket::recv_complete_msg(nlohmann::json& json) noexcept {
 
 void H9MsgSocket::shutdown_read() noexcept {
     shutdown(_socket, SHUT_RD);
-}
-
-std::uint64_t H9MsgSocket::get_next_id() noexcept {
-    if (next_msg_id == 0)
-        next_msg_id = 1;
-    else
-        ++next_msg_id;
-    return next_msg_id;
 }

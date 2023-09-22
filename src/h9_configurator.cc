@@ -121,6 +121,7 @@ void H9Configurator::load_configuration() {
         if (config_file != default_config) {
             config_file = default_config;
             load_configuration();
+            return ;
         }
     }
     else if (result == CFG_FILE_ERROR) {
@@ -130,7 +131,11 @@ void H9Configurator::load_configuration() {
         if (config_file != default_config) {
             config_file = default_config;
             load_configuration();
+            return ;
         }
+    }
+    else {
+        SPDLOG_INFO("Loading configuration from {} file.", config_file);
     }
 
     if (host.empty()) {

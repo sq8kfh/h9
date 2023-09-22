@@ -129,15 +129,15 @@ int main(int argc, char** argv) {
         h9_connector.connect("h9sniffer");
     }
     catch (std::system_error& e) {
-        SPDLOG_ERROR("Can not connect to h9bus {}:{}: {}", h9.get_host(), h9.get_port(), e.code().message());
+        SPDLOG_ERROR("Can not connect to h9bus {}:{}: {}.", h9.get_host(), h9.get_port(), e.code().message());
         exit(EXIT_FAILURE);
     }
     catch (std::runtime_error& e) {
-        SPDLOG_ERROR("Can not connect to h9bus {}:{}: authentication fail", h9.get_host(), h9.get_port());
+        SPDLOG_ERROR("Can not connect to h9bus {}:{}: {}.", h9.get_host(), h9.get_port(), e.what());
         exit(EXIT_FAILURE);
     }
 
-    jsonrpcpp::Id id(1);
+    jsonrpcpp::Id id(h9_connector.get_next_id());
 
     jsonrpcpp::Request req(id, "subscribe", nlohmann::json({{"event", "frame"}}));
     h9_connector.send(std::make_shared<jsonrpcpp::Request>(req));
@@ -154,7 +154,18 @@ int main(int argc, char** argv) {
     }
 
     while (true) {
-        jsonrpcpp::entity_ptr raw_msg = h9_connector.recv();
+        jsonrpcpp::entity_ptr raw_msg;
+        try {
+            raw_msg = h9_connector.recv();
+        }
+        catch (std::system_error& e) {
+            SPDLOG_ERROR("Messages receiving error: {}.", e.code().message());
+            exit(EXIT_FAILURE);
+        }
+        catch (std::runtime_error& e) {
+            SPDLOG_ERROR("Messages receiving error: {}.", e.what());
+            exit(EXIT_FAILURE);
+        }
 
         if (raw_msg->is_notification()) {
             jsonrpcpp::notification_ptr notification = std::dynamic_pointer_cast<jsonrpcpp::Notification>(raw_msg);

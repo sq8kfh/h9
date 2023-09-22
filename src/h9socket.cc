@@ -80,7 +80,7 @@ int H9Socket::connect() noexcept {
 
         ret = getaddrinfo(_hostname.c_str(), _port.c_str(), &hints, &servinfo);
         if (ret != 0) {
-            SPDLOG_DEBUG("H9Connector: getaddrinfo: {}.", gai_strerror(ret));
+            //SPDLOG_DEBUG("H9Connector: getaddrinfo: {}.", gai_strerror(ret));
             return -1;
         }
 
@@ -97,7 +97,7 @@ int H9Socket::connect() noexcept {
         }
 
         if (p == nullptr) {
-            SPDLOG_ERROR("connect to '{}}' port {}: {}.", _hostname.c_str(), _port.c_str(), strerror(errno));
+            //SPDLOG_ERROR("connect to '{}' port {}: {}.", _hostname.c_str(), _port.c_str(), strerror(errno));
             return -1;
         }
         freeaddrinfo(servinfo);
@@ -136,9 +136,9 @@ int H9Socket::recv(std::string& buf, int timeout_in_seconds) noexcept {
         recv_flags |= MSG_DONTWAIT;
 
         if (nbyte <= 0) {
-            if (nbyte == 0) {
-                SPDLOG_DEBUG("close connection during recv header.");
-            }
+//            if (nbyte == 0) {
+//                SPDLOG_DEBUG("close connection during recv header.");
+//            }
             return nbyte;
         }
         recv_bytes += nbyte;
@@ -158,9 +158,9 @@ int H9Socket::recv(std::string& buf, int timeout_in_seconds) noexcept {
 
         ssize_t nbyte = ::recv(_socket, &data_buf[recv_bytes - sizeof(header_buf)], tmp_to_recv, recv_flags);
         if (nbyte <= 0) {
-            if (nbyte == 0) {
-                SPDLOG_DEBUG("close connection during recv data.");
-            }
+//            if (nbyte == 0) {
+//                SPDLOG_DEBUG("close connection during recv data.");
+//            }
             return nbyte;
         }
         recv_bytes += nbyte;
@@ -191,16 +191,18 @@ int H9Socket::send(const std::string& buf) noexcept {
         return nbyte;
     }
 
-    nbyte = ::send(_socket, buf.c_str(), buf.size(), send_flags);
+    const char* char_buf = buf.c_str();
+    size_t buf_size = buf.size();
+    size_t sent_byte = 0;
 
-    if (nbyte <= 0) {
-        return nbyte;
+    while (sent_byte < buf_size) {
+        nbyte = ::send(_socket, &char_buf[sent_byte], buf_size - sent_byte, send_flags);
+        if (nbyte <= 0) {
+            return nbyte;
+        }
+        sent_byte += nbyte;
     }
-    else if (nbyte != buf.size()) {
-        SPDLOG_ERROR("sent incomplete msg.");
-        return -1;
-    }
-    return nbyte + sizeof(header);
+    return 1;
 }
 
 std::string H9Socket::get_remote_address() const noexcept {

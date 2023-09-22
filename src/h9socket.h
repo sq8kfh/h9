@@ -32,16 +32,23 @@ class H9Socket {
     H9Socket(const H9Socket& a) = delete;
 
     ~H9Socket() noexcept;
+    /// @retval <-1 an error occurred and the global variable 'errno' is set to indicate the error.
+    /// @retval 0 an successful
     int connect() noexcept;
     void close() noexcept;
 
-    /// @param[out] json Recv json object
+    /// @param[out] buf
     /// @param[in] timeout_in_seconds If >0 set recv timeout
     /// @retval -1 an error occurred and the global variable 'errno' is set to indicate the error.
     /// @retval 0 an connection closed
     /// @retval 1 on successful
     int recv(std::string& buf, int timeout_in_seconds = 0) noexcept;
+
+    /// @retval -1 an error occurred and the global variable 'errno' is set to indicate the error.
+    /// @retval 0 an connection closed
+    /// @retval 1 on successful
     int send(const std::string& buf) noexcept;
+
     std::string get_remote_address() const noexcept;
     std::string get_remote_port() const noexcept;
 };

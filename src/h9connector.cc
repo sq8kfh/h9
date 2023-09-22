@@ -7,12 +7,13 @@
  */
 
 #include "h9connector.h"
+
 #include <system_error>
 #include <unistd.h>
 
-
 H9Connector::H9Connector(std::string hostname, std::string port) noexcept:
-    h9socket(std::move(hostname), std::move(port)) {
+    h9socket(std::move(hostname), std::move(port)),
+    next_msg_id(1) {
 }
 
 H9Connector::~H9Connector() noexcept {
@@ -20,14 +21,11 @@ H9Connector::~H9Connector() noexcept {
 }
 
 void H9Connector::connect(std::string entity) {
-    if (h9socket.connect() < 0){
+    if (h9socket.connect() < 0) {
         throw std::system_error(errno, std::system_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
     int res = h9socket.authentication(entity);
-    if (res < 0) {
-        throw std::system_error(errno, std::system_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
-    }
-    else if (res == 0) {
+    if (res != 1) {
         throw std::runtime_error("Authentication fail");
     }
 }
@@ -40,17 +38,18 @@ void H9Connector::shutdown_read() noexcept {
     h9socket.shutdown_read();
 }
 
-jsonrpcpp::entity_ptr  H9Connector::recv() {
+jsonrpcpp::entity_ptr H9Connector::recv() {
     nlohmann::json json;
     int res = h9socket.recv_complete_msg(json);
-    if (res <= 0) {
+    if (res < 0) {
         throw std::system_error(errno, std::system_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
+    }
+    else if (res == 0) {
+        throw std::runtime_error("Connection closed");
     }
 
     if (json.is_discarded()) {
-
-        h9socket.send(jsonrpcpp::ParseErrorException("").to_json());
-        return nullptr;
+        throw std::runtime_error("Invalid JSON");
     }
 
     jsonrpcpp::Parser parser;
@@ -60,11 +59,12 @@ jsonrpcpp::entity_ptr  H9Connector::recv() {
 }
 
 void H9Connector::send(jsonrpcpp::entity_ptr msg) {
-    if (h9socket.send(msg->to_json()) <=0) {
+    if (h9socket.send(msg->to_json()) <= 0) {
         throw std::system_error(errno, std::system_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
 }
 
-std::uint64_t H9Connector::get_next_id() noexcept {
-    return h9socket.get_next_id();
+int H9Connector::get_next_id() noexcept {
+    ++next_msg_id; // number 1 reserved for authenticate call
+    return next_msg_id;
 }
