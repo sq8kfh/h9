@@ -3,7 +3,7 @@
  *
  * Created by SQ8KFH on 2020-11-08.
  *
- * Copyright (C) 2020 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2020-2023 Kamil Palkowski. All rights reserved.
  */
 
 #ifndef H9_NODE_H

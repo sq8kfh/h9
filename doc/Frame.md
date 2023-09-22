@@ -42,15 +42,28 @@
  | 30  | NODE_SPECIFIC_BULK6    |      next number       | -                            | 
  | 31  | NODE_SPECIFIC_BULK7    |      next number       | -                            | 
 
-### Bootloader
-
-```mermaid
-stateDiagram
-    [*] --> PAGE_START
-    PAGE_START --> PAGE_FILL_NEXT
-    PAGE_FILL_NEXT --> PAGE_FILL
-    PAGE_FILL --> PAGE_FILL_NEXT
-    PAGE_FILL --> PAGE_WRITED
-    PAGE_WRITED --> PAGE_START
-    PAGE_WRITED --> [*]
-```
+#### NOP
+#### SET_REG
+#### GET_REG
+#### SET_BIT
+#### CLEAR_BIT
+#### TOGGLE_BIT
+#### NODE_UPGRADE
+#### NODE_RESET
+#### DISCOVER
+#### REG_EXTERNALLY_CHANGED
+#### REG_INTERNALLY_CHANGED
+#### REG_VALUE_BROADCAST
+#### REG_VALUE
+#### ERROR
+#### NODE_HEARTBEAT
+#### NODE_INFO
+#### NODE_TURNED_ON
+#### NODE_SPECIFIC_BULK0
+#### NODE_SPECIFIC_BULK1
+#### NODE_SPECIFIC_BULK2
+#### NODE_SPECIFIC_BULK3
+#### NODE_SPECIFIC_BULK4
+#### NODE_SPECIFIC_BULK5
+#### NODE_SPECIFIC_BULK6
+#### NODE_SPECIFIC_BULK7
