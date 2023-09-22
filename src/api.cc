@@ -49,12 +49,12 @@ nlohmann::json API::subscribe(TCPClientThread* client_thread, const jsonrpcpp::I
         SPDLOG_DEBUG("subscribe: {}", event_name);
         return std::move(r);
     }
-    catch (std::out_of_range e) {
+    catch (std::out_of_range& e) {
         SPDLOG_ERROR("Incorrect parameters during invoke '{}' by {} - {}", __FUNCTION__, client_thread->get_client_idstring(), e.what());
         SPDLOG_DEBUG("Dump '{}' calling params: {}.", __FUNCTION__, params.to_json().dump());
         throw jsonrpcpp::InvalidParamsException(e.what(), id);
     }
-    catch (nlohmann::detail::type_error e) {
+    catch (nlohmann::detail::type_error& e) {
         SPDLOG_ERROR("Incorrect parameters during invoke '{}' by {} - {}", __FUNCTION__, client_thread->get_client_idstring(), e.what());
         SPDLOG_DEBUG("Dump '{}' calling params: {}.", __FUNCTION__, params.to_json().dump());
         throw jsonrpcpp::InvalidParamsException(e.what(), id);
@@ -77,12 +77,12 @@ nlohmann::json API::send_frame(TCPClientThread* client_thread, const jsonrpcpp::
         SPDLOG_DEBUG("send_frame call");
         return std::move(r);
     }
-    catch (std::out_of_range e) {
+    catch (std::out_of_range& e) {
         SPDLOG_ERROR("Incorrect parameters during invoke '{}' by {} - {}", __FUNCTION__, client_thread->get_client_idstring(), e.what());
         SPDLOG_DEBUG("Dump '{}' calling params: {}.", __FUNCTION__, params.to_json().dump());
         throw jsonrpcpp::InvalidParamsException(e.what(), id);
     }
-    catch (nlohmann::detail::type_error e) {
+    catch (nlohmann::detail::type_error& e) {
         SPDLOG_ERROR("Incorrect parameters during invoke '{}' by {} - {}", __FUNCTION__, client_thread->get_client_idstring(), e.what());
         SPDLOG_DEBUG("Dump '{}' calling params: {}.", __FUNCTION__, params.to_json().dump());
         throw jsonrpcpp::InvalidParamsException(e.what(), id);
@@ -90,10 +90,29 @@ nlohmann::json API::send_frame(TCPClientThread* client_thread, const jsonrpcpp::
 }
 
 nlohmann::json API::get_stats(TCPClientThread* client_thread, const jsonrpcpp::Id& id, const jsonrpcpp::Parameter& params) {
-    std::uint32_t d = 256;
-    node_mgr->get_node(16).reset(client_thread->get_client_idstring());
+    //std::uint32_t d = 256;
+    //node_mgr->get_node(16).reset(client_thread->get_client_idstring());
     //node_mgr->get_node(16).set_reg(client_thread->get_client_idstring(), 12, d);
     return std::move(MetricsCollector::metrics_to_json());
+}
+
+nlohmann::json API::authenticate(TCPClientThread* client_thread, const jsonrpcpp::Id& id, const jsonrpcpp::Parameter& params) {
+    try {
+        std::string entity = params.param_map.at("entity").get<std::string>();
+        client_thread->entity(entity);
+        nlohmann::json r = {{"authentication", true}};
+        return std::move(r);
+    }
+    catch (std::out_of_range& e) {
+        SPDLOG_ERROR("Incorrect parameters during invoke '{}' by {} - {}", __FUNCTION__, client_thread->get_client_idstring(), e.what());
+        SPDLOG_DEBUG("Dump '{}' calling params: {}.", __FUNCTION__, params.to_json().dump());
+        throw jsonrpcpp::InvalidParamsException(e.what(), id);
+    }
+    catch (nlohmann::detail::type_error& e) {
+        SPDLOG_ERROR("Incorrect parameters during invoke '{}' by {} - {}", __FUNCTION__, client_thread->get_client_idstring(), e.what());
+        SPDLOG_DEBUG("Dump '{}' calling params: {}.", __FUNCTION__, params.to_json().dump());
+        throw jsonrpcpp::InvalidParamsException(e.what(), id);
+    }
 }
 
 API::API(Bus* bus, NodeMgr* node_mgr):
@@ -104,16 +123,17 @@ API::API(Bus* bus, NodeMgr* node_mgr):
     api_methods["subscribe"] = &API::subscribe;
     api_methods["send_frame"] = &API::send_frame;
     api_methods["get_stats"] = &API::get_stats;
+    api_methods["authenticate"] = &API::authenticate;
 }
 
-jsonrpcpp::Response API::call(TCPClientThread* client_thread, jsonrpcpp::request_ptr request) {
+jsonrpcpp::Response API::call(TCPClientThread* client_thread, const jsonrpcpp::request_ptr& request) {
     if (api_methods.count(request->method())) {
         nlohmann::json r = (this->*api_methods[request->method()])(client_thread, request->id(), request->params());
 
-        jsonrpcpp::Response res(std::move(request->id()), std::move(r));
+        jsonrpcpp::Response res(request->id(), r);
         return std::move(res);
     }
     else {
-        throw jsonrpcpp::MethodNotFoundException(std::move(request->id()));
+        throw jsonrpcpp::MethodNotFoundException(request->id());
     }
 }

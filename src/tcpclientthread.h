@@ -50,7 +50,7 @@ class TCPClientThread {
     std::atomic_bool running;
     std::atomic_bool thread_running;
 
-    std::string entity;
+    std::string _entity;
 
     ClientFrameObs* _frame_observer;
     std::mutex async_msg_queue_mtx;
@@ -71,7 +71,8 @@ class TCPClientThread {
 
     std::string get_remote_address() const noexcept;
     std::string get_remote_port() const noexcept;
-    std::string get_entity() const noexcept;
+    std::string entity() const noexcept;
+    void entity(const std::string& entity) noexcept;
     std::string get_client_idstring() const noexcept;
 
     bool is_running();

@@ -85,9 +85,8 @@ cxxopts::ParseResult H9Configurator::parse_command_line_arg(int argc, char** arg
             port = std::to_string(result["port"].as<int>());
         }
 
-        if (result.count("config")) {
-            config_file = std::string(result["config"].as<std::string>());
-        }
+        config_file = std::string(result["config"].as<std::string>());
+
 
         parse_app_specific_opt(result);
 
@@ -116,14 +115,22 @@ void H9Configurator::load_configuration() {
 
     int result = cfg_parse(cfg, config_file.c_str());
     if (result == CFG_PARSE_ERROR) {
-        SPDLOG_WARN("can't parse cfg file: {}.", config_file);
+        SPDLOG_WARN("Can't parse cfg file: {}.", config_file);
         cfg_free(cfg);
         cfg = nullptr;
+        if (config_file != default_config) {
+            config_file = default_config;
+            load_configuration();
+        }
     }
     else if (result == CFG_FILE_ERROR) {
-        SPDLOG_WARN("can't open cfg file: {}.", config_file);
+        SPDLOG_WARN("Can't open cfg file: '{}'.", config_file);
         cfg_free(cfg);
         cfg = nullptr;
+        if (config_file != default_config) {
+            config_file = default_config;
+            load_configuration();
+        }
     }
 
     if (host.empty()) {
@@ -154,9 +161,23 @@ void H9Configurator::load_configuration() {
     }
 }
 
-void H9Configurator::logger_setup() {
+void H9Configurator::logger_initial_setup() {
     auto h9 = spdlog::stderr_color_st("stderr");
     spdlog::set_default_logger(h9);
+}
+
+void H9Configurator::logger_setup() {
+    auto h9 = spdlog::default_logger();
+    if (debug)
+        h9->set_pattern(log_debug_pattern);
+    else
+        h9->set_pattern(log_pattern);
+
+    int tmp_level = spdlog::level::err - verbose;
+    if (tmp_level < spdlog::level::trace)
+        h9->set_level(spdlog::level::trace);
+    else
+        h9->set_level(static_cast<spdlog::level::level_enum>(tmp_level));
 }
 
 H9Connector H9Configurator::get_connector() {

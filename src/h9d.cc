@@ -49,9 +49,6 @@ int main(int argc, char** argv) {
     configurator.configure_devices_mgr(&devices_mgr);
 
     devices_mgr.discover();
-    //Node a = node_mgr.node(12);
-
-    //Node b(std::move(a));
 
     API api(&bus, &devices_mgr);
 

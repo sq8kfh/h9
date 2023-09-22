@@ -74,8 +74,9 @@ class H9StatsConfigurator: public H9Configurator {
 
 int main(int argc, char** argv) {
     H9StatsConfigurator h9;
-    h9.logger_setup();
+    h9.logger_initial_setup();
     h9.parse_command_line_arg(argc, argv);
+    h9.logger_setup();
     h9.load_configuration();
 
     H9Connector h9_connector = h9.get_connector();

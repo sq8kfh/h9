@@ -155,8 +155,7 @@ TCPClientThread::TCPClientThread(int sockfd, API* api, TCPServer* server):
 
 TCPClientThread::~TCPClientThread() {
     SPDLOG_LOGGER_DEBUG(logger, "Cleaning client ({}) data...", get_client_idstring());
-    if (_frame_observer)
-        delete _frame_observer;
+    delete _frame_observer;
 
     close_connection();
     if (client_thread_desc.joinable())
@@ -165,8 +164,7 @@ TCPClientThread::~TCPClientThread() {
 }
 
 void TCPClientThread::set_frame_observer(ClientFrameObs* frame_observer) {
-    if (_frame_observer)
-        delete _frame_observer;
+    delete _frame_observer;
     _frame_observer = frame_observer;
 }
 
@@ -178,12 +176,16 @@ std::string TCPClientThread::get_remote_port() const noexcept {
     return h9socket.get_remote_port();
 }
 
-std::string TCPClientThread::get_entity() const noexcept {
-    return entity;
+std::string TCPClientThread::entity() const noexcept {
+    return _entity;
+}
+
+void TCPClientThread::entity(const std::string& entity) noexcept {
+    _entity = entity;
 }
 
 std::string TCPClientThread::get_client_idstring() const noexcept {
-    return get_entity() + "@" + get_remote_address() + ":" + get_remote_port();
+    return entity() + "@" + get_remote_address() + ":" + get_remote_port();
 }
 
 bool TCPClientThread::is_running() {

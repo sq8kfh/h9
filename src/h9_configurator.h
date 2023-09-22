@@ -14,8 +14,11 @@
 
 class H9Configurator {
   private:
+    constexpr static char log_debug_pattern[] = "%^[%L %T.%e] [%s:%#]%$ %v";
+    constexpr static char log_pattern[] = "%^[%L %T.%e]%$ %v";
+
     constexpr static char default_config[] = H9_CONFIG_PATH "h9.conf";
-    constexpr static char default_user_config[] = H9_CONFIG_PATH "~/.h9";
+    constexpr static char default_user_config[] = "~/.h9";
     constexpr static char default_h9d_host[] = "localhost";
     constexpr static int default_h9d_port = H9D_DEFAULT_PORT;
     constexpr static int default_source_id = DEFAULT_SOURCE_ID_FOR_CLIENT;
@@ -39,6 +42,7 @@ class H9Configurator {
     H9Configurator(const std::string& app_name, const std::string& app_desc);
     cxxopts::ParseResult parse_command_line_arg(int argc, char** argv);
     void load_configuration();
+    void logger_initial_setup();
     void logger_setup();
 
     H9Connector get_connector();

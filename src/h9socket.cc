@@ -80,7 +80,7 @@ int H9Socket::connect() noexcept {
 
         ret = getaddrinfo(_hostname.c_str(), _port.c_str(), &hints, &servinfo);
         if (ret != 0) {
-            SPDLOG_DEBUG("H9Connector: getaddrinfo: %s", gai_strerror(ret));
+            SPDLOG_DEBUG("H9Connector: getaddrinfo: {}.", gai_strerror(ret));
             return -1;
         }
 
@@ -97,7 +97,7 @@ int H9Socket::connect() noexcept {
         }
 
         if (p == nullptr) {
-            SPDLOG_ERROR("connect to '%s' port %s: %s", _hostname.c_str(), _port.c_str(), strerror(errno));
+            SPDLOG_ERROR("connect to '{}}' port {}: {}.", _hostname.c_str(), _port.c_str(), strerror(errno));
             return -1;
         }
         freeaddrinfo(servinfo);
@@ -197,7 +197,7 @@ int H9Socket::send(const std::string& buf) noexcept {
         return nbyte;
     }
     else if (nbyte != buf.size()) {
-        SPDLOG_ERROR("sent incomplete msg");
+        SPDLOG_ERROR("sent incomplete msg.");
         return -1;
     }
     return nbyte + sizeof(header);

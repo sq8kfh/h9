@@ -7,37 +7,69 @@
  */
 
 #include "h9msgsocket.h"
-#include <system_error>
+
+#include <jsonrpcpp/jsonrpcpp.hpp>
+#include <spdlog/spdlog.h>
 #include <sys/errno.h>
 #include <sys/socket.h>
+#include <system_error>
 
-
-H9MsgSocket::H9MsgSocket(int socket): H9Socket(socket), next_msg_id(0)  {
-    if (connect() < 0) //this should never happen if yes something is wrong with socket
+H9MsgSocket::H9MsgSocket(int socket):
+    H9Socket(socket),
+    next_msg_id(0) {
+    if (connect() < 0)
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
 }
 
-H9MsgSocket::H9MsgSocket(std::string hostname, std::string port) noexcept: H9Socket(std::move(hostname), std::move(port)), next_msg_id(0)  {
+H9MsgSocket::H9MsgSocket(std::string hostname, std::string port) noexcept:
+    H9Socket(std::move(hostname), std::move(port)),
+    next_msg_id(0) {
 }
 
 int H9MsgSocket::get_socket() noexcept {
     return _socket;
 }
 
-int H9MsgSocket::authentication(const std::string& entity) noexcept {
-    //IdentificationMsg ident_msg(entity);
-//    if (send(ident_msg) <= 0) {
-//        return -1;
-//    }
-    //return 0; //authentication fail
-    return 1; //if ok
+int H9MsgSocket::authentication(const std::string& entity) {
+    jsonrpcpp::Id id(1);
+
+    jsonrpcpp::Request r(id, "authenticate", nlohmann::json({{"entity", entity}}));
+    if (send(r.to_json()) <= 0) {
+        SPDLOG_ERROR("Authentication failed: {}.", std::strerror(errno));
+        throw std::system_error(errno, std::system_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
+    }
+
+    nlohmann::json json;
+    int res = recv_complete_msg(json);
+    if (res <= 0) {
+        SPDLOG_ERROR("Authentication failed: {}.", std::strerror(errno));
+        throw std::system_error(errno, std::system_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
+    }
+
+    if (json.is_discarded()) {
+        SPDLOG_ERROR("Authentication failed: invalid JSON.");
+        return 0;
+    }
+
+    jsonrpcpp::Parser parser;
+    jsonrpcpp::entity_ptr raw_res = parser.parse_json(json);
+
+    if (raw_res->is_response()) {
+        jsonrpcpp::response_ptr msg = std::dynamic_pointer_cast<jsonrpcpp::Response>(raw_res);
+        auto result = msg->result();
+        if (result.count("authentication")) {
+            return result["authentication"].get<bool>();
+        }
+    }
+
+    return 0;
 }
 
 int H9MsgSocket::send(const nlohmann::json& json) noexcept {
     return H9Socket::send(json.dump());
 }
 
-int H9MsgSocket::recv(nlohmann::json &json, int timeout_in_seconds) noexcept {
+int H9MsgSocket::recv(nlohmann::json& json, int timeout_in_seconds) noexcept {
     std::string raw_str;
     int res = H9Socket::recv(raw_str, timeout_in_seconds);
     if (res > 0) {
@@ -46,7 +78,7 @@ int H9MsgSocket::recv(nlohmann::json &json, int timeout_in_seconds) noexcept {
     return res;
 }
 
-int H9MsgSocket::recv_complete_msg(nlohmann::json &json) noexcept {
+int H9MsgSocket::recv_complete_msg(nlohmann::json& json) noexcept {
     while (true) {
         int res = recv(json, 0);
         if (res < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
@@ -63,10 +95,9 @@ void H9MsgSocket::shutdown_read() noexcept {
 }
 
 std::uint64_t H9MsgSocket::get_next_id() noexcept {
-    if (next_msg_id == 0) next_msg_id = 1;
-    else ++next_msg_id;
-    //TODO: randomize id ??
-    //std::hash<std::uint64_t> hasher;
-    //return hasher(next);
+    if (next_msg_id == 0)
+        next_msg_id = 1;
+    else
+        ++next_msg_id;
     return next_msg_id;
 }

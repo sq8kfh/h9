@@ -27,7 +27,7 @@ public:
     int get_socket() noexcept;
 
     using H9Socket::connect;
-    int authentication(const std::string& entity) noexcept;
+    int authentication(const std::string& entity);
 
     int send(const nlohmann::json &json) noexcept;
 

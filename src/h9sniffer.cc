@@ -118,8 +118,9 @@ void print_frame(const H9frame& frame) {
 
 int main(int argc, char** argv) {
     H9SnifferConfigurator h9;
-    h9.logger_setup();
+    h9.logger_initial_setup();
     h9.parse_command_line_arg(argc, argv);
+    h9.logger_setup();
     h9.load_configuration();
 
     H9Connector h9_connector = h9.get_connector();
@@ -138,16 +139,8 @@ int main(int argc, char** argv) {
 
     jsonrpcpp::Id id(1);
 
-    ExtH9Frame fr;
-    fr.dlc(4);
-    fr.data({1, 2, 3, 4});
-    jsonrpcpp::Request r(id, "send_frame", nlohmann::json({{"frame", std::move(fr)}}));
-    h9_connector.send(std::make_shared<jsonrpcpp::Request>(r));
-
-    id = jsonrpcpp::Id(2);
-
-    jsonrpcpp::Request r2(id, "subscribe", nlohmann::json({{"event", "frame"}}));
-    h9_connector.send(std::make_shared<jsonrpcpp::Request>(r2));
+    jsonrpcpp::Request req(id, "subscribe", nlohmann::json({{"event", "frame"}}));
+    h9_connector.send(std::make_shared<jsonrpcpp::Request>(req));
 
     // std::cout << r.to_json().dump() << std::endl;
     int output = 1;

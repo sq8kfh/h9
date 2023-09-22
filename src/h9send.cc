@@ -57,8 +57,9 @@ class H9SendConfigurator: public H9Configurator {
 
 int main(int argc, char* argv[]) {
     H9SendConfigurator h9;
-    h9.logger_setup();
+    h9.logger_initial_setup();
     cxxopts::ParseResult res = h9.parse_command_line_arg(argc, argv);
+    h9.logger_setup();
     h9.load_configuration();
     /*
         ctx.add_options("s,src_id", "Source id", cxxopts::value<std::uint16_t>());

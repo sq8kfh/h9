@@ -32,8 +32,9 @@ class API {
     nlohmann::json subscribe(TCPClientThread* client_thread, const jsonrpcpp::Id& id, const jsonrpcpp::Parameter& params);
     nlohmann::json send_frame(TCPClientThread* client_thread, const jsonrpcpp::Id& id, const jsonrpcpp::Parameter& params);
     nlohmann::json get_stats(TCPClientThread* client_thread, const jsonrpcpp::Id& id, const jsonrpcpp::Parameter& params);
+    nlohmann::json authenticate(TCPClientThread* client_thread, const jsonrpcpp::Id& id, const jsonrpcpp::Parameter& params);
 
   public:
     API(Bus* bus, NodeMgr* node_mgr);
-    jsonrpcpp::Response call(TCPClientThread* client_thread, jsonrpcpp::request_ptr request);
+    jsonrpcpp::Response call(TCPClientThread* client_thread, const jsonrpcpp::request_ptr& request);
 };
