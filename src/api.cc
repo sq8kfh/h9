@@ -91,8 +91,8 @@ nlohmann::json API::send_frame(TCPClientThread* client_thread, const jsonrpcpp::
 
 nlohmann::json API::get_stats(TCPClientThread* client_thread, const jsonrpcpp::Id& id, const jsonrpcpp::Parameter& params) {
     std::uint32_t d = 256;
-    node_mgr->node(16).reset(client_thread->get_client_idstring());
-    //node_mgr->node(16).set_reg(client_thread->get_client_idstring(), 12, d);
+    node_mgr->get_node(16).reset(client_thread->get_client_idstring());
+    //node_mgr->get_node(16).set_reg(client_thread->get_client_idstring(), 12, d);
     return std::move(MetricsCollector::metrics_to_json());
 }
 

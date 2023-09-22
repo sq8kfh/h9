@@ -7,7 +7,7 @@
 
 #include "node_mgr.h"
 
-void NodeMgr::on_frame_recv(const ExtH9Frame& frame) {
+void NodeMgr::on_frame_recv(const ExtH9Frame& frame) noexcept {
     notify_frame_observer(frame);
 }
 
@@ -16,7 +16,8 @@ NodeMgr::NodeMgr(Bus* bus):
     bus(bus) {
 }
 
-Node NodeMgr::node(std::uint16_t node_id) {
+Node NodeMgr::get_node(std::uint16_t node_id) {
+    //nie jest to jedyne miejsce tworzenia Node!, Node jest tworzone przy porednio przy Device
     return Node(this, bus, node_id);
 }
 

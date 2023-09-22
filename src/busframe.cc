@@ -31,7 +31,7 @@ BusFrame::BusFrame(ExtH9Frame&& a, bool raw) noexcept:
 }
 
 BusFrame::~BusFrame() {
-    SPDLOG_TRACE("~BusFrame()");
+    //SPDLOG_TRACE("~BusFrame()");
 }
 
 bool BusFrame::raw() {

@@ -9,6 +9,7 @@ Testing
 
 # CMake
 cmake-build-debug/
+cmake-build-debug-coverage/
 CMakeFiles
 CMakeCache.txt
 cmake_install.cmake

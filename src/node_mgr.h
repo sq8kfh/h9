@@ -28,14 +28,14 @@ class NodeMgr: public FrameSubject {
         }
     };
 
-    void on_frame_recv(const ExtH9Frame& frame);
-
-    Bus* bus;
     NodeMgrFrameObs frame_obs;
     int _response_timeout_duration;
+  protected:
+    virtual void on_frame_recv(const ExtH9Frame& frame) noexcept;
+    Bus* bus;
   public:
     NodeMgr(Bus* bus);
-    Node node(std::uint16_t node_id);
+    Node get_node(std::uint16_t node_id);
     void response_timeout_duration(int response_timeout_duration);
     int response_timeout_duration();
 };

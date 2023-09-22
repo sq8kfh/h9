@@ -9,14 +9,19 @@
 #include "node.h"
 
 #include <arpa/inet.h>
-
+#include <spdlog/spdlog.h>
 #include "bus.h"
 #include "node_mgr.h"
 
 void Node::on_frame_recv(const ExtH9Frame& frame) noexcept {
     frame_promise_set_mtx.lock();
-    for (auto p : frame_promise_set) {
-        p->on_frame(frame);
+    for (auto it = frame_promise_set.begin(); it != frame_promise_set.end();) {
+        if ((*it)->on_frame(frame)) {
+            it = frame_promise_set.erase(it);
+        }
+        else {
+            ++it;
+        }
     }
     frame_promise_set_mtx.unlock();
 }
@@ -68,6 +73,7 @@ ssize_t Node::reset(const std::string& origin) noexcept {
     auto future = frame_promise->get_future();
 
     if (future.wait_for(std::chrono::seconds(node_mgr->response_timeout_duration())) != std::future_status::ready) {
+        destroy_frame_promise(frame_promise);
         return TIMEOUT_ERROR; // timeout
     }
 
@@ -156,6 +162,7 @@ ssize_t Node::bit_operation(const std::string& origin, H9frame::Type type, std::
     auto future = frame_promise->get_future();
 
     if (future.wait_for(std::chrono::seconds(node_mgr->response_timeout_duration())) != std::future_status::ready) {
+        destroy_frame_promise(frame_promise);
         return TIMEOUT_ERROR; // timeout
     }
 
@@ -213,6 +220,7 @@ ssize_t Node::set_reg(const std::string& origin, std::uint8_t reg, std::size_t l
     auto future = frame_promise->get_future();
 
     if (future.wait_for(std::chrono::seconds(node_mgr->response_timeout_duration())) != std::future_status::ready) {
+        destroy_frame_promise(frame_promise);
         return TIMEOUT_ERROR; // timeout
     }
 
@@ -277,6 +285,7 @@ ssize_t Node::get_reg(const std::string& origin, std::uint8_t reg, std::size_t l
     auto future = frame_promise->get_future();
 
     if (future.wait_for(std::chrono::seconds(node_mgr->response_timeout_duration())) != std::future_status::ready) {
+        destroy_frame_promise(frame_promise);
         return TIMEOUT_ERROR; // timeout
     }
 

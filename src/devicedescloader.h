@@ -3,21 +3,20 @@
  *
  * Created by SQ8KFH on 2020-11-28.
  *
- * Copyright (C) 2020-2021 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2020-2023 Kamil Palkowski. All rights reserved.
  */
 
-#ifndef H9_DEVICEDESCLOADER_H
-#define H9_DEVICEDESCLOADER_H
+#pragma once
 
 #include "config.h"
-#include <string>
-#include <map>
-#include <vector>
-#include <confuse.h>
 
+#include <confuse.h>
+#include <map>
+#include <string>
+#include <vector>
 
 class DeviceDescLoader {
-public:
+  public:
     struct RegisterDesc {
         std::uint8_t number;
         std::string name;
@@ -35,10 +34,11 @@ public:
         std::map<std::uint16_t, RegisterDesc> registers;
     };
 
-private:
-    cfg_t *cfg;
+  private:
+    cfg_t* cfg;
     std::map<std::uint16_t, DeviceDesc> devices;
-public:
+
+  public:
     DeviceDescLoader();
     ~DeviceDescLoader();
     void load_file(std::string devices_desc_file);
@@ -47,6 +47,3 @@ public:
     std::string get_device_description_by_type(std::uint16_t type);
     std::map<std::uint16_t, RegisterDesc> get_device_register_by_type(std::uint16_t type);
 };
-
-
-#endif //H9_DEVICEDESCLOADER_H

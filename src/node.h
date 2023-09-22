@@ -39,15 +39,18 @@ class Node: public FrameObserver {
             comparator_has_seqnum(false),
             comparator(comparator) {}
 
-        void on_frame(const ExtH9Frame& frame) {
+        /// @return Return true on full match - FramePromise can be deleted
+        bool on_frame(const ExtH9Frame& frame) {
             if (comparator == frame) {
                 if (comparator_has_seqnum) {
                     promise.set_value(frame);
+                    return true;
                 }
                 else {
                     frame_storage.push(frame);
                 }
             }
+            return false;
         }
 
         void set_comparator_seqnum(uint8_t seqnum) {
@@ -55,7 +58,9 @@ class Node: public FrameObserver {
             comparator.set_seqnum(seqnum);
             comparator_has_seqnum = true;
             while (!frame_storage.empty()) {
-                on_frame(frame_storage.front());
+                if (on_frame(frame_storage.front()) ){
+                    node->frame_promise_set.erase(this);
+                }
                 frame_storage.pop();
             }
             node->frame_promise_set_mtx.unlock();

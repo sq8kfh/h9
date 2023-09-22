@@ -162,11 +162,13 @@ void H9dConfigurator::logger_setup() {
     auto bus = spdlog::stdout_color_mt(bus_logger_name);
     auto frame_console = spdlog::stdout_color_mt(frames_logger_name);
     auto tcpserver_console = spdlog::stdout_color_mt(tcp_logger_name);
+    auto devices_console = spdlog::stdout_color_mt(devices_logger_name);
 
     if (log_file_sink) {
         bus->sinks().push_back(log_file_sink);
         frame_console->sinks().push_back(log_file_sink);
         tcpserver_console->sinks().push_back(log_file_sink);
+        devices_console->sinks().push_back(log_file_sink);
     }
 
     spdlog::apply_all([&](std::shared_ptr<spdlog::logger> l) {
@@ -274,6 +276,7 @@ void H9dConfigurator::load_configuration() {
     cfg_opt_t cfg_bus_opts[] = {
         CFG_INT("source_id", default_source_id, CFGF_NONE),
         CFG_INT("response_timeout_duration", default_response_timeout_duration, CFGF_NONE),
+        CFG_STR("devices_description_filename", nullptr, CFGF_NONE),
         CFG_END()};
 
     cfg_opt_t cfg_endpoint_sec[] = {
@@ -436,9 +439,12 @@ void H9dConfigurator::configure_bus(Bus* bus) {
     }
 }
 
-void H9dConfigurator::configure_node_mgr(NodeMgr* node_mgr) {
+void H9dConfigurator::configure_devices_mgr(DevicesMgr* devices_mgr) {
     cfg_t* cfg_bus= cfg_getsec(cfg, "bus");
-    node_mgr->response_timeout_duration(cfg_getint(cfg_bus, "response_timeout_duration"));
+    devices_mgr->response_timeout_duration(cfg_getint(cfg_bus, "response_timeout_duration"));
+    if (cfg_getstr(cfg_bus, "devices_description_filename")) {
+        devices_mgr->load_devices_description(cfg_getstr(cfg_bus, "devices_description_filename"));
+    }
 }
 
 void H9dConfigurator::configure_tcpserver(TCPServer* server) {

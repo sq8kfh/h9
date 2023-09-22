@@ -14,7 +14,7 @@
 #include <string>
 
 #include "bus.h"
-#include "node_mgr.h"
+#include "devices_mgr.h"
 #include "tcpserver.h"
 
 class H9dConfigurator {
@@ -25,6 +25,7 @@ class H9dConfigurator {
     constexpr static char frames_recv_to_file_logger_name[] = "frames_recv_to_file";
     constexpr static char frames_sent_to_file_logger_name[] = "frames_sent_to_file";
     constexpr static char tcp_logger_name[] = "tcp";
+    constexpr static char devices_logger_name[] = "dev";
 
     constexpr static int default_source_id = 509;
     constexpr static int default_response_timeout_duration = 5;
@@ -59,7 +60,7 @@ class H9dConfigurator {
     void drop_privileges();
 
     void configure_bus(Bus* bus);
-    void configure_node_mgr(NodeMgr* node_mgr);
+    void configure_devices_mgr(DevicesMgr* devices_mgr);
     void configure_tcpserver(TCPServer* server);
 
     static std::string version_string();

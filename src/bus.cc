@@ -83,7 +83,7 @@ Bus::Bus():
     logger = spdlog::get(H9dConfigurator::bus_logger_name);
     frames_logger = spdlog::get(H9dConfigurator::frames_logger_name);
     frames_recv_file_logger = spdlog::get(H9dConfigurator::frames_recv_to_file_logger_name);
-    frames_sent_file_logger = spdlog::get(H9dConfigurator::frames_recv_to_file_logger_name);
+    frames_sent_file_logger = spdlog::get(H9dConfigurator::frames_sent_to_file_logger_name);
 
     next_seqnum = 0;
 

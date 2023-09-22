@@ -24,7 +24,7 @@
 #include "bus.h"
 #include "h9d_configurator.h"
 #include "tcpserver.h"
-#include "node_mgr.h"
+#include "devices_mgr.h"
 #include "metrics_collector.h"
 
 int main(int argc, char** argv) {
@@ -45,13 +45,15 @@ int main(int argc, char** argv) {
     configurator.configure_bus(&bus);
     bus.activate();
 
-    NodeMgr node_mgr(&bus);
-    configurator.configure_node_mgr(&node_mgr);
+    DevicesMgr devices_mgr(&bus);
+    configurator.configure_devices_mgr(&devices_mgr);
+
+    devices_mgr.discover();
     //Node a = node_mgr.node(12);
 
     //Node b(std::move(a));
 
-    API api(&bus, &node_mgr);
+    API api(&bus, &devices_mgr);
 
     TCPServer server(&api);
     configurator.configure_tcpserver(&server);

@@ -39,7 +39,10 @@ set(H9D_SRC h9d.cc config.h
         metrics_collector.cc metrics_collector.h
         node_mgr.cc node_mgr.h
         node.cc node.h
-        send_frame_result.h)
+        send_frame_result.h
+        devices_mgr.cc devices_mgr.h
+        device.cc device.h
+        devicedescloader.cc devicedescloader.h)
 
 set(H9SNIFFER_SRC h9sniffer.cc config.h
         h9frame.cc h9frame.h

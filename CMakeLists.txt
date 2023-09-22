@@ -12,6 +12,7 @@ set(H9_VERSION ${PROJECT_VERSION})
 
 find_package(Python REQUIRED)
 find_package(PkgConfig REQUIRED)
+
 find_package(spdlog REQUIRED)
 find_package(nlohmann_json 3.11.2 REQUIRED)
 #find_package(FLEX 2.6.1 REQUIRED)
