@@ -42,7 +42,11 @@ set(H9D_SRC h9d.cc config.h
         send_frame_result.h
         devices_mgr.cc devices_mgr.h
         device.cc device.h
-        devicedescloader.cc devicedescloader.h)
+        devicedescloader.cc devicedescloader.h
+        virtual_driver.cc virtual_driver.h
+        virtual_endpoint.cc virtual_endpoint.h
+        virtual_py_node.cc virtual_py_node.h
+        py_h9.cc py_h9.h)
 
 set(CLIENT_COMMON_SRC config.h
         h9frame.cc h9frame.h
@@ -59,13 +63,13 @@ set(H9SEND_SRC h9send.cc config.h)
 set(H9STATS_SRC h9stats.cc config.h)
 
 add_custom_command(OUTPUT git_version.h
-                  COMMAND ${Python_EXECUTABLE} ${PROJECT_SOURCE_DIR}/scripts/generate_git_version_header.py > git_version.h~
-                  COMMAND /bin/sh -c 'diff git_version.h~ git_version.h 2>&1 > /dev/null || { cp git_version.h~ git_version.h\; }' DEPENDS ${H9D_SRC})
+                  COMMAND ${Python_EXECUTABLE} ${PROJECT_SOURCE_DIR}/scripts/generate_git_version_header.py > ${PROJECT_SOURCE_DIR}/src/git_version.h~
+                  COMMAND /bin/sh -c 'diff ${PROJECT_SOURCE_DIR}/src/git_version.h~ ${PROJECT_SOURCE_DIR}/src/git_version.h 2> /dev/null > /dev/null || { cp ${PROJECT_SOURCE_DIR}/src/git_version.h~ ${PROJECT_SOURCE_DIR}/src/git_version.h\; }' DEPENDS ${H9D_SRC})
 
 add_executable(h9d ${H9D_SRC} git_version.h)
-target_include_directories(h9d PUBLIC ${CONFUSE_INCLUDE_DIRS})
+target_include_directories(h9d PUBLIC ${CONFUSE_INCLUDE_DIRS} ${Python_INCLUDE_DIRS})
 target_compile_options(h9d PUBLIC ${CONFUSE_CFLAGS_OTHER})
-target_link_libraries(h9d PUBLIC ${CONFUSE_LIBRARIES} PRIVATE nlohmann_json::nlohmann_json spdlog::spdlog)
+target_link_libraries(h9d PUBLIC ${CONFUSE_LIBRARIES} PRIVATE nlohmann_json::nlohmann_json spdlog::spdlog Python::Python)
 
 add_library(CLIENT_COMMON OBJECT ${CLIENT_COMMON_SRC} git_version.h)
 target_include_directories(CLIENT_COMMON PUBLIC ${CONFUSE_INCLUDE_DIRS})

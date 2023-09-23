@@ -14,10 +14,7 @@
 
 class LoopDriver: public BusDriver {
   private:
-    constexpr static std::uint16_t LOOPBACK_PORT = 61432;
-
     sockaddr_in loopback_addr;
-    static int instance_counter;
 
   public:
     explicit LoopDriver(const std::string& name);

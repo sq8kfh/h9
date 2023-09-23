@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.24)
 
 project(h9 VERSION 0.3.0)
 
@@ -10,7 +10,7 @@ set(H9_USER_CONFIG_FILE "~/.h9")
 set(H9_CONFIG_PATH "../conf/")
 set(H9_VERSION ${PROJECT_VERSION})
 
-find_package(Python REQUIRED)
+find_package(Python REQUIRED Interpreter Development)
 find_package(PkgConfig REQUIRED)
 
 find_package(spdlog REQUIRED)
@@ -20,6 +20,8 @@ find_package(nlohmann_json 3.11.2 REQUIRED)
 
 pkg_check_modules(CONFUSE libconfuse REQUIRED)
 pkg_check_modules(READLINE readline>=8.0)
+
+message("-! Python version ${Python_VERSION}")
 
 if(NOT READLINE_FOUND)
     message(STATUS "Checking for module 'readline>=7.0'")
@@ -32,8 +34,6 @@ if(NOT READLINE_FOUND)
     set(READLINE_LIBRARIES ${Readline_LIBRARIES})
     set(READLINE_INCLUDE_DIRS ${Readline_INCLUDE_DIRS})
 endif()
-
-find_program(XXD_EXECUTABLE xxd)
 
 include_directories(${CMAKE_SOURCE_DIR}/thirdparty/ ${CMAKE_SOURCE_DIR})
 

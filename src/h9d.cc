@@ -26,6 +26,7 @@
 #include "tcpserver.h"
 #include "devices_mgr.h"
 #include "metrics_collector.h"
+#include "virtual_endpoint.h"
 
 int main(int argc, char** argv) {
     H9dConfigurator configurator;
@@ -41,9 +42,13 @@ int main(int argc, char** argv) {
     configurator.save_pid();
     configurator.drop_privileges();
 
+    VirtualEndpoint virtual_endpoint;
+
     Bus bus;
-    configurator.configure_bus(&bus);
+    configurator.configure_bus(&bus, &virtual_endpoint);
     bus.activate();
+
+    virtual_endpoint.activate();
 
     DevicesMgr devices_mgr(&bus);
     configurator.configure_devices_mgr(&devices_mgr);

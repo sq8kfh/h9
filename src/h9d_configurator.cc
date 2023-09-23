@@ -393,7 +393,7 @@ void H9dConfigurator::drop_privileges() {
     }
 }
 
-void H9dConfigurator::configure_bus(Bus* bus) {
+void H9dConfigurator::configure_bus(Bus* bus, VirtualEndpoint* vendpoint) {
     cfg_t* cfg_bus= cfg_getsec(cfg, "bus");
     bus->bus_id(cfg_getint(cfg_bus, "source_id"));
 
@@ -406,6 +406,9 @@ void H9dConfigurator::configure_bus(Bus* bus) {
             std::string driver = cfg_getstr(endpoint_section, "driver");
             if (driver == "loop") {
                 bus->add_driver(new LoopDriver(endpoint_name));
+            }
+            else if (driver == "virtual" && vendpoint) {
+                bus->add_driver(vendpoint->get_driver(endpoint_name));
             }
             else if (driver == "SLCAN") {
                 if (cfg_getstr(endpoint_section, "tty")) {

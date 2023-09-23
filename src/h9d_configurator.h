@@ -16,6 +16,7 @@
 #include "bus.h"
 #include "devices_mgr.h"
 #include "tcpserver.h"
+#include "virtual_endpoint.h"
 
 class H9dConfigurator {
   public:
@@ -59,7 +60,7 @@ class H9dConfigurator {
     void save_pid();
     void drop_privileges();
 
-    void configure_bus(Bus* bus);
+    void configure_bus(Bus* bus, VirtualEndpoint* vendpoint);
     void configure_devices_mgr(DevicesMgr* devices_mgr);
     void configure_tcpserver(TCPServer* server);
 

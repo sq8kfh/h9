@@ -39,6 +39,9 @@ Makefile
 *.so
 *.so.*
 
+# Python
+__pycache__/
+
 # Project
 config.h
 git_version.h
