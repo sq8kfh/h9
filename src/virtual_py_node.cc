@@ -10,10 +10,13 @@
 
 #include <spdlog/spdlog.h>
 
+#include "h9d_configurator.h"
 #include "py_h9.h"
+#include "virtual_endpoint.h"
 
 namespace {
 
+std::shared_ptr<spdlog::logger> py_logger;
 std::string h9log_buf;
 
 static PyObject* h9log_write(PyObject* self, PyObject* args) {
@@ -28,7 +31,7 @@ static PyObject* h9log_write(PyObject* self, PyObject* args) {
             h9log_buf.append(1, *data);
         }
         else {
-            SPDLOG_DEBUG("PyNode: {}", h9log_buf);
+            SPDLOG_LOGGER_DEBUG(py_logger, "* PyNode *  {}", h9log_buf);
             h9log_buf.clear();
         }
         ++ret;
@@ -49,71 +52,44 @@ static PyMethodDef h9log_methods[] = {
 };
 
 static struct PyModuleDef h9log_module = {
-    PyModuleDef_HEAD_INIT,
-    "h9log", /* name of module */
-    nullptr, /* module documentation, may be NULL */
-    -1,      /* size of per-interpreter state of the module, or -1 if the module keeps state in global variables. */
-    h9log_methods,
-    NULL, NULL, NULL, NULL};
-
-/*static PyObject* PyInit_h9logger(void) {
-    return PyModule_Create(&h9logger_module);
-}*/
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = "h9log",
+    .m_doc = nullptr,
+    .m_size = -1, /* size of per-interpreter state of the module, or -1 if the module keeps state in global variables. */
+    .m_methods = h9log_methods,
+    .m_slots = NULL,
+    .m_traverse = NULL,
+    .m_clear = NULL,
+    .m_free = NULL};
 
 } // namespace
 
-VirtualPyNode::VirtualPyNode(const std::string& py_file, VirtualEndpoint* vendpoint):
-    on_frame_func(nullptr) {
-    PyImport_AppendInittab("h9", &PyInit_h9);
-    Py_SetProgramName(L"VirtualPyNode");
-    Py_Initialize();
-    PySys_SetPath(L"/Users/crowx/projekty/h9/h9/virtual_node/");
+VirtualEndpoint* VirtualPyNode::virtual_endpoint = nullptr;
 
-    PyObject* h9log = PyModule_Create(&h9log_module);
-    PyObject* sys = PyImport_ImportModule("sys");
-    PyObject_SetAttrString(sys, "stdout", h9log);
-    PyObject_SetAttrString(sys, "stderr", h9log);
-    PyObject_SetAttrString(sys, "stdin", nullptr);
+void VirtualPyNode::send_turned_on_broadcast() {
+    H9frame frame;
+    frame.priority = H9frame::Priority::LOW;
+    frame.type = H9frame::Type::NODE_TURNED_ON;
+    frame.seqnum = 0;
+    frame.source_id = node_id;
+    frame.destination_id = H9frame::BROADCAST_ID;
 
-    PyObject* pName = PyUnicode_DecodeFSDefault("rpi_gpio_node");
+    frame.dlc = 8;
 
-    PyObject* pModule = PyImport_Import(pName);
-
-    Py_DECREF(h9log);
-    Py_DECREF(sys);
-    Py_DECREF(pName);
-
-    if (pModule != NULL) {
-        on_frame_func = PyObject_GetAttrString(pModule, "on_frame");
-        if (on_frame_func && PyCallable_Check(on_frame_func)) {
-            SPDLOG_INFO("Loaded on_frame method for PyNode");
-        }
-        else {
-            if (PyErr_Occurred())
-                PyErr_Print();
-            printf("Cannot find function \"on_frame\"\n");
-        }
-        Py_XDECREF(on_frame_func);
-        Py_DECREF(pModule);
-    }
-    else {
-        PyErr_Print();
-        fprintf(stderr, "Failed to load \"%s\"\n", py_file.c_str());
-    }
+    frame.data[0] = (NODE_TYPE >> 8) & 0xff;
+    frame.data[1] = (NODE_TYPE)&0xff;
+    frame.data[2] = (VERSION_MAJOR >> 8);
+    frame.data[3] = VERSION_MAJOR & 0xff;
+    frame.data[4] = (VERSION_MINOR >> 8) & 0xff;
+    frame.data[5] = VERSION_MINOR & 0xff;
+    frame.data[6] = (VERSION_PATCH >> 8) & 0xff;
+    frame.data[7] = VERSION_PATCH & 0xff;
+    send_frame(frame);
 }
 
-VirtualPyNode::~VirtualPyNode() {
-    Py_XDECREF(on_frame_func);
-    Py_FinalizeEx();
-};
-
-void VirtualPyNode::on_frame(const H9frame& frame) {
+void VirtualPyNode::call_py_on_frame(const H9frame& frame) {
     if (on_frame_func) {
-
-        //PyH9frame t;
-        //t.frame = frame;
-
-        PyObject *f = PyH9Frame_New(frame);
+        PyObject* f = PyH9Frame_New(frame);
 
         PyObject* pArgs = PyTuple_New(1);
         PyTuple_SetItem(pArgs, 0, (PyObject*)f);
@@ -126,7 +102,217 @@ void VirtualPyNode::on_frame(const H9frame& frame) {
         else {
             Py_DECREF(on_frame_func);
             PyErr_Print();
-            printf("Call failed\n");
+            SPDLOG_LOGGER_WARN(logger, "Call 'on_frame' function failed.");
         }
+    }
+}
+
+void VirtualPyNode::reset() {
+    virtual_endpoint->reload_node(new_node_id, py_module);
+}
+
+bool VirtualPyNode::send_frame(const H9frame& frame) {
+    if (VirtualPyNode::virtual_endpoint) {
+        VirtualPyNode::virtual_endpoint->send_frame(frame);
+    }
+    return false;
+}
+
+VirtualPyNode::VirtualPyNode(int node_id, const std::string& py_path, const std::string& py_module, VirtualEndpoint* vendpoint):
+    node_id(node_id),
+    py_module(py_module),
+    on_frame_func(nullptr) {
+    virtual_endpoint = vendpoint;
+    new_node_id = node_id;
+
+    logger = spdlog::get(H9dConfigurator::vendpoint_logger_name);
+    ::py_logger = spdlog::get(H9dConfigurator::vendpoint_logger_name);
+
+    SPDLOG_LOGGER_INFO(logger, "Loading Python virtual node: '{}' with id: {}.", py_module, node_id);
+
+    PyImport_AppendInittab("h9", &PyInit_h9);
+
+    PyConfig config;
+    // PyConfig_InitPythonConfig(&config);
+    PyConfig_InitIsolatedConfig(&config);
+
+    // config._isolated_interpreter = 1;
+
+    // PyConfig_SetBytesString(&config, &config.program_name, "h9");
+    PyConfig_SetBytesString(&config, &config.program_name, "h9");
+    PyConfig_SetBytesString(&config, &config.pythonpath_env, py_path.c_str());
+
+    Py_InitializeFromConfig(&config);
+
+    PyConfig_Clear(&config);
+
+    // Py_Initialize();
+
+    // PySys_SetPath(py_path.c_str());
+
+    PyObject* h9log = PyModule_Create(&h9log_module);
+    PyObject* sys = PyImport_ImportModule("sys");
+    PyObject_SetAttrString(sys, "stdout", h9log);
+    PyObject_SetAttrString(sys, "stderr", h9log);
+    PyObject_SetAttrString(sys, "stdin", nullptr);
+
+    PyObject* pName = PyUnicode_DecodeFSDefault(py_module.c_str());
+
+    PyObject* pModule = PyImport_Import(pName);
+
+    Py_DECREF(h9log);
+    Py_DECREF(sys);
+    Py_DECREF(pName);
+
+    if (pModule != NULL) {
+        on_frame_func = PyObject_GetAttrString(pModule, "on_frame");
+        if (on_frame_func && PyCallable_Check(on_frame_func)) {
+            SPDLOG_LOGGER_INFO(logger, "Loaded 'on_frame' method for '{}' PyNode.", py_module);
+        }
+        else {
+            if (PyErr_Occurred())
+                PyErr_Print();
+            SPDLOG_LOGGER_WARN(logger, "Cannot find 'on_frame' function in '{}' PyNode.", py_module);
+        }
+        Py_XDECREF(on_frame_func);
+        Py_DECREF(pModule);
+    }
+    else {
+        PyErr_Print();
+        SPDLOG_LOGGER_ERROR(logger, "Failed to load '{}' PyNode module.", py_module.c_str());
+    }
+
+    send_turned_on_broadcast();
+}
+
+VirtualPyNode::~VirtualPyNode() {
+    Py_XDECREF(on_frame_func);
+    Py_FinalizeEx();
+    SPDLOG_LOGGER_INFO(logger, "Unload Python virtual node: '{}' with id: {}.", py_module, node_id);
+};
+
+void VirtualPyNode::on_frame(const H9frame& frame) {
+    if (frame.type == H9frame::Type::DISCOVER && (frame.destination_id == node_id || frame.destination_id == H9frame::BROADCAST_ID)) {
+        H9frame res;
+        res.priority = frame.priority;
+        res.type = H9frame::Type::NODE_INFO;
+        res.seqnum = frame.seqnum;
+        res.source_id = node_id;
+        res.destination_id = frame.source_id;
+
+        res.dlc = 8;
+        res.data[0] = (NODE_TYPE >> 8) & 0xff;
+        res.data[1] = (NODE_TYPE)&0xff;
+        res.data[2] = (VERSION_MAJOR >> 8);
+        res.data[3] = VERSION_MAJOR & 0xff;
+        res.data[4] = (VERSION_MINOR >> 8) & 0xff;
+        res.data[5] = VERSION_MINOR & 0xff;
+        res.data[6] = (VERSION_PATCH >> 8) & 0xff;
+        res.data[7] = VERSION_PATCH & 0xff;
+        send_frame(res);
+    }
+    else if (frame.type == H9frame::Type::NODE_RESET && (frame.destination_id == node_id || frame.destination_id == H9frame::BROADCAST_ID)) {
+        reset();
+        return;
+    }
+    else if (frame.type == H9frame::Type::SET_REG && frame.destination_id == node_id && frame.dlc > 1) {
+        if (frame.data[0] >= 10) {
+            call_py_on_frame(frame);
+        }
+        else {
+            H9frame res;
+            res.priority = frame.priority;
+            res.seqnum = frame.seqnum;
+            res.source_id = node_id;
+            res.destination_id = frame.source_id;
+
+            if (frame.data[0] == 4 && frame.dlc == 3) { // reg 4
+                res.type = H9frame::Type::REG_EXTERNALLY_CHANGED;
+                res.data[0] = frame.data[0];
+
+                new_node_id = (frame.data[1] & 0x01) << 8 | frame.data[2];
+
+                res.data[1] = frame.data[1];
+                res.data[2] = frame.data[2];
+                res.dlc = 3;
+            }
+            else {
+                res.type = H9frame::Type::ERROR;
+                res.data[0] = H9frame::to_underlying(H9frame::Error::INVALID_REGISTER);
+                res.dlc = 1;
+            }
+            send_frame(res);
+        }
+    }
+    else if (frame.type == H9frame::Type::GET_REG && frame.destination_id == node_id && frame.dlc == 1) {
+        if (frame.data[0] >= 10) {
+            call_py_on_frame(frame);
+        }
+        else {
+            H9frame res;
+            res.priority = frame.priority;
+            res.type = H9frame::Type::REG_VALUE;
+            res.seqnum = frame.seqnum;
+            res.source_id = node_id;
+            res.destination_id = frame.source_id;
+
+            res.data[0] = frame.data[0];
+            if (frame.data[0] == 1) { // type
+                res.data[1] = (NODE_TYPE >> 8) & 0xff;
+                res.data[2] = (NODE_TYPE ) & 0xff;
+                res.dlc = 3;
+            }
+            else if (frame.data[0] == 2) {
+                res.data[1] = (VERSION_MAJOR >> 8);
+                res.data[2] = VERSION_MAJOR & 0xff;
+                res.data[3] = (VERSION_MINOR >> 8) & 0xff;
+                res.data[4] = VERSION_MINOR & 0xff;
+                res.data[5] = (VERSION_PATCH >> 8) & 0xff;
+                res.data[6] = VERSION_PATCH & 0xff;
+                res.dlc = 7;
+            }
+            else if (frame.data[0] == 3) {
+                int max = 7 < py_module.size() ? 7 : py_module.size();
+
+                for (int i = 0; i < max; ++i){
+                    res.data[i+1] = py_module.at(i);
+                }
+            }
+            else if (frame.data[0] == 4) {
+                res.data[1] = (new_node_id >> 8) & 0x01;
+                res.data[2] = (new_node_id) & 0xff;
+                res.dlc = 3;
+            }
+            else if (frame.data[0] == 5) { //cpu type
+                res.data[1] = 0xff;
+                res.dlc = 2;
+            }
+            else {
+                res.type = H9frame::Type::ERROR;
+                res.data[0] = H9frame::to_underlying(H9frame::Error::INVALID_REGISTER);
+                res.dlc = 1;
+            }
+            send_frame(res);
+        }
+    }
+    else if (frame.type == H9frame::Type::SET_BIT && frame.destination_id == node_id) {
+        call_py_on_frame(frame);
+    }
+    else if (frame.type == H9frame::Type::CLEAR_BIT && frame.destination_id == node_id) {
+        call_py_on_frame(frame);
+    }
+    else if (frame.type == H9frame::Type::TOGGLE_BIT && frame.destination_id == node_id) {
+        call_py_on_frame(frame);
+    }
+    else if (frame.type == H9frame::Type::NODE_UPGRADE && frame.destination_id == node_id) {
+        H9frame res;
+        res.priority = frame.priority;
+        res.type = H9frame::Type::ERROR;
+        res.seqnum = frame.seqnum;
+        res.source_id = node_id;
+        res.destination_id = frame.source_id;
+        res.dlc = 1;
+        res.data[0] = H9frame::to_underlying(H9frame::Error::UNSUPPORTED_BOOTLOADER);
+        send_frame(res);
     }
 }

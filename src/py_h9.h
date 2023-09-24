@@ -14,6 +14,7 @@
 typedef struct {
     PyObject_HEAD
         H9frame frame;
+    std::uint8_t LOW;
 } PyH9frame;
 
 PyMODINIT_FUNC PyInit_h9(void);

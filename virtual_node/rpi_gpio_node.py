@@ -1,22 +1,28 @@
-import h9
+from h9 import H9Frame, send_frame
 
-print(dir(h9.H9Frame))
+print("Loading:", __name__, "module")
+print(__name__, "spec:", __spec__)
 
-print(type(h9.H9Frame))
+print("dir(H9Frame)", dir(H9Frame))
+# print("h9:", h9.__name__)
+# print(h9.__name__, "spec:", h9.__spec__)
 
-frame = h9.H9Frame()
-print(dir(frame.seqnum))
 #
-print(h9.H9Frame.seqnum)
-
-frame.seqnum = 12
-print(frame.seqnum)
-
-frame.seqnum = 1200000000000
-print(frame.seqnum)
+# H9Frame(type, destination_id, data, priority, seqnum, source_id, dlc)
+#
+#f = H9Frame(1, 44, seqnum=12, data=[1])
 
 def on_frame(frame):
-    print(type(frame))
-    print("Yuppi! ", frame.seqnum)
+    print(__name__, "on_frame()")
+    if frame.type == H9Frame.TYPE_GET_REG:
+        print("Reg:", frame.data[0])
+        res = H9Frame()
+        res.priority = H9Frame.PRIORITY_LOW
+        res.type = H9Frame.TYPE_REG_VALUE
+        res.seqnum = frame.seqnum
+        res.destination_id = frame.source_id
+        res.source_id = 111
+        res.data = (frame.data[0], 100)
+        send_frame(res)
 
 #input("Please enter the message:\n")

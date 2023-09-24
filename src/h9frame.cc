@@ -121,5 +121,5 @@ const char* H9frame::error_to_string(Error error) {
     case Error::NODE_SPECIFIC_ERROR:
         return "NODE_SPECIFIC_ERROR";
     }
-    return "UNKNOWN";
+    return nullptr;
 }

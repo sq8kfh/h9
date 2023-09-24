@@ -43,6 +43,7 @@ int main(int argc, char** argv) {
     configurator.drop_privileges();
 
     VirtualEndpoint virtual_endpoint;
+    configurator.configure_virtual_endpoint(&virtual_endpoint);
 
     Bus bus;
     configurator.configure_bus(&bus, &virtual_endpoint);
@@ -60,21 +61,6 @@ int main(int argc, char** argv) {
     TCPServer server(&api);
     configurator.configure_tcpserver(&server);
     server.run();
-
-    //    std::cout << entity->is_request() << std::endl;
-
-    /* while (1) {
-         sleep(1);
-         // bus.send();
-         // sleep(5);
-         ExtH9Frame h9frame;
-         h9frame.type(H9frame::Type::DISCOVER);
-         h9frame.destination_id(H9frame::BROADCAST_ID);
-         h9frame.source_id(3);
-         h9frame.dlc(0);
-         // h9frame.data({1,3,4});
-
-     }*/
 
     return EXIT_FAILURE;
 }

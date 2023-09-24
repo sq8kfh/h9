@@ -58,13 +58,20 @@ struct H9frame {
         NODE_SPECIFIC_ERROR = 0xff,
     };
 
-    constexpr static std::uint16_t BROADCAST_ID = 0x01ff;
-
     constexpr static int H9FRAME_PRIORITY_BIT_LENGTH = 1;
     constexpr static int H9FRAME_TYPE_BIT_LENGTH = 5;
     constexpr static int H9FRAME_SEQNUM_BIT_LENGTH = 5;
     constexpr static int H9FRAME_DESTINATION_ID_BIT_LENGTH = 9;
     constexpr static int H9FRAME_SOURCE_ID_BIT_LENGTH = 9;
+
+    constexpr static std::uint16_t BROADCAST_ID = 0x01ff;
+
+    constexpr static int H9FRAME_PRIORITY_MAX_VALUE = (1 << H9FRAME_PRIORITY_BIT_LENGTH) - 1;
+    constexpr static int H9FRAME_TYPE_MAX_VALUE = (1 << H9FRAME_TYPE_BIT_LENGTH) - 1;
+    constexpr static int H9FRAME_SEQNUM_MAX_VALUE = (1 << H9FRAME_SEQNUM_BIT_LENGTH) - 1;
+    constexpr static int H9FRAME_DESTINATION_ID_MAX_VALUE = BROADCAST_ID;
+    constexpr static int H9FRAME_SOURCE_ID_MAX_VALUE = BROADCAST_ID - 1;
+    constexpr static int H9FRAME_DATA_LENGTH = 8;
 
     Priority priority;
     Type type;
@@ -72,7 +79,7 @@ struct H9frame {
     std::uint16_t destination_id: H9FRAME_DESTINATION_ID_BIT_LENGTH;
     std::uint16_t source_id: H9FRAME_SOURCE_ID_BIT_LENGTH;
     std::uint8_t dlc;
-    std::uint8_t data[8]{};
+    std::uint8_t data[H9FRAME_DATA_LENGTH]{};
 
     H9frame();
     void set_type_from_underlying(std::underlying_type_t<Type> int_type);

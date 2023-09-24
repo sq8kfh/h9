@@ -61,7 +61,7 @@ class Bus: public FrameSubject {
 
     MetricsCollector::counter_t& sent_frames_counter;
     MetricsCollector::counter_t& received_frames_counter;
-    //MetricsCollector::counter_t& size_of_send_queue;
+    // MetricsCollector::counter_t& size_of_send_queue;
 
     constexpr static int number_of_frame_types = 1 << H9frame::H9FRAME_TYPE_BIT_LENGTH;
     MetricsCollector::counter_t* sent_frames_counter_by_type[number_of_frame_types];
@@ -74,9 +74,10 @@ class Bus: public FrameSubject {
     Bus& operator=(const Bus&) = delete;
     ~Bus();
 
-    void bus_id(std::uint16_t bus_id);
+    void bus_default_source_id(std::uint16_t bus_id);
 
     void add_driver(BusDriver* bus_driver);
+    int endpoint_count();
     void activate();
 
     /// Send frame to the bus.

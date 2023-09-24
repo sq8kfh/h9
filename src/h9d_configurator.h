@@ -27,6 +27,7 @@ class H9dConfigurator {
     constexpr static char frames_sent_to_file_logger_name[] = "frames_sent_to_file";
     constexpr static char tcp_logger_name[] = "tcp";
     constexpr static char devices_logger_name[] = "dev";
+    constexpr static char vendpoint_logger_name[] = "vend";
 
     constexpr static int default_source_id = 509;
     constexpr static int default_response_timeout_duration = 5;
@@ -61,6 +62,7 @@ class H9dConfigurator {
     void drop_privileges();
 
     void configure_bus(Bus* bus, VirtualEndpoint* vendpoint);
+    void configure_virtual_endpoint(VirtualEndpoint* vendpoint);
     void configure_devices_mgr(DevicesMgr* devices_mgr);
     void configure_tcpserver(TCPServer* server);
 

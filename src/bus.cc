@@ -31,7 +31,7 @@ void Bus::recv_thread() {
                 if (!queue_empty) {
                     bus_frame = send_queue.top();
                     send_queue.pop();
-                    //size_of_send_queue = send_queue.size();
+                    // size_of_send_queue = send_queue.size();
                 }
                 send_queue_mtx.unlock();
 
@@ -79,7 +79,7 @@ Bus::Bus():
     run(true),
     sent_frames_counter(MetricsCollector::make_counter("bus.send_frames")),
     received_frames_counter(MetricsCollector::make_counter("bus.received_frames")) {
-    //size_of_send_queue(MetricsCollector::make_counter("bus.size_of_send_queue")) {
+    // size_of_send_queue(MetricsCollector::make_counter("bus.size_of_send_queue")) {
     logger = spdlog::get(H9dConfigurator::bus_logger_name);
     frames_logger = spdlog::get(H9dConfigurator::frames_logger_name);
     frames_recv_file_logger = spdlog::get(H9dConfigurator::frames_recv_to_file_logger_name);
@@ -87,9 +87,9 @@ Bus::Bus():
 
     next_seqnum = 0;
 
-    for (int i =0; i < number_of_frame_types; ++i) {
+    for (int i = 0; i < number_of_frame_types; ++i) {
         sent_frames_counter_by_type[i] = MetricsCollector::make_counter_ptr("bus.frames[type=" + std::string(H9frame::type_to_string(H9frame::from_underlying<H9frame::Type>(i))) + "].send");
-        received_frames_counter_by_type[i]= MetricsCollector::make_counter_ptr("bus.frames[type=" + std::string(H9frame::type_to_string(H9frame::from_underlying<H9frame::Type>(i))) + "].received");
+        received_frames_counter_by_type[i] = MetricsCollector::make_counter_ptr("bus.frames[type=" + std::string(H9frame::type_to_string(H9frame::from_underlying<H9frame::Type>(i))) + "].received");
     }
 
     SPDLOG_LOGGER_INFO(logger, "Created buses manager with '{}' I/O event notification mechanism.", IOEventQueue::notification_mechanism_name);
@@ -106,13 +106,17 @@ Bus::~Bus() {
     }
 }
 
-void Bus::bus_id(std::uint16_t bus_id) {
+void Bus::bus_default_source_id(std::uint16_t bus_id) {
     _bus_id = bus_id;
 }
 
 void Bus::add_driver(BusDriver* bus_driver) {
-    SPDLOG_LOGGER_INFO(logger, "Adding a bus interface {} (driver: {})...", bus_driver->name, bus_driver->driver_name);
+    SPDLOG_LOGGER_INFO(logger, "Adding '{}' endpoint (driver: {})...", bus_driver->name, bus_driver->driver_name);
     bus[bus_driver->open()] = bus_driver;
+}
+
+int Bus::endpoint_count() {
+    return bus.size();
 }
 
 void Bus::activate() {
