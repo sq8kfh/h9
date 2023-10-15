@@ -85,7 +85,9 @@ class Node: public FrameObserver {
 
   protected:
     const std::uint16_t _node_id;
+    Node(NodeMgr* node_mgr, Bus* bus, std::uint16_t node_id) noexcept;
 
+    friend NodeMgr;
   public:
     constexpr static std::uint8_t REG_NODE_TYPE = 1;
     constexpr static std::uint8_t REG_NODE_VERSION = 2;
@@ -96,7 +98,6 @@ class Node: public FrameObserver {
     constexpr static ssize_t TIMEOUT_ERROR = -1000;
     constexpr static ssize_t MALFORMED_FRAME_ERROR = -1001;
 
-    Node(NodeMgr* node_mgr, Bus* bus, std::uint16_t node_id) noexcept;
     ~Node() noexcept;
 
     std::uint16_t node_id() noexcept;
@@ -113,7 +114,7 @@ class Node: public FrameObserver {
     ssize_t clear_bit(const std::string& origin, std::uint8_t reg, std::uint8_t bit, std::size_t length = 0, std::uint8_t* reg_after_set = nullptr) noexcept;
     ssize_t toggle_bit(const std::string& origin, std::uint8_t reg, std::uint8_t bit, std::size_t length = 0, std::uint8_t* reg_after_set = nullptr) noexcept;
 
-    ssize_t set_reg(const std::string& origin, std::uint8_t reg, std::size_t length, std::uint8_t* reg_val, std::uint8_t* reg_after_set = nullptr) noexcept;
+    ssize_t set_reg(const std::string& origin, std::uint8_t reg, std::size_t length, const std::uint8_t* reg_val, std::uint8_t* reg_after_set = nullptr, ssize_t reg_after_set_length = -1) noexcept;
     ssize_t set_reg(const std::string& origin, std::uint8_t reg, std::uint8_t reg_val, std::uint8_t* reg_after_set = nullptr) noexcept;
     ssize_t set_reg(const std::string& origin, std::uint8_t reg, std::uint16_t reg_val, std::uint16_t* reg_after_set = nullptr) noexcept;
     ssize_t set_reg(const std::string& origin, std::uint8_t reg, std::uint32_t reg_val, std::uint32_t* reg_after_set = nullptr) noexcept;

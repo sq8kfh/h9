@@ -43,6 +43,9 @@ void Bus::recv_thread() {
                     bus_frame->source_id(_bus_id);
                     bus_frame->seqnum(next_seqnum);
                     ++next_seqnum;
+                    if (next_seqnum > H9frame::H9FRAME_SEQNUM_MAX_VALUE) {
+                        next_seqnum = 0;
+                    }
                 }
 
                 ++sent_frames_counter;

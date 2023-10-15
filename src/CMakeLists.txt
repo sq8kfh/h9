@@ -46,7 +46,8 @@ set(H9D_SRC h9d.cc config.h
         virtual_driver.cc virtual_driver.h
         virtual_endpoint.cc virtual_endpoint.h
         virtual_py_node.cc virtual_py_node.h
-        py_h9.cc py_h9.h)
+        py_h9.cc py_h9.h
+        dev_node_exception.cc dev_node_exception.h)
 
 set(CLIENT_COMMON_SRC config.h
         h9frame.cc h9frame.h

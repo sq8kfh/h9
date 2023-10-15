@@ -17,7 +17,7 @@ NodeMgr::NodeMgr(Bus* bus):
 }
 
 Node NodeMgr::get_node(std::uint16_t node_id) {
-    //nie jest to jedyne miejsce tworzenia Node!, Node jest tworzone przy porednio przy Device
+    //nie jest to jedyne miejsce tworzenia Node!, Node jest tworzone posrednio przy Device
     return Node(this, bus, node_id);
 }
 

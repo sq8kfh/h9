@@ -100,7 +100,9 @@ void VirtualPyNode::call_py_on_frame(const H9frame& frame) {
             Py_DECREF(pValue);
         }
         else {
-            Py_DECREF(on_frame_func);
+            //TODO: co robic jak sie funkcja pythona wysypie? zignorwac czy wywalic modul?
+            //Py_DECREF(on_frame_func);
+            //on_frame_func = nullptr;
             PyErr_Print();
             SPDLOG_LOGGER_WARN(logger, "Call 'on_frame' function failed.");
         }
@@ -272,11 +274,12 @@ void VirtualPyNode::on_frame(const H9frame& frame) {
                 res.dlc = 7;
             }
             else if (frame.data[0] == 3) {
-                int max = 7 < py_module.size() ? 7 : py_module.size();
+                int max = 6 < py_module.size() ? 6 : py_module.size();
 
                 for (int i = 0; i < max; ++i){
                     res.data[i+1] = py_module.at(i);
                 }
+                res.dlc = max;
             }
             else if (frame.data[0] == 4) {
                 res.data[1] = (new_node_id >> 8) & 0x01;

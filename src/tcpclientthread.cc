@@ -69,19 +69,21 @@ void TCPClientThread::thread_recv_msg() {
     if (msg && msg->is_request()) {
         jsonrpcpp::request_ptr request = std::dynamic_pointer_cast<jsonrpcpp::Request>(msg);
 
-        SPDLOG_LOGGER_INFO(logger, "Recv request (id: {}) - execute method '{}' from client {}", request->id().int_id(), request->method(), get_client_idstring().c_str());
+        SPDLOG_LOGGER_DEBUG(logger, "Recv request (id: {}) - execute method '{}' from client {}", request->id().int_id(), request->method(), get_client_idstring().c_str());
 
         try {
             jsonrpcpp::Response response = api->call(this, request);
             h9socket.send(response.to_json());
+            SPDLOG_LOGGER_DEBUG(logger, "Sent response (id: {}) - method '{}' to client {}", response.id().int_id(), request->method(), get_client_idstring().c_str());
         }
         catch (const jsonrpcpp::RequestException& e) {
             h9socket.send(e.to_json());
+            SPDLOG_LOGGER_WARN(logger, "Sent error response (id: {}) - method '{}' to client {}: {}", e.id().int_id(), request->method(), get_client_idstring().c_str(), e.what());
         }
     }
     else if (msg && msg->is_batch()) {
         jsonrpcpp::batch_ptr batch = std::dynamic_pointer_cast<jsonrpcpp::Batch>(msg);
-        SPDLOG_LOGGER_INFO(logger, "Recv batch from client {}", get_client_idstring().c_str());
+        SPDLOG_LOGGER_DEBUG(logger, "Recv batch from client {}", get_client_idstring().c_str());
 
         jsonrpcpp::Batch response_batch;
         for (const auto& batch_entity : batch->entities) {
@@ -114,7 +116,7 @@ void TCPClientThread::thread_send_async_msg() {
     bool queue_empty = false;
     do {
         async_msg_queue_mtx.lock();
-        SPDLOG_DEBUG("thread_send_async_msg", async_msg_queue.size());
+        SPDLOG_LOGGER_TRACE(logger,"thread_send_async_msg, queue size: {}", async_msg_queue.size());
 
         assert(!async_msg_queue.empty());
 

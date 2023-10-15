@@ -8,8 +8,27 @@
 
 #include "devicedescloader.h"
 
+#include "spdlog/spdlog.h"
+
 static void cfg_err_func(cfg_t* cfg, const char* fmt, va_list args) {
-    //Logger::default_log.vlog(Log::Level::WARN, __FILE__, __LINE__, fmt, args);
+    char msgbuf[1024];
+    vsnprintf(msgbuf, sizeof(msgbuf), fmt, args);
+    // last_confuse_error_message = msgbuf;
+    SPDLOG_ERROR(msgbuf);
+    // SPDLOG_ERROR(fmt, args);
+    //  Logger::default_log.vlog(Log::Level::WARN, __FILE__, __LINE__, fmt, args);
+}
+
+static int conf_valid_type(cfg_t* cfg, cfg_opt_t* opt) {
+    if (strcmp(cfg_opt_getnstr(opt, 0), "uint") == 0)
+        return 0;
+    else if (strcmp(cfg_opt_getnstr(opt, 0), "str") == 0)
+        return 0;
+    else if (strcmp(cfg_opt_getnstr(opt, 0), "bool") == 0)
+        return 0;
+
+    cfg_error(cfg, "invalid value for option '%s': %s", cfg_opt_name(opt), cfg_opt_getnstr(opt, 0));
+    return -1;
 }
 
 DeviceDescLoader::DeviceDescLoader():
@@ -27,7 +46,7 @@ void DeviceDescLoader::load_file(std::string devices_desc_file) {
         CFG_STR("name", nullptr, CFGF_NONE),
         CFG_STR("type", nullptr, CFGF_NONE),
         CFG_INT("size", 0, CFGF_NONE),
-        CFG_STR("mode", nullptr, CFGF_NONE),
+//        CFG_STR("mode", nullptr, CFGF_NONE),
         CFG_BOOL("readable", cfg_false, CFGF_NONE),
         CFG_BOOL("writable", cfg_false, CFGF_NONE),
         CFG_STR_LIST("bits-names", (char*)"{}", CFGF_NONE),
@@ -46,15 +65,16 @@ void DeviceDescLoader::load_file(std::string devices_desc_file) {
 
     cfg = cfg_init(cfg_opts, CFGF_NONE);
     cfg_set_error_function(cfg, cfg_err_func);
+    cfg_set_validate_func(cfg, "device|register|type", conf_valid_type);
     int ret = cfg_parse(cfg, devices_desc_file.c_str());
 
     if (ret == CFG_FILE_ERROR) {
-        //h9_log_err("Devices description file (%s) - file error", devices_desc_file.c_str());
+        SPDLOG_ERROR("Devices description file ({}) - file error", devices_desc_file.c_str());
         cfg_free(cfg);
         return;
     }
     else if (ret == CFG_PARSE_ERROR) {
-        //h9_log_err("Devices description file (%s) - parse error", devices_desc_file.c_str());
+        SPDLOG_ERROR("Devices description file ({}) - parse error", devices_desc_file.c_str());
         cfg_free(cfg);
         return;
     }

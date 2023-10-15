@@ -18,54 +18,55 @@ class ExtH9Frame {
     H9frame _frame;
     std::string _origin;
 
+    unsigned int valid;
   public:
+    constexpr static unsigned int VALID_ORIGIN = 1 << 0;
+    constexpr static unsigned int VALID_PRIORITY = 1 << 1;
+    constexpr static unsigned int VALID_TYPE = 1 << 2;
+    constexpr static unsigned int VALID_SEQNUM = 1 << 3;
+    constexpr static unsigned int VALID_DESTINATION_ID = 1 << 4;
+    constexpr static unsigned int VALID_SOURCE_ID = 1 << 5;
+    constexpr static unsigned int VALID_DLC = 1 << 6;
+    constexpr static unsigned int VALID_DATA = 1 << 7;
+
+    constexpr static unsigned int VALID_ALL = (VALID_ORIGIN | VALID_PRIORITY | VALID_TYPE | VALID_SEQNUM | VALID_DESTINATION_ID | VALID_SOURCE_ID | VALID_DLC | VALID_DATA);
+    constexpr static unsigned int VALID_UNUSED = ~VALID_ALL;
+
     ExtH9Frame() = default;
     ExtH9Frame(const H9frame& frame, const std::string& origin);
     ExtH9Frame(const std::string& origin, H9frame::Type type, std::uint16_t dst, std::uint8_t dlc = 0, const std::vector<std::uint8_t>& data = {});
     ExtH9Frame(std::string origin, H9frame::Priority priority, H9frame::Type type, std::uint16_t dst, std::uint8_t dlc = 0, const std::vector<std::uint8_t>& data = {});
 
+    unsigned int valid_member();
+    unsigned int invalid_member();
+
     const H9frame& frame() const { return _frame; }
 
     const std::string& origin() const { return _origin; }
 
-    void origin(const std::string& origin) { _origin = origin; }
-
     H9frame::Priority priority() const { return _frame.priority; }
-
-    void priority(H9frame::Priority priority) { _frame.priority = priority; }
 
     H9frame::Type type() const { return _frame.type; }
 
-    void type(H9frame::Type type) { _frame.type = type; }
-    void type(std::uint8_t type) { _frame.set_type_from_underlying(type); }
-
     std::uint8_t seqnum() const { return _frame.seqnum; }
-
-    void seqnum(std::uint8_t seqnum) { _frame.seqnum = seqnum; }
 
     std::uint16_t destination_id() const { return _frame.destination_id; }
 
-    void destination_id(std::uint16_t destination_id) { _frame.destination_id = destination_id; }
-
     std::uint16_t source_id() const { return _frame.source_id; }
-
-    void source_id(std::uint16_t source_id) { _frame.source_id = source_id; }
 
     std::uint8_t dlc() const { return _frame.dlc; }
 
-    void dlc(std::uint8_t dlc) { _frame.dlc = dlc <= 8 ? dlc : 8; }
-
     const std::uint8_t* data() const { return _frame.data; };
 
-    void data(const std::vector<std::uint8_t>& data) {
-        int i = 0;
-        for (auto& d : data) {
-            _frame.data[i] = d;
-            ++i;
-            if (i > 8)
-                break;
-        }
-    }
+    void origin(const std::string& origin);
+    void priority(H9frame::Priority priority);
+    void type(H9frame::Type type);
+    void type(std::uint8_t type);
+    void seqnum(std::uint8_t seqnum);
+    void destination_id(std::uint16_t destination_id);
+    void source_id(std::uint16_t source_id);
+    void dlc(std::uint8_t dlc);
+    void data(const std::vector<std::uint8_t>& data);
 };
 
 void to_json(nlohmann::json& j, const ExtH9Frame& f);

@@ -80,5 +80,7 @@ class DevicesMgr: public NodeMgr {
 
     std::vector<Device::RegisterDsc> get_registers_list(std::uint16_t dev_id) noexcept;
 
-    int get_device_info(std::uint16_t dev_id, DeviceInfo& device_info) noexcept;
+    int get_device_info(std::uint16_t dev_id, DeviceInfo& device_info);
+    Device::regvalue_t set_register(std::uint16_t dev_id, std::uint8_t reg, Device::regvalue_t value);
+    Device::regvalue_t get_register(std::uint16_t dev_id, std::uint8_t reg);
 };

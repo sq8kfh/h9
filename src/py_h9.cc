@@ -294,10 +294,10 @@ static PyGetSetDef h9frame_getsetters[] = {
     {NULL} /* Sentinel */
 };
 
-static PyMemberDef h9frame_members[] = {
-    {"LOW", T_UBYTE, offsetof(PyH9frame, LOW), READONLY, "LOW priority"},
-    {NULL} /* Sentinel */
-};
+//static PyMemberDef h9frame_members[] = {
+//    {"LOW", T_UBYTE, offsetof(PyH9frame, LOW), READONLY, "LOW priority"},
+//    {NULL} /* Sentinel */
+//};
 
 // static PyObject*
 // Custom_name(CustomObject* self, PyObject* Py_UNUSED(ignored)) {
@@ -321,7 +321,7 @@ PyTypeObject h9frameType = {
     .tp_init = (initproc)H9Frame_init,
     .tp_new = PyType_GenericNew,
     //.tp_dealloc = (destructor)Custom_dealloc,
-    .tp_members = h9frame_members,
+//    .tp_members = h9frame_members,
     //.tp_methods = Custom_methods,
 };
 

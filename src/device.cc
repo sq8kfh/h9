@@ -12,6 +12,7 @@
 
 #include "tcpclientthread.h"
 #include "h9d_configurator.h"
+#include "dev_node_exception.h"
 
 DeviceDescLoader Device::devicedescloader;
 
@@ -89,7 +90,7 @@ DeviceDescLoader Device::devicedescloader;
 
     register_map[1] = {1, "Node type", "uint", 16, true, false, {}, ""};
     register_map[2] = {2, "Node version", "uint", 48, true, false, {}, ""};
-    register_map[3] = {3, "Build metadata", "char", 48, true, false, {}, ""};
+    register_map[3] = {3, "Build metadata", "str", 48, true, false, {}, ""};
     register_map[4] = {4, "Node id", "uint", 9, true, true, {}, ""};
     register_map[5] = {5, "MCU type", "uint", 8, true, false, {}, ""};
 
@@ -159,4 +160,190 @@ std::time_t Device::device_last_seen_time() const noexcept {
 
 std::string Device::device_description() const noexcept {
     return _device_description;
+}
+
+Device::regvalue_t Device::set_register(std::uint8_t reg, Device::regvalue_t value) {
+    if (register_map.count(reg)) {
+        if (register_map[reg].writable) {
+            if (std::holds_alternative<std::int64_t>(value) && register_map[reg].type != "str") {
+                auto v = std::get<std::int64_t>(value);
+                if (register_map[reg].size <= 8) {
+                    std::uint8_t tmp = v & ((1 << register_map[reg].size) - 1);
+                    std::uint8_t val;
+                    ssize_t ret;
+                    if ((ret = set_reg("h9d", reg, tmp, &val)) < 0) {
+                        if (ret == Node::TIMEOUT_ERROR) throw TimeoutException();
+                        else if (ret == Node::MALFORMED_FRAME_ERROR) throw MalformedFrameException();
+                        else throw NodeException(-ret);
+                    }
+                    else if (ret != sizeof(val)) {
+                        throw SizeMismatchException();
+                    }
+                    return {val};
+                }
+                else if (register_map[reg].size <= 16) {
+                    std::uint16_t tmp = v & ((1 << register_map[reg].size) - 1);
+                    std::uint16_t val;
+                    ssize_t ret;
+                    if ((ret = set_reg("h9d", reg, tmp, &val)) < 0) {
+                        if (ret == Node::TIMEOUT_ERROR) throw TimeoutException();
+                        else if (ret == Node::MALFORMED_FRAME_ERROR) throw MalformedFrameException();
+                        else throw NodeException(-ret);
+                    }
+                    else if (ret != sizeof(val)) {
+                        throw SizeMismatchException();
+                    }
+                    return {val};
+                }
+                else if (register_map[reg].size <= 32) {
+                    std::uint32_t tmp = v & ((1 << register_map[reg].size) - 1);
+                    std::uint32_t val;
+                    ssize_t ret;
+                    if ((ret = set_reg("h9d", reg, tmp, &val)) < 0) {
+                        if (ret == Node::TIMEOUT_ERROR) throw TimeoutException();
+                        else if (ret == Node::MALFORMED_FRAME_ERROR) throw MalformedFrameException();
+                        else throw NodeException(-ret);
+                    }
+                    else if (ret != sizeof(val)) {
+                        throw SizeMismatchException();
+                    }
+                    return {val};
+                }
+            }
+            else if (std::holds_alternative<std::string>(value) && register_map[reg].type == "str") {
+                auto v = std::get<std::string>(value);
+                size_t len = register_map[reg].size / 8;
+                len = len < v.size() ? len : v.size();
+
+                ssize_t ret_len = (register_map[reg].size + 7)/8 + 1;
+                auto *ret_buf = new std::uint8_t[ret_len];
+
+                ssize_t ret;
+                if ((ret = set_reg("h9d", reg, len, reinterpret_cast<const std::uint8_t *>(v.c_str()), ret_buf, ret_len)) < 0) {
+                    if (ret == Node::TIMEOUT_ERROR) throw TimeoutException();
+                    else if (ret == Node::MALFORMED_FRAME_ERROR) throw MalformedFrameException();
+                    else throw NodeException(-ret);
+                }
+
+                ret_buf[ret] = '\0';
+                std::string ret_str = {reinterpret_cast<char*>(ret_buf)};
+                delete [] ret_buf;
+
+                return {ret_str};
+            }
+            else if (std::holds_alternative<std::vector<std::uint8_t>>(value)) {
+                auto v = std::get<std::vector<std::uint8_t>>(value);
+                size_t len = (register_map[reg].size + 7)/8;
+                if (len == v.size()) {
+                    auto *ret_buf = new std::uint8_t[len];
+
+                    ssize_t ret;
+                    if ((ret = set_reg("h9d", reg, len, v.data(), ret_buf)) < 0) {
+                        delete [] ret_buf;
+                        if (ret == Node::TIMEOUT_ERROR) throw TimeoutException();
+                        else if (ret == Node::MALFORMED_FRAME_ERROR) throw MalformedFrameException();
+                        else throw NodeException(-ret);
+                    }
+                    else if (ret != len) {
+                        throw SizeMismatchException();
+                    }
+
+                    Device::regvalue_t ret_v = {std::vector<std::uint8_t> (ret_buf, ret_buf+ret)};
+                    delete [] ret_buf;
+                    return std::move(ret_v);
+                }
+            }
+            throw UnsupportedRegisterDataConversionException(reg);
+        }
+        throw RegisterNotWritableException(reg);
+    }
+    else {
+        throw RegisterNotExistException(reg);
+    }
+}
+
+Device::regvalue_t Device::get_register(std::uint8_t reg) {
+    if (register_map.count(reg)) {
+        if (register_map[reg].readable) {
+            if (register_map[reg].type != "str") {
+                if (register_map[reg].size <= 8) {
+                    std::uint8_t val;
+                    ssize_t ret;
+                    if ((ret = get_reg("h9d", reg, &val)) < 0) {
+                        if (ret == Node::TIMEOUT_ERROR) throw TimeoutException();
+                        else if (ret == Node::MALFORMED_FRAME_ERROR) throw MalformedFrameException();
+                        else throw NodeException(-ret);
+                    }
+                    else if (ret != sizeof(val)) {
+                        throw SizeMismatchException();
+                    }
+                    return {val};
+                }
+                else if (register_map[reg].size <= 16) {
+                    std::uint16_t val;
+                    ssize_t ret;
+                    if ((ret = get_reg("h9d", reg, &val)) < 0) {
+                        if (ret == Node::TIMEOUT_ERROR) throw TimeoutException();
+                        else if (ret == Node::MALFORMED_FRAME_ERROR) throw MalformedFrameException();
+                        else throw NodeException(-ret);
+                    }
+                    else if (ret != sizeof(val)) {
+                        throw SizeMismatchException();
+                    }
+                    return {val};
+                }
+                else if (register_map[reg].size <= 32) {
+                    std::uint32_t val;
+                    ssize_t ret;
+                    if ((ret = get_reg("h9d", reg, &val)) < 0) {
+                        if (ret == Node::TIMEOUT_ERROR) throw TimeoutException();
+                        else if (ret == Node::MALFORMED_FRAME_ERROR) throw MalformedFrameException();
+                        else throw NodeException(-ret);
+                    }
+                    else if (ret != sizeof(val)) {
+                        throw SizeMismatchException();
+                    }
+                    return {val};
+                }
+                else {
+                    size_t len = (register_map[reg].size + 7) / 8;
+                    auto *buf = new std::uint8_t[len];
+
+                    ssize_t ret;
+                    if ((ret = get_reg("h9d", reg, len, buf)) < 0) {
+                        delete [] buf;
+                        if (ret == Node::TIMEOUT_ERROR) throw TimeoutException();
+                        else if (ret == Node::MALFORMED_FRAME_ERROR) throw MalformedFrameException();
+                        else throw NodeException(-ret);
+                    }
+                    else if (ret != len) {
+                        throw SizeMismatchException();
+                    }
+                    Device::regvalue_t ret_v = {std::vector<std::uint8_t> (buf, buf+ret)};
+                    delete [] buf;
+                    return std::move(ret_v);
+                }
+            }
+            else if (register_map[reg].type == "str") {
+                size_t len = (register_map[reg].size + 7)/8 + 1;
+                auto *buf = new std::uint8_t[len];
+                ssize_t ret;
+                if ((ret = get_reg("h9d", reg, len - 1, buf)) < 0) {
+                    delete [] buf;
+                    if (ret == Node::TIMEOUT_ERROR) throw TimeoutException();
+                    else if (ret == Node::MALFORMED_FRAME_ERROR) throw MalformedFrameException();
+                    else throw NodeException(-ret);
+                }
+                buf[ret] = '\0';
+                std::string ret_str = {reinterpret_cast<char*>(buf)};
+                delete [] buf;
+                return std::move(ret_str);
+            }
+            throw UnsupportedRegisterDataConversionException(reg);
+        }
+        throw RegisterNotReadableException(reg);
+    }
+    else {
+        throw RegisterNotExistException(reg);
+    }
 }

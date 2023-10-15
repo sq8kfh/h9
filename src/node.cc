@@ -200,7 +200,7 @@ ssize_t Node::toggle_bit(const std::string& origin, std::uint8_t reg, std::uint8
     return bit_operation(origin, H9frame::Type::TOGGLE_BIT, reg, bit, length, reg_after_set);
 }
 
-ssize_t Node::set_reg(const std::string& origin, std::uint8_t reg, std::size_t length, std::uint8_t* reg_val, std::uint8_t* reg_after_set) noexcept {
+ssize_t Node::set_reg(const std::string& origin, std::uint8_t reg, std::size_t length, const std::uint8_t* reg_val, std::uint8_t* reg_after_set, ssize_t reg_after_set_length) noexcept {
     H9FrameComparator comparator;
     comparator.set_source_id(_node_id);
     comparator.set_type(H9frame::Type::REG_EXTERNALLY_CHANGED);
@@ -230,7 +230,8 @@ ssize_t Node::set_reg(const std::string& origin, std::uint8_t reg, std::size_t l
 
     if (res.type() == H9frame::Type::REG_EXTERNALLY_CHANGED && res.dlc() > 1) {
         if (reg_after_set) {
-            size_t max = length < res.dlc() - 1 ? length : res.dlc() - 1;
+            reg_after_set_length = reg_after_set_length < 0 ? length : reg_after_set_length;
+            size_t max = length < res.dlc() - 1 ? reg_after_set_length : res.dlc() - 1;
 
             for (int i = 0; i < max; ++i) {
                 reg_after_set[i] = res.data()[i + 1];
@@ -302,7 +303,6 @@ ssize_t Node::get_reg(const std::string& origin, std::uint8_t reg, std::size_t l
 
         return res.dlc() - 1;
     }
-
     else if (res.type() == H9frame::Type::ERROR && res.dlc() == 1) {
         return -res.data()[0];
     }
