@@ -14,7 +14,7 @@
 #include "virtual_py_node.h"
 
 static int H9Frame_init(PyH9frame* self, PyObject* args, PyObject* kwds) {
-    static char* kwlist[] = {"type", "destination_id", "data", "priority", "seqnum", "source_id", "dlc", NULL};
+    static const char* kwlist[] = {"type", "destination_id", "data", "priority", "seqnum", "source_id", "dlc", NULL};
 
     std::uint8_t priority = H9frame::to_underlying(H9frame::Priority::LOW);
     std::uint8_t type = H9frame::to_underlying(H9frame::Type::NOP);
@@ -24,7 +24,7 @@ static int H9Frame_init(PyH9frame* self, PyObject* args, PyObject* kwds) {
     std::uint8_t dlc = 0;
     PyObject* data = nullptr;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|BHOBBHB", kwlist, &type, &destination_id, &data, &priority, &seqnum, &source_id, &dlc))
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|BHOBBHB", const_cast<char**>(kwlist), &type, &destination_id, &data, &priority, &seqnum, &source_id, &dlc))
         return -1;
 
     if (priority > H9frame::H9FRAME_PRIORITY_MAX_VALUE) {
