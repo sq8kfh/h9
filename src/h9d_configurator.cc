@@ -442,7 +442,7 @@ void H9dConfigurator::configure_bus(Bus* bus, VirtualEndpoint* vendpoint) {
                     // SocketCANDriver("can0", "can0");
                 }
                 else {
-                    SPDLOG_ERROR("Missing option 'interface' for {}.", cfg_title(bus_driver_section));
+                    SPDLOG_ERROR("Missing option 'interface' for {}.", cfg_title(endpoint_section));
                 }
             }
 #endif
