@@ -18,7 +18,6 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
-#include <spdlog/spdlog.h>
 
 
 H9Socket::H9Socket() noexcept {

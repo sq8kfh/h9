@@ -9,7 +9,6 @@
 #include "h9msgsocket.h"
 
 #include <jsonrpcpp/jsonrpcpp.hpp>
-#include <spdlog/spdlog.h>
 #include <sys/errno.h>
 #include <sys/socket.h>
 #include <system_error>

@@ -12,6 +12,7 @@
 #include <spdlog/spdlog.h>
 #include "bus.h"
 #include "node_mgr.h"
+#include <fmt/core.h>
 
 void Node::on_frame_recv(const ExtH9Frame& frame) noexcept {
     frame_promise_set_mtx.lock();

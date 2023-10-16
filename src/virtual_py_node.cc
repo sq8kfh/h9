@@ -279,7 +279,7 @@ void VirtualPyNode::on_frame(const H9frame& frame) {
                 for (int i = 0; i < max; ++i){
                     res.data[i+1] = py_module.at(i);
                 }
-                res.dlc = max;
+                res.dlc = max+1;
             }
             else if (frame.data[0] == 4) {
                 res.data[1] = (new_node_id >> 8) & 0x01;

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.24)
+cmake_minimum_required(VERSION 3.18)
 
 project(h9 VERSION 0.3.0)
 
@@ -13,8 +13,9 @@ set(H9_VERSION ${PROJECT_VERSION})
 find_package(Python3 3.9 EXACT REQUIRED Interpreter Development)
 find_package(PkgConfig REQUIRED)
 
+find_package(fmt REQUIRED)
 find_package(spdlog REQUIRED)
-find_package(nlohmann_json 3.11.2 REQUIRED)
+find_package(nlohmann_json 3.9.1 REQUIRED)
 #find_package(FLEX 2.6.1 REQUIRED)
 #find_package(BISON 3.3.2 REQUIRED)
 
