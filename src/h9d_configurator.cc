@@ -436,7 +436,7 @@ void H9dConfigurator::configure_bus(Bus* bus, VirtualEndpoint* vendpoint) {
             }
 #ifdef H9_SOCKETCAN_DRIVER
                 else if (driver == "SocketCAN") {
-                if (cfg_getstr(bus_driver_section, "interface")) {
+                if (cfg_getstr(endpoint_name, "interface")) {
                     std::string interface = cfg_getstr(endpoint_section, "interface");
                     bus->add_driver(new SocketCANDriver(endpoint_name, interface));
                     // SocketCANDriver("can0", "can0");
