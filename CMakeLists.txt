@@ -6,8 +6,6 @@ set(CMAKE_CXX_STANDARD 17)
 
 option(H9_DEBUG "Enable debug")
 
-set(H9_USER_CONFIG_FILE "~/.h9")
-set(H9_CONFIG_PATH "../conf/")
 set(H9_VERSION ${PROJECT_VERSION})
 
 find_package(Python3 3.9 EXACT REQUIRED Interpreter Development)
@@ -37,11 +35,18 @@ if(NOT READLINE_FOUND)
     set(READLINE_INCLUDE_DIRS ${Readline_INCLUDE_DIRS})
 endif()
 
-include_directories(${CMAKE_SOURCE_DIR}/thirdparty/ ${CMAKE_SOURCE_DIR})
+include_directories(${CMAKE_SOURCE_DIR}/thirdparty/ ${CMAKE_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/src/)
 
 link_directories(/usr/local/lib/ /opt/local/lib/)
 
 add_subdirectory(src)
+
+install(FILES conf/h9d.conf DESTINATION /etc/h9)
+install(FILES conf/h9.conf DESTINATION /etc/h9)
+install(FILES conf/devices.conf DESTINATION /etc/h9)
+install(FILES systemd/h9d.service DESTINATION /etc/systemd/system)
+install(DIRECTORY virtual_node DESTINATION lib/h9)
+install(DIRECTORY DESTINATION /var/log/h9)
 
 #enable_testing()
 #

@@ -44,7 +44,7 @@ Makefile
 __pycache__/
 
 # Project
-config.h
+config_gen.h
 git_version.h
 git_version.h~
 src/h9d

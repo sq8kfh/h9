@@ -1,0 +1,12 @@
+[Unit]
+Description=h9 daemon
+Requires=network.target
+After=multi-user.target
+
+[Service]
+Type=forking
+PIDFile=/var/run/h9d.pid
+ExecStart=/usr/local/bin/h9d -d -p /var/run/h9d.pid -l /var/log/h9/h9d.log
+
+[Install]
+WantedBy=multi-user.target

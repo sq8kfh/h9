@@ -17,8 +17,8 @@ class H9Configurator {
     constexpr static char log_debug_pattern[] = "%^[%L %T.%e] [%s:%#]%$ %v";
     constexpr static char log_pattern[] = "%^[%L %T.%e]%$ %v";
 
-    constexpr static char default_config[] = H9_CONFIG_PATH "h9.conf";
-    constexpr static char default_user_config[] = "~/.h9";
+    constexpr static const char* default_config = H9_CONFIG_FILE;
+    constexpr static const char* default_user_config = H9_USER_CONFIG_FILE;
     constexpr static char default_h9d_host[] = "localhost";
     constexpr static int default_h9d_port = H9D_DEFAULT_PORT;
     constexpr static int default_source_id = DEFAULT_SOURCE_ID_FOR_CLIENT;

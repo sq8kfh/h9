@@ -35,7 +35,7 @@ class H9dConfigurator {
     constexpr static char log_debug_pattern[] = "%^[%L %T.%e] [%n:%t] [%s:%#]%$ %v";
     constexpr static char log_pattern[] = "%^[%L %T.%e] [%n:%t]%$ %v";
 
-    constexpr static char default_config[] = H9_CONFIG_PATH "h9d.conf";
+    constexpr static const char* default_config = H9D_CONFIG_FILE;
 
     bool debug;
     int verbose;

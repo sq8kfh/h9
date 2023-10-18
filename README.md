@@ -30,10 +30,25 @@ codesign -s - -f --entitlements tmp.entitlements CrashSelf ./src/h9d
 ```
 
 ### Raspberry Pi OS
+/etc/udev/rules.d/99-persistent-network.rules
+```
+SUBSYSTEM=="net", ACTION=="change|add", KERNEL=="can0" ATTR{tx_queue_len}="1000"
+```
+
+/etc/systemd/network/80-can0.network
+```
+[Match]
+Name=can0
+
+[CAN]
+BitRate=125000
+```
 ```
 sudo apt-get install python3.9-dev
 sudo apt-get install libspdlog-dev
 sudo apt-get install nlohmann-json3-dev
 cmake .
 make
+
+sudo adduser --system --no-create-home --group --disabled-login h9d
 ```
