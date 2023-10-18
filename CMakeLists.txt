@@ -22,6 +22,7 @@ find_package(nlohmann_json 3.11.2 REQUIRED)
 pkg_check_modules(CONFUSE libconfuse REQUIRED)
 pkg_check_modules(READLINE readline>=8.0)
 
+message("-! Compiler ${CMAKE_CXX_COMPILER_ID}")
 message("-! Python version ${Python3_VERSION}")
 
 if(NOT READLINE_FOUND)

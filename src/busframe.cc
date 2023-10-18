@@ -28,6 +28,7 @@ BusFrame::BusFrame(ExtH9Frame&& a, bool raw) noexcept:
     _raw(raw) {
     _number_of_active_bus = 0;
     _send_counter = 0;
+    _send_fail_counter = 0;
 }
 
 BusFrame::~BusFrame() {

@@ -12,6 +12,10 @@ else()
     SET(H9_SOCKETCAN_DRIVER "")
 endif()
 
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    SET(ATOMIC_LINK atomic)
+endif()
+
 configure_file(config.h.in config.h)
 
 add_compile_definitions(SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE)
@@ -71,7 +75,7 @@ add_custom_command(OUTPUT git_version.h
 add_executable(h9d ${H9D_SRC} git_version.h)
 target_include_directories(h9d PUBLIC ${CONFUSE_INCLUDE_DIRS} ${Python3_INCLUDE_DIRS})
 target_compile_options(h9d PUBLIC ${CONFUSE_CFLAGS_OTHER})
-target_link_libraries(h9d PUBLIC ${CONFUSE_LIBRARIES} PRIVATE fmt::fmt nlohmann_json::nlohmann_json spdlog::spdlog Python3::Python)
+target_link_libraries(h9d PUBLIC ${CONFUSE_LIBRARIES} PRIVATE ${ATOMIC_LINK} fmt::fmt nlohmann_json::nlohmann_json spdlog::spdlog Python3::Python)
 
 add_library(CLIENT_COMMON OBJECT ${CLIENT_COMMON_SRC} git_version.h)
 target_include_directories(CLIENT_COMMON PUBLIC ${CONFUSE_INCLUDE_DIRS})

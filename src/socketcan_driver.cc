@@ -85,6 +85,7 @@ int SocketCANDriver::recv_data(H9frame* frame) {
 
     *frame = res;
     // on_frame_recv(res);
+    return nbyte;
 }
 
 int SocketCANDriver::send_data(std::shared_ptr<BusFrame> busframe) {
@@ -116,4 +117,6 @@ int SocketCANDriver::send_data(std::shared_ptr<BusFrame> busframe) {
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
     frame_sent_correctly(busframe);
+
+    return nbyte;
 }
