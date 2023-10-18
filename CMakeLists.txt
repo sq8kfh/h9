@@ -8,7 +8,7 @@ option(H9_DEBUG "Enable debug")
 
 set(H9_VERSION ${PROJECT_VERSION})
 
-find_package(Python3 3.9 EXACT REQUIRED Interpreter Development)
+find_package(Python3 3.10 REQUIRED Interpreter Development)
 find_package(PkgConfig REQUIRED)
 
 find_package(fmt 9.0 REQUIRED)

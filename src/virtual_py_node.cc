@@ -135,22 +135,19 @@ VirtualPyNode::VirtualPyNode(int node_id, const std::string& py_path, const std:
     PyImport_AppendInittab("h9", &PyInit_h9);
 
     PyConfig config;
+
     // PyConfig_InitPythonConfig(&config);
     PyConfig_InitIsolatedConfig(&config);
 
-    // config._isolated_interpreter = 1;
-
-    // PyConfig_SetBytesString(&config, &config.program_name, "h9");
     PyConfig_SetBytesString(&config, &config.program_name, "h9");
-    PyConfig_SetBytesString(&config, &config.pythonpath_env, py_path.c_str());
 
     Py_InitializeFromConfig(&config);
 
     PyConfig_Clear(&config);
 
-    // Py_Initialize();
-
-    // PySys_SetPath(py_path.c_str());
+    PyObject* sysPath = PySys_GetObject("path");
+    PyList_Append(sysPath, PyUnicode_FromString(py_path.c_str()));
+    //PySys_SetPath(L"/Users/crowx/projekty/h9/h9/virtual_node");
 
     PyObject* h9log = PyModule_Create(&h9log_module);
     PyObject* sys = PyImport_ImportModule("sys");

@@ -7,6 +7,7 @@
 sudo port install spdlog
 sudo port install nlohmann-json
 CMAKE_PREFIX_PATH=/opt/local//lib/libfmt10/cmake/fmt/ cmake .
+CMAKE_PREFIX_PATH=/opt/local/ cmake .
 make
 ```
 

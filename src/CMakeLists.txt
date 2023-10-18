@@ -69,8 +69,8 @@ set(H9SEND_SRC h9send.cc config.h config_gen.h)
 set(H9STATS_SRC h9stats.cc config.h config_gen.h)
 
 add_custom_command(OUTPUT git_version.h
-                  COMMAND ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/scripts/generate_git_version_header.py > ${PROJECT_SOURCE_DIR}/src/git_version.h~
-                  COMMAND /bin/sh -c 'diff ${PROJECT_SOURCE_DIR}/src/git_version.h~ ${PROJECT_SOURCE_DIR}/src/git_version.h 2> /dev/null > /dev/null || { cp ${PROJECT_SOURCE_DIR}/src/git_version.h~ ${PROJECT_SOURCE_DIR}/src/git_version.h\; }' DEPENDS ${H9D_SRC})
+                  COMMAND ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/scripts/generate_git_version_header.py > ${CMAKE_CURRENT_BINARY_DIR}/git_version.h~
+                  COMMAND /bin/sh -c 'diff ${CMAKE_CURRENT_BINARY_DIR}/git_version.h~ ${CMAKE_CURRENT_BINARY_DIR}/git_version.h 2> /dev/null > /dev/null || { cp ${CMAKE_CURRENT_BINARY_DIR}/git_version.h~ ${CMAKE_CURRENT_BINARY_DIR}/git_version.h\; }' DEPENDS ${H9D_SRC})
 
 
 add_executable(h9d ${H9D_SRC} git_version.h)
