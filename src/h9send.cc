@@ -31,8 +31,6 @@ class H9SendConfigurator: public H9Configurator {
                 ("t,type", "Frame type", cxxopts::value<std::underlying_type_t<H9frame::Type >>())
                 ("r,repeat", "Repeat the frame every given time in seconds", cxxopts::value<unsigned int>())
                 ;
-//ctx.add_positional_options_list("data", "[hex data]", "");
-                ;
         // clang-format on
         options.parse_positional("data");
         options.positional_help("data");
@@ -40,15 +38,7 @@ class H9SendConfigurator: public H9Configurator {
         options.add_options()("data", "[hex data]", cxxopts::value<std::vector<std::string>>());
     }
 
-    void parse_app_specific_opt(const cxxopts::ParseResult& result) {
-        extended = result.count("extended");
-        simple = result.count("simple");
-    }
-
   public:
-    bool extended;
-    bool simple;
-
     H9SendConfigurator():
         H9Configurator("h9send", "Sends frames to the H9 Bus.") {}
 };

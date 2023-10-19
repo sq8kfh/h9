@@ -51,14 +51,8 @@ src/h9d
 src/h9sniffer
 src/h9send
 src/h9stats
-h9msg.xsd.h
-h9bus/h9bus
+src/h9fwupload
 h9cli/h9cli
 h9cli/lexer.cc
 h9cli/parser.cc
 h9cli/parser.hh
-h9d/h9d
-h9fwu/h9fwu
-h9send/h9send
-h9sniffer/h9sniffer
-h9stat/h9stat
