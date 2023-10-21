@@ -42,9 +42,9 @@ void FirmwareUploader::upload(BusProxy* bus) {
                     frame.type(H9frame::Type::QUIT_BOOTLOADER);
                     frame.destination_id(node_id);
                     frame.dlc(0);
-//                    frame.seqnum = seqnum++;
 
                     bus->put_frame(frame);
+
                     printf("\nDone.\n");
                     exit(EXIT_SUCCESS);
                 }
@@ -69,7 +69,7 @@ void FirmwareUploader::upload(BusProxy* bus) {
             frame.type(H9frame::Type::PAGE_START);
             frame.destination_id(node_id);
             frame.dlc(2);
-//            frame.seqnum = seqnum++;
+
             frame.data({(uint8_t)((page >> 8) & 0xff), (uint8_t)((page)&0xff)});
             bus->put_frame(frame);
         }
@@ -78,17 +78,9 @@ void FirmwareUploader::upload(BusProxy* bus) {
             frame.type(H9frame::Type::PAGE_FILL);
             frame.destination_id(node_id);
             frame.dlc(8);
-//            frame.seqnum = seqnum++;
+
             frame.data({&firmware[fw_idx], &firmware[fw_idx+8]});
             fw_idx += 8;
-//            frame.data[0] = fw[fw_idx++];
-//            frame.data[1] = fw[fw_idx++];
-//            frame.data[2] = fw[fw_idx++];
-//            frame.data[3] = fw[fw_idx++];
-//            frame.data[4] = fw[fw_idx++];
-//            frame.data[5] = fw[fw_idx++];
-//            frame.data[6] = fw[fw_idx++];
-//            frame.data[7] = fw[fw_idx++];
 
             bus->put_frame(frame);
         }

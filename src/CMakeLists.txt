@@ -70,6 +70,8 @@ set(H9STATS_SRC h9stats.cc config.h config_gen.h)
 
 set(H9FWUPLOAD_SRC h9fwupload.cc config.h config_gen.h.in firmware_uploader.cc firmware_uploader.h)
 
+set(H9CLI_SRC h9cli.cc config.h config_gen.h.in cli_parsing_driver.cc cli_parsing_driver.h)
+
 add_custom_command(OUTPUT git_version.h
                   COMMAND ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/scripts/generate_git_version_header.py > ${CMAKE_CURRENT_BINARY_DIR}/git_version.h~
                   COMMAND /bin/sh -c 'diff ${CMAKE_CURRENT_BINARY_DIR}/git_version.h~ ${CMAKE_CURRENT_BINARY_DIR}/git_version.h 2> /dev/null > /dev/null || { cp ${CMAKE_CURRENT_BINARY_DIR}/git_version.h~ ${CMAKE_CURRENT_BINARY_DIR}/git_version.h\; }' DEPENDS ${H9D_SRC})
@@ -108,3 +110,11 @@ target_include_directories(h9fwupload PUBLIC ${CONFUSE_INCLUDE_DIRS})
 target_compile_options(h9fwupload PUBLIC ${CONFUSE_CFLAGS_OTHER})
 target_link_libraries(h9fwupload PUBLIC ${CONFUSE_LIBRARIES} PRIVATE nlohmann_json::nlohmann_json spdlog::spdlog)
 install(TARGETS h9fwupload RUNTIME DESTINATION bin)
+
+
+BISON_TARGET(cli_parser cli_parser.y ${CMAKE_CURRENT_BINARY_DIR}/cli_parser.cc DEFINES_FILE ${CMAKE_CURRENT_BINARY_DIR}/cli_parser.h)
+FLEX_TARGET(cli_scaner cli_lexer.l ${CMAKE_CURRENT_BINARY_DIR}/cli_lexer.cc)
+ADD_FLEX_BISON_DEPENDENCY(cli_scaner cli_parser)
+add_executable(h9cli ${H9CLI_SRC} ${BISON_cli_parser_OUTPUTS} ${FLEX_cli_scaner_OUTPUTS})
+target_include_directories(h9cli PUBLIC ${CMAKE_SOURCE_DIR}/src ${CONFUSE_INCLUDE_DIRS})
+target_link_libraries(h9cli PUBLIC ${READLINE_LIBRARIES} ${CONFUSE_LIBRARIES} PRIVATE nlohmann_json::nlohmann_json spdlog::spdlog)

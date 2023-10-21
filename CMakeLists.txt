@@ -14,8 +14,9 @@ find_package(PkgConfig REQUIRED)
 find_package(fmt 9.0 REQUIRED)
 find_package(spdlog 1.10 REQUIRED)
 find_package(nlohmann_json 3.11.2 REQUIRED)
-#find_package(FLEX 2.6.1 REQUIRED)
-#find_package(BISON 3.3.2 REQUIRED)
+
+find_package(FLEX 2.6 REQUIRED)
+find_package(BISON 3.8 REQUIRED)
 
 pkg_check_modules(CONFUSE libconfuse REQUIRED)
 pkg_check_modules(READLINE readline>=8.0)
@@ -35,7 +36,7 @@ if(NOT READLINE_FOUND)
     set(READLINE_INCLUDE_DIRS ${Readline_INCLUDE_DIRS})
 endif()
 
-include_directories(${CMAKE_SOURCE_DIR}/thirdparty/ ${CMAKE_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/src/)
+include_directories(${CMAKE_SOURCE_DIR}/thirdparty/ ${CMAKE_CURRENT_BINARY_DIR}/src/)
 
 link_directories(/usr/local/lib/ /opt/local/lib/)
 

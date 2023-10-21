@@ -6,8 +6,8 @@
 ```
 sudo port install spdlog
 sudo port install nlohmann-json
-CMAKE_PREFIX_PATH=/opt/local//lib/libfmt10/cmake/fmt/ cmake .
-CMAKE_PREFIX_PATH=/opt/local/ cmake .
+CMAKE_PREFIX_PATH=/opt/local//lib/libfmt10/cmake/fmt/ cmake -DBISON_EXECUTABLE=/opt/local/bin/bison ..
+CMAKE_PREFIX_PATH=/opt/local/ cmake -DBISON_EXECUTABLE=/opt/local/bin/bison -DFLEX_EXECUTABLE=/opt/local/bin/flex ..
 make
 ```
 
