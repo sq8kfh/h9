@@ -111,10 +111,11 @@ target_compile_options(h9fwupload PUBLIC ${CONFUSE_CFLAGS_OTHER})
 target_link_libraries(h9fwupload PUBLIC ${CONFUSE_LIBRARIES} PRIVATE nlohmann_json::nlohmann_json spdlog::spdlog)
 install(TARGETS h9fwupload RUNTIME DESTINATION bin)
 
-
 BISON_TARGET(cli_parser cli_parser.y ${CMAKE_CURRENT_BINARY_DIR}/cli_parser.cc DEFINES_FILE ${CMAKE_CURRENT_BINARY_DIR}/cli_parser.h)
 FLEX_TARGET(cli_scaner cli_lexer.l ${CMAKE_CURRENT_BINARY_DIR}/cli_lexer.cc)
 ADD_FLEX_BISON_DEPENDENCY(cli_scaner cli_parser)
-add_executable(h9cli ${H9CLI_SRC} ${BISON_cli_parser_OUTPUTS} ${FLEX_cli_scaner_OUTPUTS})
+add_executable(h9cli ${H9CLI_SRC} ${BISON_cli_parser_OUTPUTS} ${FLEX_cli_scaner_OUTPUTS} $<TARGET_OBJECTS:CLIENT_COMMON>)
 target_include_directories(h9cli PUBLIC ${CMAKE_SOURCE_DIR}/src ${CONFUSE_INCLUDE_DIRS})
+target_compile_options(h9cli PUBLIC ${CONFUSE_CFLAGS_OTHER})
 target_link_libraries(h9cli PUBLIC ${READLINE_LIBRARIES} ${CONFUSE_LIBRARIES} PRIVATE nlohmann_json::nlohmann_json spdlog::spdlog)
+install(TARGETS h9cli RUNTIME DESTINATION bin)
