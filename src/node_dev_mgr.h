@@ -24,18 +24,20 @@
 #include "raw_node.h"
 
 class TCPClientThread;
+class DevStatusObserver;
+class Dev;
 
-class NodeMgr: public FrameSubject {
+class NodeDevMgr: public FrameSubject {
   private:
     std::shared_ptr<spdlog::logger> logger;
     Bus* bus;
 
     // TODO: nadpisac notify_frame_observer - żeby zmniejszyc zlozonosc, break po pierwszym match
     class NodeMgrFrameObs: public FrameObserver {
-        NodeMgr* node_mgr;
+        NodeDevMgr* node_mgr;
 
       public:
-        NodeMgrFrameObs(Bus* bus, NodeMgr* node_mgr):
+        NodeMgrFrameObs(Bus* bus, NodeDevMgr* node_mgr):
             FrameObserver(bus, H9FrameComparator()),
             node_mgr(node_mgr) {}
 
@@ -50,8 +52,10 @@ class NodeMgr: public FrameSubject {
     virtual void on_frame_recv(const ExtH9Frame& frame) noexcept;
 
     std::shared_mutex nodes_map_mtx;
+    std::shared_mutex devs_map_mtx;
 
     std::map<std::uint16_t, Node*> nodes_map;
+    std::map<std::string, Dev*> devs_map;
 
     std::mutex frame_queue_mtx;
     std::condition_variable frame_queue_cv; // TODO: counting_semaphore (C++20)?
@@ -59,11 +63,12 @@ class NodeMgr: public FrameSubject {
 
     std::atomic_bool nodes_update_thread_run;
     std::thread nodes_update_thread_desc;
-    void nodes_update_thread();
+    void nodes_dev_update_thread();
+    void update_dev_after_node_discovered(std::uint16_t node_id, std::uint16_t node_type);
 
     Node* build_node(std::uint16_t node_id, std::uint16_t node_type, std::uint64_t node_version) noexcept;
     void add_node(std::uint16_t node_id, std::uint16_t node_type, std::uint64_t node_version) noexcept;
-
+    void update_device_last_seen_time(std::uint16_t node_id) noexcept;
   public:
     struct NodeDsc {
         std::uint16_t id;
@@ -80,10 +85,10 @@ class NodeMgr: public FrameSubject {
         std::string description;
     };
 
-    explicit NodeMgr(Bus* bus);
-    NodeMgr(const NodeMgr& a) = delete;
-    ~NodeMgr();
-    void load_devices_description(const std::string& nodes_description_filename);
+    explicit NodeDevMgr(Bus* bus);
+    NodeDevMgr(const NodeDevMgr& a) = delete;
+    ~NodeDevMgr();
+    void load_nodes_description(const std::string& nodes_description_filename);
 
     void response_timeout_duration(int response_timeout_duration);
     int response_timeout_duration();
@@ -92,22 +97,28 @@ class NodeMgr: public FrameSubject {
 
     int active_devices_count() noexcept;
     bool is_node_exist(std::uint16_t node_id) noexcept;
-    std::vector<NodeMgr::NodeDsc> get_nodes_list() noexcept;
+    std::vector<NodeDevMgr::NodeDsc> get_nodes_list() noexcept;
 
-    //    int attach_event_observer(TCPClientThread* observer, const std::string& event_name, std::uint16_t dev_id) noexcept;
-    //    int detach_event_observer(TCPClientThread* observer, const std::string& event_name, std::uint16_t dev_id) noexcept;
-    //    std::vector<std::string> get_events_list(std::uint16_t dev_id) noexcept;
-    //
-    //    std::vector<std::string> get_device_specific_methods(std::uint16_t dev_id) noexcept;
-    // H9Value execute_device_specific_method(std::uint16_t dev_id, const std::string& method_name, const H9Tuple& tuple);
+    void attach_node_state_observer(std::uint16_t node_id, Node::NodeStateObserver* obs);
+    void detach_node_state_observer(std::uint16_t node_id, Node::NodeStateObserver* obs);
 
     std::vector<Node::RegisterDsc> get_registers_list(std::uint16_t node_id) noexcept;
 
-    int get_node_info(std::uint16_t dev_id, NodeInfo& device_info);
+    int get_node_info(std::uint16_t node_id, NodeInfo& node_info);
     void node_reset(std::uint16_t node_id);
     Node::regvalue_t set_register(std::uint16_t node_id, std::uint8_t reg, Node::regvalue_t value);
     Node::regvalue_t get_register(std::uint16_t node_id, std::uint8_t reg);
     Node::regvalue_t set_register_bit(std::uint16_t node_id, std::uint8_t reg, std::uint8_t bit_num);
     Node::regvalue_t clear_register_bit(std::uint16_t node_id, std::uint8_t reg, std::uint8_t bit_num);
     Node::regvalue_t toggle_register_bit(std::uint16_t node_id, std::uint8_t reg, std::uint8_t bit_num);
+
+    struct DevDsc {
+        std::string name;
+        std::string type;
+    };
+
+    std::vector<NodeDevMgr::DevDsc> get_devs_list() noexcept;
+
+    void attach_dev_state_observer(std::string dev_id, DevStatusObserver* obs);
+    void detach_dev_state_observer(std::string dev_id, DevStatusObserver* obs);
 };

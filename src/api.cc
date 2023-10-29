@@ -14,6 +14,7 @@
 
 #include "dev_node_exception.h"
 #include "h9d_configurator.h"
+#include "dev_status_observer.h"
 
 nlohmann::json API::get_version(TCPClientThread* client_thread, const jsonrpcpp::Id& id, const jsonrpcpp::Parameter& params) {
     nlohmann::json r({{"version", H9dConfigurator::version()}});
@@ -43,6 +44,9 @@ nlohmann::json API::subscribe(TCPClientThread* client_thread, const jsonrpcpp::I
 
         if (event_name == "frame") {
             client_thread->set_frame_observer(new ClientFrameObs(client_thread, bus, H9FrameComparator()));
+        }
+        else if (event_name == "dev_status") {
+            client_thread->set_dev_status_observer(new DevStatusObserver(client_thread, node_dev_mgr));
         }
 
         nlohmann::json r = {{"return", "ok"}};
@@ -129,7 +133,7 @@ nlohmann::json API::authenticate(TCPClientThread* client_thread, const jsonrpcpp
 
 nlohmann::json API::get_nodes_list(TCPClientThread* client_thread, const jsonrpcpp::Id& id, const jsonrpcpp::Parameter& params) {
     nlohmann::json r = nlohmann::json::array();
-    for (auto& d : dev_mgr->get_nodes_list()) {
+    for (auto& d : node_dev_mgr->get_nodes_list()) {
         r.push_back({{"id", d.id}, {"type", d.type}, {"name", d.name}});
     }
     return std::move(r);
@@ -150,8 +154,8 @@ nlohmann::json API::get_node_info(TCPClientThread* client_thread, const jsonrpcp
         SPDLOG_DEBUG("Dump '{}' calling params: {}.", __FUNCTION__, params.to_json().dump());
         throw jsonrpcpp::InvalidParamsException(e.what(), id);
     }
-    NodeMgr::NodeInfo device_info;
-    if (dev_mgr->get_node_info(node_id, device_info) < 0) {
+    NodeDevMgr::NodeInfo device_info;
+    if (node_dev_mgr->get_node_info(node_id, device_info) < 0) {
         throw jsonrpcpp::RequestException(jsonrpcpp::Error("Node " + std::to_string(node_id) + "does not exist.", NODE_DOES_NOT_EXIST), id);
     }
 
@@ -190,7 +194,7 @@ nlohmann::json API::get_node_info(TCPClientThread* client_thread, const jsonrpcp
 }
 
 nlohmann::json API::discover_nodes(TCPClientThread* client_thread, const jsonrpcpp::Id& id, const jsonrpcpp::Parameter& params) {
-    dev_mgr->discover();
+    node_dev_mgr->discover();
     return true;
 }
 
@@ -211,7 +215,7 @@ nlohmann::json API::node_reset(TCPClientThread* client_thread, const jsonrpcpp::
     }
 
     try {
-        dev_mgr->node_reset(node_id);
+        node_dev_mgr->node_reset(node_id);
     }
     catch (DevNodeException& e) {
         throw jsonrpcpp::RequestException(jsonrpcpp::Error(e.what(), -1), id);
@@ -237,10 +241,10 @@ nlohmann::json API::get_registers_list(TCPClientThread* client_thread, const jso
         SPDLOG_DEBUG("Dump '{}' calling params: {}.", __FUNCTION__, params.to_json().dump());
         throw jsonrpcpp::InvalidParamsException(e.what(), id);
     }
-    if (dev_mgr->is_node_exist(node_id)) {
+    if (node_dev_mgr->is_node_exist(node_id)) {
         nlohmann::json r = nlohmann::json::array();
 
-        for (auto& reg : dev_mgr->get_registers_list(node_id)) {
+        for (auto& reg : node_dev_mgr->get_registers_list(node_id)) {
             r.push_back({{"number", reg.number},
                          {"name", reg.name},
                          {"type", reg.type},
@@ -276,7 +280,7 @@ nlohmann::json API::get_register_value(TCPClientThread* client_thread, const jso
     nlohmann::json r;
 
     try {
-        auto res = dev_mgr->get_register(node_id, reg);
+        auto res = node_dev_mgr->get_register(node_id, reg);
         if (std::holds_alternative<std::int64_t>(res)) {
             r = std::get<std::int64_t>(res);
         }
@@ -330,7 +334,7 @@ nlohmann::json API::set_register_value(TCPClientThread* client_thread, const jso
     nlohmann::json r;
 
     try {
-        auto res = dev_mgr->set_register(node_id, reg, val);
+        auto res = node_dev_mgr->set_register(node_id, reg, val);
         if (std::holds_alternative<std::int64_t>(res)) {
             r = std::get<std::int64_t>(res);
         }
@@ -371,7 +375,7 @@ nlohmann::json API::set_register_bit(TCPClientThread* client_thread, const jsonr
     nlohmann::json r;
 
     try {
-        auto res = dev_mgr->set_register_bit(node_id, reg, bit_num);
+        auto res = node_dev_mgr->set_register_bit(node_id, reg, bit_num);
         if (std::holds_alternative<std::int64_t>(res)) {
             r = std::get<std::int64_t>(res);
         }
@@ -412,7 +416,7 @@ nlohmann::json API::clear_register_bit(TCPClientThread* client_thread, const jso
     nlohmann::json r;
 
     try {
-        auto res = dev_mgr->clear_register_bit(node_id, reg, bit_num);
+        auto res = node_dev_mgr->clear_register_bit(node_id, reg, bit_num);
         if (std::holds_alternative<std::int64_t>(res)) {
             r = std::get<std::int64_t>(res);
         }
@@ -453,7 +457,7 @@ nlohmann::json API::toggle_register_bit(TCPClientThread* client_thread, const js
     nlohmann::json r;
 
     try {
-        auto res = dev_mgr->toggle_register_bit(node_id, reg, bit_num);
+        auto res = node_dev_mgr->toggle_register_bit(node_id, reg, bit_num);
         if (std::holds_alternative<std::int64_t>(res)) {
             r = std::get<std::int64_t>(res);
         }
@@ -471,10 +475,17 @@ nlohmann::json API::toggle_register_bit(TCPClientThread* client_thread, const js
     return std::move(r);
 }
 
+nlohmann::json API::get_devs_list(TCPClientThread* client_thread, const jsonrpcpp::Id& id, const jsonrpcpp::Parameter& params) {
+    nlohmann::json r = nlohmann::json::array();
+    for (auto& d : node_dev_mgr->get_devs_list()) {
+        r.push_back({{"name", d.name}, {"type", d.type}});
+    }
+    return std::move(r);
+}
 
-API::API(Bus* bus, NodeMgr* dev_mgr):
+API::API(Bus* bus, NodeDevMgr* dev_mgr):
     bus(bus),
-    dev_mgr(dev_mgr) {
+    node_dev_mgr(dev_mgr) {
     api_methods["get_version"] = &API::get_version;
     api_methods["get_methods_list"] = &API::get_methods_list;
     api_methods["subscribe"] = &API::subscribe;
@@ -491,6 +502,7 @@ API::API(Bus* bus, NodeMgr* dev_mgr):
     api_methods["set_register_bit"] = &API::set_register_bit;
     api_methods["clear_register_bit"] = &API::clear_register_bit;
     api_methods["toggle_register_bit"] = &API::toggle_register_bit;
+    api_methods["get_devs_list"] = &API::get_devs_list;
 }
 
 jsonrpcpp::Response API::call(TCPClientThread* client_thread, const jsonrpcpp::request_ptr& request) {

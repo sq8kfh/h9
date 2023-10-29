@@ -6,17 +6,18 @@
  * Copyright (C) 2020-2023 Kamil Palkowski. All rights reserved.
  */
 
-#include "node_mgr.h"
+#include "node_dev_mgr.h"
 
 #include <cassert>
 #include <utility>
 
+#include "antenna_switch_dev.h"
 #include "bus.h"
 #include "dev_node_exception.h"
 #include "h9d_configurator.h"
 #include "tcpclientthread.h"
 
-void NodeMgr::on_frame_recv(const ExtH9Frame& frame) noexcept {
+void NodeDevMgr::on_frame_recv(const ExtH9Frame& frame) noexcept {
     notify_frame_observer(frame);
 
     frame_queue_mtx.lock();
@@ -25,7 +26,7 @@ void NodeMgr::on_frame_recv(const ExtH9Frame& frame) noexcept {
     frame_queue_cv.notify_one();
 }
 
-void NodeMgr::nodes_update_thread() {
+void NodeDevMgr::nodes_dev_update_thread() {
     while (nodes_update_thread_run) {
         std::unique_lock<std::mutex> lk(frame_queue_mtx);
         frame_queue_cv.wait(lk, [this]() { return !frame_queue.empty(); });
@@ -37,6 +38,7 @@ void NodeMgr::nodes_update_thread() {
         SPDLOG_LOGGER_TRACE(logger, "Devices update thread: pop frame (remained {}).", remained_frame);
 
         if (frame.type() == H9frame::Type::NODE_INFO) {
+            uint16_t node_type = frame.data()[0] << 8 | frame.data()[1];
             uint16_t version_major = frame.data()[2] << 8 | frame.data()[3];
             uint16_t version_minor = frame.data()[4] << 8 | frame.data()[5];
             uint16_t version_patch = frame.data()[6] << 8 | frame.data()[7];
@@ -44,9 +46,12 @@ void NodeMgr::nodes_update_thread() {
             version = version << 16 | version_minor;
             version = version << 16 | version_patch;
             SPDLOG_LOGGER_INFO(logger, "Dev discovered id: {}, type: {}, version: {}.{}.{}.", frame.source_id(), frame.data()[0] << 8 | frame.data()[1], version_major, version_minor, version_patch);
-            add_node(frame.source_id(), frame.data()[0] << 8 | frame.data()[1], version);
+            add_node(frame.source_id(), node_type, version);
+
+            update_dev_after_node_discovered(frame.source_id(), node_type);
         }
         else if (frame.type() == H9frame::Type::NODE_TURNED_ON) {
+            uint16_t node_type = frame.data()[0] << 8 | frame.data()[1];
             uint16_t version_major = frame.data()[2] << 8 | frame.data()[3];
             uint16_t version_minor = frame.data()[4] << 8 | frame.data()[5];
             uint16_t version_patch = frame.data()[6] << 8 | frame.data()[7];
@@ -54,43 +59,44 @@ void NodeMgr::nodes_update_thread() {
             version = version << 16 | version_minor;
             version = version << 16 | version_patch;
             SPDLOG_LOGGER_INFO(logger, "Dev turned on id: {}, type: {}, version: {}.{}.{}.", frame.source_id(), frame.data()[0] << 8 | frame.data()[1], version_major, version_minor, version_patch);
-            add_node(frame.source_id(), frame.data()[0] << 8 | frame.data()[1], version);
+            add_node(frame.source_id(), node_type, version);
+
+            update_dev_after_node_discovered(frame.source_id(), node_type);
         }
-        //        else if(frame.type >= H9frame::Type::REG_EXTERNALLY_CHANGED) {
-        //        /*else if(frame.type == H9frame::Type::REG_EXTERNALLY_CHANGED || frame.type == H9frame::Type::REG_INTERNALLY_CHANGED ||
-        //                frame.type == H9frame::Type::REG_VALUE_BROADCAST || frame.type == H9frame::Type::REG_VALUE ||
-        //                frame.type == H9frame::Type::ERROR || frame.type == H9frame::Type::NODE_HEARTBEAT ||
-        //                frame.type == H9frame::Type::NODE_SPECIFIC_BULK0 || frame.type == H9frame::Type::NODE_SPECIFIC_BULK1 ||
-        //                frame.type == H9frame::Type::NODE_SPECIFIC_BULK2 || frame.type == H9frame::Type::NODE_SPECIFIC_BULK3 ||
-        //                frame.type == H9frame::Type::NODE_SPECIFIC_BULK4 || frame.type == H9frame::Type::NODE_SPECIFIC_BULK5 ||
-        //                frame.type == H9frame::Type::NODE_SPECIFIC_BULK6 || frame.type == H9frame::Type::NODE_SPECIFIC_BULK7) {*/
-        //
-        //            devices_map_mtx.lock_shared();
-        //            if (devices_map.count(frame.source_id)) {
-        //                devices_map[frame.source_id]->update_device_state(frame);
-        //                devices_map_mtx.unlock_shared();
-        //            }
-        //            else {
-        //                devices_map_mtx.unlock_shared();
-        //                h9_log_warn("Received frame from unknown device (id: %hu)", frame.source_id);
-        //                auto seqnum = h9bus->get_next_seqnum(1);
-        //                h9bus->send_node_discover(H9frame::Priority::LOW, seqnum, 1, frame.source_id);
-        //            }
-        //        }
+
+        update_device_last_seen_time(frame.source_id());
+
+        if (frame.type() >= H9frame::Type::REG_EXTERNALLY_CHANGED) {
+            nodes_map_mtx.lock_shared();
+            if (nodes_map.count(frame.source_id())) {
+                nodes_map[frame.source_id()]->update_node_state(frame);
+            }
+            nodes_map_mtx.unlock_shared();
+        }
     }
 }
 
-Node* NodeMgr::build_node(std::uint16_t node_id, std::uint16_t node_type, std::uint64_t node_version) noexcept {
-    if (false && node_type == 5) {
-        // return new AntennaSwitch(bus, node_id, node_version);
-    }
-    else {
-        // Node _node = node(node_id);
-        return new Node(this, bus, node_id, node_type, node_version);
+void NodeDevMgr::update_dev_after_node_discovered(std::uint16_t node_id, std::uint16_t node_type) {
+    if (node_id == 100) {
+        devs_map_mtx.lock();
+        if (devs_map.count("*") == 0) {
+            auto* dev = new AntennaSwitchDev(this, 100);
+            devs_map["*"] = dev;
+            devs_map_mtx.unlock();
+
+            dev->init();
+        }
+        else {
+            devs_map_mtx.unlock();
+        }
     }
 }
 
-void NodeMgr::add_node(std::uint16_t node_id, std::uint16_t node_type, std::uint64_t node_version) noexcept {
+Node* NodeDevMgr::build_node(std::uint16_t node_id, std::uint16_t node_type, std::uint64_t node_version) noexcept {
+    return new Node(this, bus, node_id, node_type, node_version);
+}
+
+void NodeDevMgr::add_node(std::uint16_t node_id, std::uint16_t node_type, std::uint64_t node_version) noexcept {
     // TODO: sharelock, pelny lock tylko przy usuwaniu, update_device_last_seen_time przerobic na atomic
     nodes_map_mtx.lock();
     if (nodes_map.count(node_id)) {
@@ -105,9 +111,6 @@ void NodeMgr::add_node(std::uint16_t node_id, std::uint16_t node_type, std::uint
             delete nodes_map[node_id];
             nodes_map[node_id] = build_node(node_id, node_type, node_version);
         }
-        else {
-            nodes_map[node_id]->update_device_last_seen_time();
-        }
     }
     else {
         nodes_map[node_id] = build_node(node_id, node_type, node_version);
@@ -115,17 +118,25 @@ void NodeMgr::add_node(std::uint16_t node_id, std::uint16_t node_type, std::uint
     nodes_map_mtx.unlock();
 }
 
-NodeMgr::NodeMgr(Bus* bus):
+void NodeDevMgr::update_device_last_seen_time(std::uint16_t node_id) noexcept {
+    nodes_map_mtx.lock_shared();
+    if (nodes_map.count(node_id)) {
+        nodes_map[node_id]->update_node_last_seen_time();
+    }
+    nodes_map_mtx.unlock_shared();
+}
+
+NodeDevMgr::NodeDevMgr(Bus* bus):
     frame_obs(bus, this),
     bus(bus) {
     logger = spdlog::get(H9dConfigurator::nodes_logger_name);
     nodes_update_thread_run = true;
     nodes_update_thread_desc = std::thread([this]() {
-        this->nodes_update_thread();
+        this->nodes_dev_update_thread();
     });
 }
 
-NodeMgr::~NodeMgr() {
+NodeDevMgr::~NodeDevMgr() {
     nodes_update_thread_run = false;
     if (nodes_update_thread_desc.joinable())
         nodes_update_thread_desc.join();
@@ -136,42 +147,42 @@ NodeMgr::~NodeMgr() {
     }
 }
 
-void NodeMgr::load_devices_description(const std::string& nodes_description_filename) {
+void NodeDevMgr::load_nodes_description(const std::string& nodes_description_filename) {
     SPDLOG_LOGGER_INFO(logger, "Loading devices description file: '{}'.", nodes_description_filename);
     Node::nodedescloader.load_file(nodes_description_filename);
 }
 
-void NodeMgr::response_timeout_duration(int response_timeout_duration) {
+void NodeDevMgr::response_timeout_duration(int response_timeout_duration) {
     _response_timeout_duration = response_timeout_duration;
 }
 
-int NodeMgr::response_timeout_duration() {
+int NodeDevMgr::response_timeout_duration() {
     return _response_timeout_duration;
 }
 
-int NodeMgr::discover() noexcept {
-    ExtH9Frame frame("?", H9frame::Type::DISCOVER, H9frame::BROADCAST_ID, 0, {});
+int NodeDevMgr::discover() noexcept {
+    ExtH9Frame frame("h9d", H9frame::Type::DISCOVER, H9frame::BROADCAST_ID, 0, {});
 
     return bus->send_frame(frame);
 }
 
-int NodeMgr::active_devices_count() noexcept {
+int NodeDevMgr::active_devices_count() noexcept {
     nodes_map_mtx.lock_shared();
     int ret = nodes_map.size();
     nodes_map_mtx.unlock_shared();
     return ret;
 }
 
-bool NodeMgr::is_node_exist(std::uint16_t node_id) noexcept {
+bool NodeDevMgr::is_node_exist(std::uint16_t node_id) noexcept {
     nodes_map_mtx.lock_shared();
     bool ret = nodes_map.count(node_id);
     nodes_map_mtx.unlock_shared();
     return ret;
 }
 
-std::vector<NodeMgr::NodeDsc> NodeMgr::get_nodes_list() noexcept {
+std::vector<NodeDevMgr::NodeDsc> NodeDevMgr::get_nodes_list() noexcept {
     nodes_map_mtx.lock_shared();
-    std::vector<NodeMgr::NodeDsc> ret;
+    std::vector<NodeDevMgr::NodeDsc> ret;
 
     for (auto it : nodes_map) {
         ret.push_back({it.first, it.second->device_type(), it.second->device_version_major(), it.second->device_version_minor(), it.second->device_version_patch(), it.second->device_name()});
@@ -181,67 +192,29 @@ std::vector<NodeMgr::NodeDsc> NodeMgr::get_nodes_list() noexcept {
     return std::move(ret);
 }
 
-// int DevicesMgr::attach_event_observer(TCPClientThread *observer, const std::string& event_name, std::uint16_t dev_id) noexcept {
-//     devices_map_mtx.lock_shared();
-//     if (devices_map.count(dev_id)) {
-//         devices_map[dev_id]->attach_event_observer(observer, event_name);
-//     }
-//     else {
-//         //h9_log_warn("Can not attach event observer %s:%s, device id: %hu does not exist", observer->get_remote_address().c_str(), observer->get_remote_port().c_str(), dev_id);
-//     }
-//     devices_map_mtx.unlock_shared();
-//     return 0;
-// }
-//
-// int DevicesMgr::detach_event_observer(TCPClientThread *observer, const std::string& event_name, std::uint16_t dev_id) noexcept {
-//     devices_map_mtx.lock_shared();
-//     if (devices_map.count(dev_id)) {
-//         devices_map[dev_id]->detach_event_observer(observer, event_name);
-//     }
-//     devices_map_mtx.unlock_shared();
-//     return 0;
-// }
-//
-// std::vector<std::string> DevicesMgr::get_events_list(std::uint16_t dev_id) noexcept {
-//     devices_map_mtx.lock_shared();
-//     if (devices_map.count(dev_id)) {
-//         auto ret = devices_map[dev_id]->get_events_list();
-//         devices_map_mtx.unlock_shared();
-//         return ret;
-//     }
-//     devices_map_mtx.unlock_shared();
-//     return std::vector<std::string>();
-// }
-//
-// std::vector<std::string> DevicesMgr::get_device_specific_methods(std::uint16_t dev_id) noexcept {
-//     devices_map_mtx.lock_shared();
-//     if (devices_map.count(dev_id)) {
-//         auto ret = devices_map[dev_id]->get_device_specific_methods();
-//         devices_map_mtx.unlock_shared();
-//         return ret;
-//     }
-//     devices_map_mtx.unlock_shared();
-//     return std::vector<std::string>();
-// }
+void NodeDevMgr::attach_node_state_observer(std::uint16_t node_id, Node::NodeStateObserver* obs) {
+    nodes_map_mtx.lock_shared();
+    if (nodes_map.count(node_id)) {
+        nodes_map[node_id]->attach_node_state_observer(obs);
+        nodes_map_mtx.unlock_shared();
+        return;
+    }
+    nodes_map_mtx.unlock_shared();
+    throw DeviceNotExistException();
+}
 
-// H9Value DevicesMgr::execute_device_specific_method(std::uint16_t dev_id, const std::string &method_name, const H9Tuple& tuple) {
-//     devices_map_mtx.lock_shared();
-//     if (devices_map.count(dev_id)) {
-//         try {
-//             auto ret = devices_map[dev_id]->execute_device_specific_method(method_name, tuple);
-//             devices_map_mtx.unlock_shared();
-//             return ret;
-//         }
-//         catch (...) {
-//             devices_map_mtx.unlock_shared();
-//             throw;
-//         }
-//     }
-//     devices_map_mtx.unlock_shared();
-//     assert(0);
-// }
+void NodeDevMgr::detach_node_state_observer(std::uint16_t node_id, Node::NodeStateObserver* obs) {
+    nodes_map_mtx.lock_shared();
+    if (nodes_map.count(node_id)) {
+        nodes_map[node_id]->detach_node_state_observer(obs);
+        nodes_map_mtx.unlock_shared();
+        return;
+    }
+    nodes_map_mtx.unlock_shared();
+    throw DeviceNotExistException();
+}
 
-std::vector<Node::RegisterDsc> NodeMgr::get_registers_list(std::uint16_t node_id) noexcept {
+std::vector<Node::RegisterDsc> NodeDevMgr::get_registers_list(std::uint16_t node_id) noexcept {
     nodes_map_mtx.lock_shared();
     if (nodes_map.count(node_id)) {
         auto ret = nodes_map[node_id]->get_registers_list();
@@ -252,20 +225,20 @@ std::vector<Node::RegisterDsc> NodeMgr::get_registers_list(std::uint16_t node_id
     return std::vector<Node::RegisterDsc>();
 }
 
-int NodeMgr::get_node_info(std::uint16_t dev_id, NodeMgr::NodeInfo& device_info) {
+int NodeDevMgr::get_node_info(std::uint16_t node_id, NodeDevMgr::NodeInfo& node_info) {
     nodes_map_mtx.lock_shared();
-    if (nodes_map.count(dev_id)) {
+    if (nodes_map.count(node_id)) {
         int ret = 0;
-        auto dev = nodes_map[dev_id];
-        device_info.id = dev_id;
-        device_info.type = dev->device_type();
-        device_info.name = dev->device_name();
-        device_info.version_major = dev->device_version_major();
-        device_info.version_minor = dev->device_version_minor();
-        device_info.version_patch = dev->device_version_patch();
-        device_info.created_time = dev->device_created_time();
-        device_info.last_seen_time = dev->device_last_seen_time();
-        device_info.description = dev->device_description();
+        auto dev = nodes_map[node_id];
+        node_info.id = node_id;
+        node_info.type = dev->device_type();
+        node_info.name = dev->device_name();
+        node_info.version_major = dev->device_version_major();
+        node_info.version_minor = dev->device_version_minor();
+        node_info.version_patch = dev->device_version_patch();
+        node_info.created_time = dev->device_created_time();
+        node_info.last_seen_time = dev->device_last_seen_time();
+        node_info.description = dev->device_description();
 
         nodes_map_mtx.unlock_shared();
         return ret;
@@ -274,7 +247,7 @@ int NodeMgr::get_node_info(std::uint16_t dev_id, NodeMgr::NodeInfo& device_info)
     throw DeviceNotExistException();
 }
 
-void NodeMgr::node_reset(std::uint16_t node_id) {
+void NodeDevMgr::node_reset(std::uint16_t node_id) {
     nodes_map_mtx.lock_shared();
     if (nodes_map.count(node_id)) {
         try {
@@ -289,7 +262,7 @@ void NodeMgr::node_reset(std::uint16_t node_id) {
     throw DeviceNotExistException();
 }
 
-Node::regvalue_t NodeMgr::set_register(std::uint16_t node_id, std::uint8_t reg, Node::regvalue_t value) {
+Node::regvalue_t NodeDevMgr::set_register(std::uint16_t node_id, std::uint8_t reg, Node::regvalue_t value) {
     nodes_map_mtx.lock_shared();
     if (nodes_map.count(node_id)) {
         try {
@@ -306,7 +279,7 @@ Node::regvalue_t NodeMgr::set_register(std::uint16_t node_id, std::uint8_t reg, 
     throw DeviceNotExistException();
 }
 
-Node::regvalue_t NodeMgr::get_register(std::uint16_t node_id, std::uint8_t reg) {
+Node::regvalue_t NodeDevMgr::get_register(std::uint16_t node_id, std::uint8_t reg) {
     nodes_map_mtx.lock_shared();
     if (nodes_map.count(node_id)) {
         try {
@@ -323,7 +296,7 @@ Node::regvalue_t NodeMgr::get_register(std::uint16_t node_id, std::uint8_t reg) 
     throw DeviceNotExistException();
 }
 
-Node::regvalue_t NodeMgr::set_register_bit(std::uint16_t node_id, std::uint8_t reg, std::uint8_t bit_num) {
+Node::regvalue_t NodeDevMgr::set_register_bit(std::uint16_t node_id, std::uint8_t reg, std::uint8_t bit_num) {
     nodes_map_mtx.lock_shared();
     if (nodes_map.count(node_id)) {
         try {
@@ -340,7 +313,7 @@ Node::regvalue_t NodeMgr::set_register_bit(std::uint16_t node_id, std::uint8_t r
     throw DeviceNotExistException();
 }
 
-Node::regvalue_t NodeMgr::clear_register_bit(std::uint16_t node_id, std::uint8_t reg, std::uint8_t bit_num) {
+Node::regvalue_t NodeDevMgr::clear_register_bit(std::uint16_t node_id, std::uint8_t reg, std::uint8_t bit_num) {
     nodes_map_mtx.lock_shared();
     if (nodes_map.count(node_id)) {
         try {
@@ -357,7 +330,7 @@ Node::regvalue_t NodeMgr::clear_register_bit(std::uint16_t node_id, std::uint8_t
     throw DeviceNotExistException();
 }
 
-Node::regvalue_t NodeMgr::toggle_register_bit(std::uint16_t node_id, std::uint8_t reg, std::uint8_t bit_num) {
+Node::regvalue_t NodeDevMgr::toggle_register_bit(std::uint16_t node_id, std::uint8_t reg, std::uint8_t bit_num) {
     nodes_map_mtx.lock_shared();
     if (nodes_map.count(node_id)) {
         try {
@@ -371,5 +344,39 @@ Node::regvalue_t NodeMgr::toggle_register_bit(std::uint16_t node_id, std::uint8_
         }
     }
     nodes_map_mtx.unlock_shared();
+    throw DeviceNotExistException();
+}
+
+std::vector<NodeDevMgr::DevDsc> NodeDevMgr::get_devs_list() noexcept {
+    devs_map_mtx.lock_shared();
+    std::vector<NodeDevMgr::DevDsc> ret;
+
+    for (auto it : devs_map) {
+        ret.push_back({it.first, it.second->type()});
+    }
+
+    devs_map_mtx.unlock_shared();
+    return std::move(ret);
+}
+
+void NodeDevMgr::attach_dev_state_observer(std::string dev_id, DevStatusObserver* obs) {
+    devs_map_mtx.lock_shared();
+    if (devs_map.count(dev_id)) {
+        devs_map[dev_id]->attach_dev_status_observer(obs);
+        devs_map_mtx.unlock_shared();
+        return;
+    }
+    devs_map_mtx.unlock_shared();
+    throw DeviceNotExistException();
+}
+
+void NodeDevMgr::detach_dev_state_observer(std::string dev_id, DevStatusObserver* obs) {
+    devs_map_mtx.lock_shared();
+    if (devs_map.count(dev_id)) {
+        devs_map[dev_id]->detach_dev_status_observer(obs);
+        devs_map_mtx.unlock_shared();
+        return;
+    }
+    devs_map_mtx.unlock_shared();
     throw DeviceNotExistException();
 }

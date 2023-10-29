@@ -20,7 +20,7 @@
 
 #include "frameobserver.h"
 
-class NodeMgr;
+class NodeDevMgr;
 class Bus;
 
 class RawNode: public FrameObserver {
@@ -71,7 +71,7 @@ class RawNode: public FrameObserver {
         }
     };
 
-    NodeMgr* const node_mgr;
+    NodeDevMgr* const node_mgr;
     Bus* const bus;
 
     std::mutex frame_promise_set_mtx;
@@ -85,9 +85,9 @@ class RawNode: public FrameObserver {
 
   protected:
     const std::uint16_t _node_id;
-    RawNode(NodeMgr* node_mgr, Bus* bus, std::uint16_t node_id) noexcept;
+    RawNode(NodeDevMgr* node_mgr, Bus* bus, std::uint16_t node_id) noexcept;
 
-    friend NodeMgr;
+    friend NodeDevMgr;
   public:
     constexpr static std::uint8_t REG_NODE_TYPE = 1;
     constexpr static std::uint8_t REG_NODE_VERSION = 2;

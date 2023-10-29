@@ -16,59 +16,25 @@
 
 DeviceDescLoader Node::nodedescloader;
 
-// void Device::update_device_state(H9frame frame) noexcept {
-////    update_device_last_seen_time();
-////
-////    if (frame.type == H9frame::Type::REG_EXTERNALLY_CHANGED || frame.type == H9frame::Type::REG_INTERNALLY_CHANGED ||
-////        frame.type == H9frame::Type::REG_VALUE_BROADCAST) { // && frame.source_id == 32 && frame.data[0] == 10) {
-////        DeviceEvent event_msg(node_id, "register_change");
-////
-////        event_msg.add_value("register_id", frame.data[0]);
-////        event_msg.add_value("value_len", frame.dlc-1);
-////        uint64_t tmp_value = 0;
-////        for (int i=1; i < frame.dlc; ++i) {
-////            tmp_value <<= 8;
-////            tmp_value |= frame.data[i];
-////        }
-////        event_msg.add_value("value", tmp_value);
-////
-////        notify_event_observer("register_change", std::move(event_msg));
-////    }
-//}
+void Node::update_node_state(const ExtH9Frame& frame) {
+    for (auto obs: node_state_observers) {
+        obs->update_dev_state(node_id(), frame);
+    }
+}
 
- void Node::update_device_last_seen_time() noexcept {
+void Node::attach_node_state_observer(Node::NodeStateObserver* obs) {
+    node_state_observers.push_back(obs);
+}
+
+void Node::detach_node_state_observer(Node::NodeStateObserver* obs) {
+    node_state_observers.erase(std::remove(node_state_observers.begin(), node_state_observers.end(), obs), node_state_observers.end());
+}
+
+ void Node::update_node_last_seen_time() noexcept {
      _last_seen_time = std::time(nullptr);
 }
 
-////void Device::attach_event_observer(TCPClientThread *observer, const std::string& event_name) noexcept {
-////    event_name_mtx.lock();
-////    event_observers[event_name].insert(observer);
-////    event_name_mtx.unlock();
-////    h9_log_info("Attach observer %s to '%s' event on device %hu", observer->get_client_idstring().c_str(), event_name.c_str(), get_node_id());
-////}
-////
-////void Device::detach_event_observer(TCPClientThread *observer, const std::string& event_name) noexcept {
-////    event_name_mtx.lock();
-////    event_observers[event_name].erase(observer);
-////    event_name_mtx.unlock();
-////    h9_log_info("Detach observer %s from '%s' event on device %hu", observer->get_client_idstring().c_str(), event_name.c_str(), get_node_id());
-////}
-////
-////void Device::notify_event_observer(std::string event_name, GenericMsg msg) noexcept {
-////    event_name_mtx.lock();
-////    for (auto observer : event_observers[event_name]) {
-////        h9_log_debug("Notify observer %s, event '%s' on device %hu", observer->get_client_idstring().c_str(), event_name.c_str(), node_id);
-////        try {
-////            (*observer).send_msg(msg);
-////        }
-////        catch (std::runtime_error& e) {
-////            h9_log_err("Notify observer %s error: %s", observer->get_client_idstring().c_str(), e.what());
-////        }
-////    }
-////    event_name_mtx.unlock();
-////}
-
-Node::Node(NodeMgr* node_mgr, Bus* bus, std::uint16_t node_id, std::uint16_t node_type, std::uint64_t node_version) noexcept:
+Node::Node(NodeDevMgr* node_mgr, Bus* bus, std::uint16_t node_id, std::uint16_t node_type, std::uint64_t node_version) noexcept:
     RawNode(node_mgr, bus, node_id),
     //Node(std::move(node)),
     _device_type(node_type),
@@ -99,12 +65,9 @@ Node::Node(NodeMgr* node_mgr, Bus* bus, std::uint16_t node_id, std::uint16_t nod
     }
 }
 
-// std::vector<std::string> Device::get_events_list() noexcept {
-//    std::vector<std::string> ret;
-//    ret.push_back("register_change");
-//
-//    return ret;
-//}
+Node::~Node() {
+    SPDLOG_LOGGER_TRACE(logger, "~Node() {}", fmt::ptr(this));
+}
 
 std::vector<Node::RegisterDsc> Node::get_registers_list() noexcept {
     std::vector<Node::RegisterDsc> ret;
@@ -113,18 +76,6 @@ std::vector<Node::RegisterDsc> Node::get_registers_list() noexcept {
     }
     return ret;
 }
-
-// std::vector<std::string> Device::get_device_specific_methods() noexcept {
-//     return std::vector<std::string>();
-// }
-//
-// H9Value Device::execute_device_specific_method(const std::string &method_name, const H9Tuple& tuple) {
-//     assert(0);
-// }
-//
-// std::uint16_t Device::get_device_id() const noexcept {
-//     return node_id;
-// }
 
 std::uint16_t Node::device_type() const noexcept {
     return _device_type;

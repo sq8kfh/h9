@@ -13,7 +13,7 @@
 #include <spdlog/spdlog.h>
 
 #include "bus.h"
-#include "node_mgr.h"
+#include "node_dev_mgr.h"
 
 void RawNode::on_frame_recv(const ExtH9Frame& frame) noexcept {
     frame_promise_set_mtx.lock();
@@ -44,7 +44,7 @@ void RawNode::destroy_frame_promise(FramePromise* frame_promise) {
     frame_promise_set_mtx.unlock();
 }
 
-RawNode::RawNode(NodeMgr* node_mgr, Bus* bus, std::uint16_t node_id) noexcept:
+RawNode::RawNode(NodeDevMgr* node_mgr, Bus* bus, std::uint16_t node_id) noexcept:
     FrameObserver(node_mgr, H9FrameComparator(node_id)),
     node_mgr(node_mgr),
     bus(bus),

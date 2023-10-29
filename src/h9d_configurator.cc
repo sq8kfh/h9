@@ -498,11 +498,11 @@ void H9dConfigurator::configure_virtual_endpoint(VirtualEndpoint* vendpoint) {
     }
 }
 
-void H9dConfigurator::configure_devices_mgr(NodeMgr* devices_mgr) {
+void H9dConfigurator::configure_devices_mgr(NodeDevMgr* devices_mgr) {
     cfg_t* cfg_bus= cfg_getsec(cfg, "bus");
     devices_mgr->response_timeout_duration(cfg_getint(cfg_bus, "response_timeout_duration"));
     if (cfg_getstr(cfg_bus, "devices_description_filename")) {
-        devices_mgr->load_devices_description(cfg_getstr(cfg_bus, "devices_description_filename"));
+        devices_mgr->load_nodes_description(cfg_getstr(cfg_bus, "devices_description_filename"));
     }
 }
 

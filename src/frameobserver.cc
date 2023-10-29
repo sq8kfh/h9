@@ -9,6 +9,7 @@
 #include "frameobserver.h"
 
 #include "framesubject.h"
+#include <spdlog/spdlog.h>
 
 FrameObserver::FrameObserver(FrameSubject* subject, H9FrameComparator comparator):
     subject(subject) {

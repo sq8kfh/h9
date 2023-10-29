@@ -14,6 +14,7 @@
 #include <sys/errno.h>
 
 #include "h9d_configurator.h"
+#include "dev_status_observer.h"
 
 void TCPClientThread::thread() {
     thread_running = true;
@@ -154,7 +155,8 @@ TCPClientThread::TCPClientThread(int sockfd, API* api, TCPServer* server):
     h9socket(sockfd),
     api(api),
     server(server),
-    _frame_observer(nullptr) {
+    _frame_observer(nullptr),
+    _dev_status_observer(nullptr) {
     logger = spdlog::get(H9dConfigurator::tcp_logger_name);
 
     running = true;
@@ -164,8 +166,10 @@ TCPClientThread::TCPClientThread(int sockfd, API* api, TCPServer* server):
 }
 
 TCPClientThread::~TCPClientThread() {
+    SPDLOG_LOGGER_TRACE(logger, "~TCPClientThread() {}", fmt::ptr(this));
     SPDLOG_LOGGER_DEBUG(logger, "Cleaning client ({}) data...", get_client_idstring());
     delete _frame_observer;
+    delete _dev_status_observer;
 
     close_connection();
     if (client_thread_desc.joinable())
@@ -176,6 +180,11 @@ TCPClientThread::~TCPClientThread() {
 void TCPClientThread::set_frame_observer(ClientFrameObs* frame_observer) {
     delete _frame_observer;
     _frame_observer = frame_observer;
+}
+
+void TCPClientThread::set_dev_status_observer(DevStatusObserver* dev_status_observer) {
+    delete _dev_status_observer;
+    _dev_status_observer = dev_status_observer;
 }
 
 std::string TCPClientThread::get_remote_address() const noexcept {

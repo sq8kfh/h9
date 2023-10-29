@@ -9,7 +9,6 @@
 #pragma once
 
 #include "frameobserver.h"
-#include "tcpclientthread.h"
 
 class TCPClientThread;
 

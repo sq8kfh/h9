@@ -28,6 +28,7 @@
 
 class API;
 class ClientFrameObs;
+class DevStatusObserver;
 class TCPServer;
 
 class TCPClientThread {
@@ -53,6 +54,8 @@ class TCPClientThread {
     std::string _entity;
 
     ClientFrameObs* _frame_observer;
+    DevStatusObserver* _dev_status_observer;
+
     std::mutex async_msg_queue_mtx;
     std::queue<jsonrpcpp::entity_ptr> async_msg_queue;
 
@@ -68,6 +71,7 @@ class TCPClientThread {
     ~TCPClientThread();
 
     void set_frame_observer(ClientFrameObs* frame_observer);
+    void set_dev_status_observer(DevStatusObserver* dev_status_observer);
 
     std::string get_remote_address() const noexcept;
     std::string get_remote_port() const noexcept;

@@ -44,14 +44,16 @@ set(H9D_SRC h9d.cc config.h config_gen.h
         metrics_collector.cc metrics_collector.h
         raw_node.cc raw_node.h
         send_frame_result.h
-        node_mgr.cc node_mgr.h
+        node_dev_mgr.cc node_dev_mgr.h
         node.cc node.h
         devicedescloader.cc devicedescloader.h
         virtual_driver.cc virtual_driver.h
         virtual_endpoint.cc virtual_endpoint.h
         virtual_py_node.cc virtual_py_node.h
         py_h9.cc py_h9.h
-        dev_node_exception.cc dev_node_exception.h)
+        dev_node_exception.cc dev_node_exception.h
+        dev.cc dev.h
+        antenna_switch_dev.cc antenna_switch_dev.h dev_status_observer.cc dev_status_observer.h)
 
 set(CLIENT_COMMON_SRC config.h config_gen.h
         h9frame.cc h9frame.h

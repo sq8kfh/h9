@@ -21,13 +21,18 @@
 #include "devicedescloader.h"
 #include "raw_node.h"
 
-class NodeMgr;
+class NodeDevMgr;
 class TCPClientThread;
 
 class Node: protected RawNode {
   public:
     using RegisterDsc = DeviceDescLoader::RegisterDesc;
     using regvalue_t = std::variant<std::string, std::int64_t, std::vector<std::uint8_t>>;
+
+    class NodeStateObserver {
+      public:
+        virtual void update_dev_state(std::uint16_t node_id, const ExtH9Frame& frame) = 0;
+    };
 
   private:
     std::shared_ptr<spdlog::logger> logger;
@@ -40,28 +45,22 @@ class Node: protected RawNode {
     const std::time_t _created_time;
     std::time_t _last_seen_time;
 
+    std::vector<NodeStateObserver*> node_state_observers;
     std::map<std::uint8_t, RegisterDsc> register_map;
 
-    friend class NodeMgr;
-    //    void update_device_state(H9frame frame) noexcept;
-    void update_device_last_seen_time() noexcept;
-    //
-    //    std::mutex event_name_mtx;
-    //    std::map<std::string, std::set<TCPClientThread *>> event_observers;
-    //    void attach_event_observer(TCPClientThread *observer, const std::string& event_name) noexcept;
-    //    void detach_event_observer(TCPClientThread *observer, const std::string& event_name) noexcept;
+    friend class NodeDevMgr;
+    void update_node_state(const ExtH9Frame& frame);
+    void attach_node_state_observer(Node::NodeStateObserver* obs);
+    void detach_node_state_observer(Node::NodeStateObserver* obs);
+    void update_node_last_seen_time() noexcept;
+
   protected:
     ////    void notify_event_observer(std::string event_name, GenericMsg msg) noexcept;
-    Node(NodeMgr* node_mgr, Bus* bus, std::uint16_t node_id, std::uint16_t node_type, std::uint64_t node_version) noexcept;
-
+    Node(NodeDevMgr* node_mgr, Bus* bus, std::uint16_t node_id, std::uint16_t node_type, std::uint64_t node_version) noexcept;
   public:
-    //
-    //    std::vector<std::string> get_events_list() noexcept;
+    ~Node();
     std::vector<RegisterDsc> get_registers_list() noexcept;
-    //    virtual std::vector<std::string> get_device_specific_methods() noexcept;
-    //    virtual H9Value execute_device_specific_method(const std::string &method_name, const H9Tuple& tuple);
-    //
-    //    std::uint16_t get_device_id() const noexcept;
+
     [[nodiscard]] std::uint16_t device_type() const noexcept;
     [[nodiscard]] std::uint64_t device_version() const noexcept;
     [[nodiscard]] std::uint16_t device_version_major() const noexcept;

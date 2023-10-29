@@ -13,7 +13,7 @@
 #include <nlohmann/json.hpp>
 
 #include "bus.h"
-#include "node_mgr.h"
+#include "node_dev_mgr.h"
 #include "tcpclientthread.h"
 
 class TCPClientThread;
@@ -25,7 +25,7 @@ class API {
     using api_method = nlohmann::json (API::*)(TCPClientThread* client_thread, const jsonrpcpp::Id&, const jsonrpcpp::Parameter&);
 
     Bus* const bus;
-    NodeMgr* const dev_mgr;
+    NodeDevMgr* const node_dev_mgr;
 
     std::map<std::string, api_method> api_methods;
 
@@ -45,7 +45,8 @@ class API {
     nlohmann::json set_register_bit(TCPClientThread* client_thread, const jsonrpcpp::Id& id, const jsonrpcpp::Parameter& params);
     nlohmann::json clear_register_bit(TCPClientThread* client_thread, const jsonrpcpp::Id& id, const jsonrpcpp::Parameter& params);
     nlohmann::json toggle_register_bit(TCPClientThread* client_thread, const jsonrpcpp::Id& id, const jsonrpcpp::Parameter& params);
+    nlohmann::json get_devs_list(TCPClientThread* client_thread, const jsonrpcpp::Id& id, const jsonrpcpp::Parameter& params);
   public:
-    API(Bus* bus, NodeMgr* dev_mgr);
+    API(Bus* bus, NodeDevMgr* dev_mgr);
     jsonrpcpp::Response call(TCPClientThread* client_thread, const jsonrpcpp::request_ptr& request);
 };
