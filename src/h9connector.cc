@@ -20,6 +20,10 @@ H9Connector::~H9Connector() noexcept {
     h9socket.close();
 }
 
+std::string H9Connector::hostname() const noexcept {
+    return h9socket.get_remote_address();
+}
+
 void H9Connector::connect(std::string entity) {
     if (h9socket.connect() < 0) {
         throw std::system_error(errno, std::system_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));

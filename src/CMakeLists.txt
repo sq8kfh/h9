@@ -70,7 +70,7 @@ set(H9STATS_SRC h9stats.cc config.h config_gen.h)
 
 set(H9FWUPLOAD_SRC h9fwupload.cc config.h config_gen.h.in firmware_uploader.cc firmware_uploader.h)
 
-set(H9CLI_SRC h9cli.cc config.h config_gen.h.in cli_parsing_driver.cc cli_parsing_driver.h)
+set(H9CLI_SRC h9cli.cc config.h config_gen.h.in cli_parsing_driver.cc cli_parsing_driver.h cli_cache.cc cli_cache.h command_executor.cc command_executor.h)
 
 add_custom_command(OUTPUT git_version.h
                   COMMAND ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/scripts/generate_git_version_header.py > ${CMAKE_CURRENT_BINARY_DIR}/git_version.h~

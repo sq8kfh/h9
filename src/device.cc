@@ -162,6 +162,15 @@ std::string Device::device_description() const noexcept {
     return _device_description;
 }
 
+void Device::node_reset() {
+    ssize_t ret;
+    if ((ret = reset("h9d")) < 0) {
+        if (ret == Node::TIMEOUT_ERROR) throw TimeoutException();
+        else if (ret == Node::MALFORMED_FRAME_ERROR) throw MalformedFrameException();
+        else throw NodeException(-ret);
+    }
+}
+
 Device::regvalue_t Device::set_register(std::uint8_t reg, Device::regvalue_t value) {
     if (register_map.count(reg)) {
         if (register_map[reg].writable) {
@@ -342,6 +351,90 @@ Device::regvalue_t Device::get_register(std::uint8_t reg) {
             throw UnsupportedRegisterDataConversionException(reg);
         }
         throw RegisterNotReadableException(reg);
+    }
+    else {
+        throw RegisterNotExistException(reg);
+    }
+}
+
+Device::regvalue_t Device::set_register_bit(std::uint8_t reg, std::uint8_t bit_num) {
+    if (register_map.count(reg)) {
+        if (register_map[reg].writable) {
+            if (register_map[reg].type != "str") {
+                size_t result_len = (register_map[reg].size + 7) / 8;
+                auto *result_buf = new std::uint8_t[result_len];
+
+                ssize_t ret;
+                if ((ret = set_bit("h9d", reg, bit_num, result_len, result_buf)) < 0) {
+                    delete [] result_buf;
+                    if (ret == Node::TIMEOUT_ERROR) throw TimeoutException();
+                    else if (ret == Node::MALFORMED_FRAME_ERROR) throw MalformedFrameException();
+                    else throw NodeException(-ret);
+                }
+
+                Device::regvalue_t ret_v = {std::vector<std::uint8_t> (result_buf, result_buf+ret)};
+                delete [] result_buf;
+                return std::move(ret_v);
+            }
+            throw UnsupportedRegisterDataConversionException(reg);
+        }
+        throw RegisterNotWritableException(reg);
+    }
+    else {
+        throw RegisterNotExistException(reg);
+    }
+}
+
+Device::regvalue_t Device::clear_register_bit(std::uint8_t reg, std::uint8_t bit_num) {
+    if (register_map.count(reg)) {
+        if (register_map[reg].writable) {
+            if (register_map[reg].type != "str") {
+                size_t result_len = (register_map[reg].size + 7) / 8;
+                auto *result_buf = new std::uint8_t[result_len];
+
+                ssize_t ret;
+                if ((ret = clear_bit("h9d", reg, bit_num, result_len, result_buf)) < 0) {
+                    delete [] result_buf;
+                    if (ret == Node::TIMEOUT_ERROR) throw TimeoutException();
+                    else if (ret == Node::MALFORMED_FRAME_ERROR) throw MalformedFrameException();
+                    else throw NodeException(-ret);
+                }
+
+                Device::regvalue_t ret_v = {std::vector<std::uint8_t> (result_buf, result_buf+ret)};
+                delete [] result_buf;
+                return std::move(ret_v);
+            }
+            throw UnsupportedRegisterDataConversionException(reg);
+        }
+        throw RegisterNotWritableException(reg);
+    }
+    else {
+        throw RegisterNotExistException(reg);
+    }
+}
+
+Device::regvalue_t Device::toggle_register_bit(std::uint8_t reg, std::uint8_t bit_num) {
+    if (register_map.count(reg)) {
+        if (register_map[reg].writable) {
+            if (register_map[reg].type != "str") {
+                size_t result_len = (register_map[reg].size + 7) / 8;
+                auto *result_buf = new std::uint8_t[result_len];
+
+                ssize_t ret;
+                if ((ret = toggle_bit("h9d", reg, bit_num, result_len, result_buf)) < 0) {
+                    delete [] result_buf;
+                    if (ret == Node::TIMEOUT_ERROR) throw TimeoutException();
+                    else if (ret == Node::MALFORMED_FRAME_ERROR) throw MalformedFrameException();
+                    else throw NodeException(-ret);
+                }
+
+                Device::regvalue_t ret_v = {std::vector<std::uint8_t> (result_buf, result_buf+ret)};
+                delete [] result_buf;
+                return std::move(ret_v);
+            }
+            throw UnsupportedRegisterDataConversionException(reg);
+        }
+        throw RegisterNotWritableException(reg);
     }
     else {
         throw RegisterNotExistException(reg);

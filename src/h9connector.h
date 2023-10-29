@@ -23,6 +23,8 @@ class H9Connector {
     H9Connector(std::string hostname, std::string port) noexcept;
     ~H9Connector() noexcept;
 
+    std::string hostname() const noexcept;
+
     /*
      * throw: std::system_error
      */

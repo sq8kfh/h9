@@ -10,8 +10,6 @@
 
 %code requires {
     #include <jsonrpcpp/jsonrpcpp.hpp>
-    //#include "abstractcommand.h"
-    //#include "expression.h"
     class CLIParsingDriver;
 }
 
@@ -29,38 +27,48 @@
 
 %define api.token.prefix {TOK_}
 
-%token END  0      "end of file"
+%token END  0           "end of file"
 %token LF_SEMICOLON
 
-%token T_NODE      "node"
-%token T_RESTART   "restart"
-%token T_REG       "reg"
-%token T_SET       "set"
-%token T_GET       "get"
-%token T_SETBIT    "setbit"
-%token T_CLEARBIT  "clearbit"
-%token T_TOGGLEBIT "togglebit"
+%token T_CLI            "cli"
+%token T_CLEAR_CACHE    "clear_cache"
 
-%token MINUS       "-"
-%token PLUS        "+"
-%token STAR        "*"
-%token SLASH       "/"
-%token LPAREN      "("
-%token RPAREN      ")"
-%token ASSIGN      "="
-%token COLON       ":"
-%token <std::string> STRING
-%token <int> NUMBER "number"
+%token T_H9D            "h9d"
+%token T_DISCOVER       "discover"
+
+%token T_NODE           "node"
+%token T_RESET          "reset"
+%token T_INFO           "info"
+%token T_REG            "reg"
+%token T_SET            "set"
+%token T_GET            "get"
+%token T_SETBIT         "setbit"
+%token T_CLEARBIT       "clearbit"
+%token T_TOGGLEBIT      "togglebit"
+
+%token MINUS            "-"
+%token PLUS             "+"
+%token STAR             "*"
+%token SLASH            "/"
+%token LPAREN           "("
+%token RPAREN           ")"
+%token ASSIGN           "="
+%token COLON            ":"
+
+%token <std::string> QUOTED_STRING "<string>"
+%token <std::string> STRING "<string>"
+%token <int> NUMBER "<number>"
+
+%nterm <std::string> str_exp
 %nterm <int> num_exp
 
-%nterm  <nlohmann::json> node_exp node_sub_exp
-%nterm  <jsonrpcpp::Request> node_command
-%nterm  <nlohmann::json> node_reg_exp
-%nterm  <jsonrpcpp::Request> node_reg_command
+%nterm <int> cli_command
 
-%printer { yyo << $$.c_str(); } STRING
+%nterm <nlohmann::json> node_exp node_reg_exp
+%nterm <jsonrpcpp::Request> h9d_command node_command node_reg_command
+
+%printer { yyo << $$.c_str(); } STRING QUOTED_STRING
 %printer { yyo << $$.dump().c_str(); } node_exp
-%printer { yyo << $$.dump().c_str(); } node_sub_exp
 
 //%destructor { printf ("Discarding node_exp symbol.\n"); delete $$; } node_exp
 //%destructor { printf ("Discarding node_reg_exp symbol.\n"); delete $$; } node_reg_exp
@@ -77,71 +85,120 @@
 %left "*" "/";
 
 unit:
-    %empty                              { printf("!! empty\n"); }
-    | node_command                      { printf("!! %s\n", $1.to_json().dump().c_str()); }
-    | node_reg_command                  { printf("!! %s\n", $1.to_json().dump().c_str()); }
-    | num_exp                           { printf("!! %d\n", $1); }
+    %empty                              { }
+    | cli_command                       {
+                                            cli_drv.set_funnction_to_call($1);
+                                        }
+    | h9d_command                       {
+                                            cli_drv.set_jsonrpc_request($1);
+                                            cli_drv.set_funnction_to_call(CLIParsingDriver::JSONRPC);
+                                        }
+    | node_command                      {
+                                            cli_drv.set_jsonrpc_request($1);
+                                            cli_drv.set_funnction_to_call(CLIParsingDriver::JSONRPC);
+                                        }
+    | node_reg_command                  {
+                                            cli_drv.set_jsonrpc_request($1);
+                                            cli_drv.set_funnction_to_call(CLIParsingDriver::JSONRPC);
+                                        }
+    | num_exp                           { printf("%d\n", $1); }
+
+cli_command:
+    "cli" "clear_cache"                 { $$ = CLIParsingDriver::CLEAR_CACHE; }
+
+h9d_command:
+    "h9d" "discover"                    {
+                                            jsonrpcpp::Id id(0);
+                                            $$ = jsonrpcpp::Request(id, "discover_nodes");
+                                        }
 
 node_exp:
-    node_sub_exp                        {   $$ = $1; }
-
-node_sub_exp:
-	"node" num_exp			            {
-	                                        printf("!! node num_exp\n");
-	                                        $$ = nlohmann::json({{"dev_id", $2}});
+    "node" num_exp			            {
+	                                        cli_drv.set_last_parsed_node_id($2);
+	                                        $$ = nlohmann::json({{"node_id", $2}});
 	                                    }
+    | "node" str_exp                    {
+                                            std::uint16_t id = cli_drv.cache.get_node_id_by_name($2);
+                                            cli_drv.set_last_parsed_node_id(id);
+                                            $$ = nlohmann::json({{"node_id", id}});
+                                        }
 
 node_command:
-    node_exp "restart"      	        {
-                                            printf("!! node_exp restart\n");
-                                            jsonrpcpp::Id id(1);
-                                            $$ = jsonrpcpp::Request(id, "restart", $1);
+    node_exp "reset"      	            {
+                                            jsonrpcpp::Id id(0);
+                                            $$ = jsonrpcpp::Request(id, "node_reset", $1);
+                                        }
+    | node_exp "info"      	            {
+                                            jsonrpcpp::Id id(0);
+                                            $$ = jsonrpcpp::Request(id, "get_node_info", $1);
                                         }
 
 node_reg_exp:
     node_exp "reg" num_exp  	        {
-                                            printf("!! node_exp reg num_exp\n");
+                                            cli_drv.set_last_parsed_reg_number($3);
                                             $1["reg"] = $3;
                                             $$ = $1;
                                         }
-	//| node_exp error                  { printf("!! error\n"); }
+    | node_exp "reg" str_exp  	        {
+                                            std::uint8_t reg = cli_drv.cache.get_register_number_by_name($1["node_id"], $3);
+                                            cli_drv.set_last_parsed_reg_number(reg);
+                                            $1["reg"] = reg;
+                                            $$ = $1;
+                                        }
 
 node_reg_command:
 	node_reg_exp "get"      	        {
-                                            printf("!! node_exp get\n");
-                                            jsonrpcpp::Id id(2);
-                                            $$ = jsonrpcpp::Request(id, "get", $1);
+                                            jsonrpcpp::Id id(0);
+                                            $$ = jsonrpcpp::Request(id, "get_register_value", $1);
                                         }
 	| node_reg_exp "setbit" num_exp	    {
-                                            printf("!! node_exp setbit num_exp\n");
-                                            jsonrpcpp::Id id(2);
+                                            jsonrpcpp::Id id(0);
                                             $1["bit_num"] = $3;
-                                            $$ = jsonrpcpp::Request(id, "setbit", $1);
+                                            $$ = jsonrpcpp::Request(id, "set_register_bit", $1);
+                                        }
+    | node_reg_exp "setbit" str_exp	    {
+                                            std::uint8_t bit_num = cli_drv.cache.get_bit_number_by_name($1["node_id"], $1["reg"], $3);
+                                            $1["bit_num"] = bit_num;
+                                            jsonrpcpp::Id id(0);
+                                            $$ = jsonrpcpp::Request(id, "set_register_bit", $1);
                                         }
 	| node_reg_exp "clearbit" num_exp	{
-                                            printf("!! node_exp clearbit num_exp\n");
-                                            jsonrpcpp::Id id(2);
+                                            jsonrpcpp::Id id(0);
                                             $1["bit_num"] = $3;
-                                            $$ = jsonrpcpp::Request(id, "clearbit", $1);
+                                            $$ = jsonrpcpp::Request(id, "clear_register_bit", $1);
+                                        }
+	| node_reg_exp "clearbit" str_exp	{
+                                            std::uint8_t bit_num = cli_drv.cache.get_bit_number_by_name($1["node_id"], $1["reg"], $3);
+                                            $1["bit_num"] = bit_num;
+                                            jsonrpcpp::Id id(0);
+                                            $$ = jsonrpcpp::Request(id, "clear_register_bit", $1);
                                         }
 	| node_reg_exp "togglebit" num_exp	{
-                                            printf("!! node_exp togglebit num_exp\n");
-                                            jsonrpcpp::Id id(2);
+                                            jsonrpcpp::Id id(0);
                                             $1["bit_num"] = $3;
-                                            $$ = jsonrpcpp::Request(id, "togglebit", $1);
+                                            $$ = jsonrpcpp::Request(id, "toggle_register_bit", $1);
+                                        }
+	| node_reg_exp "togglebit" str_exp	{
+                                            std::uint8_t bit_num = cli_drv.cache.get_bit_number_by_name($1["node_id"], $1["reg"], $3);
+                                            $1["bit_num"] = bit_num;
+                                            jsonrpcpp::Id id(0);
+                                            $$ = jsonrpcpp::Request(id, "toggle_register_bit", $1);
                                         }
 	| node_reg_exp "set" num_exp	    {
-                                            printf("!! node_exp set num_exp\n");
-                                            jsonrpcpp::Id id(2);
+                                            jsonrpcpp::Id id(0);
                                             $1["value"] = $3;
-                                            $$ = jsonrpcpp::Request(id, "set", $1);
+                                            $$ = jsonrpcpp::Request(id, "set_register_value", $1);
                                         }
-	| node_reg_exp "set" STRING  	    {
-                                            printf("!! node_exp set num_exp\n");
-                                            jsonrpcpp::Id id(2);
+	| node_reg_exp "set" QUOTED_STRING  {
+                                            jsonrpcpp::Id id(0);
                                             $1["value"] = $3;
-                                            $$ = jsonrpcpp::Request(id, "set", $1);
+                                            $$ = jsonrpcpp::Request(id, "set_register_value", $1);
                                         }
+
+str_exp:
+    STRING                              { $$ = $1; }
+    | QUOTED_STRING                     { $$ = $1; }
+
 num_exp:
 	NUMBER
 	| num_exp "+" num_exp               { $$ = $1 + $3; }
@@ -154,6 +211,7 @@ num_exp:
 %%
 
 void yy::parser::error (const std::string& m) {
+    std::cerr << ": " << m << '\n';
     //if (cli_parser.print_parse_error)
  /*   	std::cerr << ": " << m << '\n';
 

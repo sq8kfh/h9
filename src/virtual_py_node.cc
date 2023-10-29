@@ -186,7 +186,7 @@ VirtualPyNode::VirtualPyNode(int node_id, const std::string& py_path, const std:
 
 VirtualPyNode::~VirtualPyNode() {
     Py_XDECREF(on_frame_func);
-    Py_FinalizeEx();
+    //    Py_FinalizeEx();
     SPDLOG_LOGGER_INFO(logger, "Unload Python virtual node: '{}' with id: {}.", py_module, node_id);
 };
 

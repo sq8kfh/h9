@@ -64,7 +64,7 @@ class SizeMismatchException: public DeviceException {
 class DeviceNotExistException: public DeviceException {
   public:
     DeviceNotExistException() {
-        msg = "Device not exist exception";
+        msg = "Node not exist exception";
     }
 };
 

@@ -153,9 +153,9 @@ int DevicesMgr::active_devices_count() noexcept {
     return ret;
 }
 
-bool DevicesMgr::is_device_exist(std::uint16_t dev_id) noexcept {
+bool DevicesMgr::is_device_exist(std::uint16_t node_id) noexcept {
     devices_map_mtx.lock_shared();
-    bool ret = devices_map.count(dev_id);
+    bool ret = devices_map.count(node_id);
     devices_map_mtx.unlock_shared();
     return ret;
 }
@@ -232,10 +232,10 @@ std::vector<DevicesMgr::DeviceDsc> DevicesMgr::get_devices_list() noexcept {
 //     assert(0);
 // }
 
-std::vector<Device::RegisterDsc> DevicesMgr::get_registers_list(std::uint16_t dev_id) noexcept {
+std::vector<Device::RegisterDsc> DevicesMgr::get_registers_list(std::uint16_t node_id) noexcept {
     devices_map_mtx.lock_shared();
-    if (devices_map.count(dev_id)) {
-        auto ret = devices_map[dev_id]->get_registers_list();
+    if (devices_map.count(node_id)) {
+        auto ret = devices_map[node_id]->get_registers_list();
         devices_map_mtx.unlock_shared();
         return ret;
     }
@@ -243,12 +243,12 @@ std::vector<Device::RegisterDsc> DevicesMgr::get_registers_list(std::uint16_t de
     return std::vector<Device::RegisterDsc>();
 }
 
-int DevicesMgr::get_device_info(std::uint16_t dev_id, DevicesMgr::DeviceInfo& device_info) {
+int DevicesMgr::get_device_info(std::uint16_t node_id, DevicesMgr::DeviceInfo& device_info) {
     devices_map_mtx.lock_shared();
-    if (devices_map.count(dev_id)) {
+    if (devices_map.count(node_id)) {
         int ret = 0;
-        auto dev = devices_map[dev_id];
-        device_info.id = dev_id;
+        auto dev = devices_map[node_id];
+        device_info.id = node_id;
         device_info.type = dev->device_type();
         device_info.name = dev->device_name();
         device_info.version_major = dev->device_version_major();
@@ -265,11 +265,26 @@ int DevicesMgr::get_device_info(std::uint16_t dev_id, DevicesMgr::DeviceInfo& de
     throw DeviceNotExistException();
 }
 
-Device::regvalue_t DevicesMgr::set_register(std::uint16_t dev_id, std::uint8_t reg, Device::regvalue_t value) {
+void DevicesMgr::node_reset(std::uint16_t node_id) {
     devices_map_mtx.lock_shared();
-    if (devices_map.count(dev_id)) {
+    if (devices_map.count(node_id)) {
         try {
-            auto ret = devices_map[dev_id]->set_register(reg, std::move(value));
+            devices_map[node_id]->node_reset();
+        }
+        catch (...) {
+            devices_map_mtx.unlock_shared();
+            throw;
+        }
+    }
+    devices_map_mtx.unlock_shared();
+    throw DeviceNotExistException();
+}
+
+Device::regvalue_t DevicesMgr::set_register(std::uint16_t node_id, std::uint8_t reg, Device::regvalue_t value) {
+    devices_map_mtx.lock_shared();
+    if (devices_map.count(node_id)) {
+        try {
+            auto ret = devices_map[node_id]->set_register(reg, std::move(value));
             devices_map_mtx.unlock_shared();
             return ret;
         }
@@ -282,11 +297,62 @@ Device::regvalue_t DevicesMgr::set_register(std::uint16_t dev_id, std::uint8_t r
     throw DeviceNotExistException();
 }
 
-Device::regvalue_t DevicesMgr::get_register(std::uint16_t dev_id, std::uint8_t reg) {
+Device::regvalue_t DevicesMgr::get_register(std::uint16_t node_id, std::uint8_t reg) {
     devices_map_mtx.lock_shared();
-    if (devices_map.count(dev_id)) {
+    if (devices_map.count(node_id)) {
         try {
-            auto ret = devices_map[dev_id]->get_register(reg);
+            auto ret = devices_map[node_id]->get_register(reg);
+            devices_map_mtx.unlock_shared();
+            return ret;
+        }
+        catch (...) {
+            devices_map_mtx.unlock_shared();
+            throw;
+        }
+    }
+    devices_map_mtx.unlock_shared();
+    throw DeviceNotExistException();
+}
+
+Device::regvalue_t DevicesMgr::set_register_bit(std::uint16_t node_id, std::uint8_t reg, std::uint8_t bit_num) {
+    devices_map_mtx.lock_shared();
+    if (devices_map.count(node_id)) {
+        try {
+            auto ret = devices_map[node_id]->set_register_bit(reg, bit_num);
+            devices_map_mtx.unlock_shared();
+            return ret;
+        }
+        catch (...) {
+            devices_map_mtx.unlock_shared();
+            throw;
+        }
+    }
+    devices_map_mtx.unlock_shared();
+    throw DeviceNotExistException();
+}
+
+Device::regvalue_t DevicesMgr::clear_register_bit(std::uint16_t node_id, std::uint8_t reg, std::uint8_t bit_num) {
+    devices_map_mtx.lock_shared();
+    if (devices_map.count(node_id)) {
+        try {
+            auto ret = devices_map[node_id]->clear_register_bit(reg, bit_num);
+            devices_map_mtx.unlock_shared();
+            return ret;
+        }
+        catch (...) {
+            devices_map_mtx.unlock_shared();
+            throw;
+        }
+    }
+    devices_map_mtx.unlock_shared();
+    throw DeviceNotExistException();
+}
+
+Device::regvalue_t DevicesMgr::toggle_register_bit(std::uint16_t node_id, std::uint8_t reg, std::uint8_t bit_num) {
+    devices_map_mtx.lock_shared();
+    if (devices_map.count(node_id)) {
+        try {
+            auto ret = devices_map[node_id]->toggle_register_bit(reg, bit_num);
             devices_map_mtx.unlock_shared();
             return ret;
         }

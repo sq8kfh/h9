@@ -68,7 +68,7 @@ class DevicesMgr: public NodeMgr {
     int discover() noexcept;
 
     int active_devices_count() noexcept;
-    bool is_device_exist(std::uint16_t dev_id) noexcept;
+    bool is_device_exist(std::uint16_t node_id) noexcept;
     std::vector<DevicesMgr::DeviceDsc> get_devices_list() noexcept;
 
 //    int attach_event_observer(TCPClientThread* observer, const std::string& event_name, std::uint16_t dev_id) noexcept;
@@ -78,9 +78,13 @@ class DevicesMgr: public NodeMgr {
 //    std::vector<std::string> get_device_specific_methods(std::uint16_t dev_id) noexcept;
     //H9Value execute_device_specific_method(std::uint16_t dev_id, const std::string& method_name, const H9Tuple& tuple);
 
-    std::vector<Device::RegisterDsc> get_registers_list(std::uint16_t dev_id) noexcept;
+    std::vector<Device::RegisterDsc> get_registers_list(std::uint16_t node_id) noexcept;
 
     int get_device_info(std::uint16_t dev_id, DeviceInfo& device_info);
-    Device::regvalue_t set_register(std::uint16_t dev_id, std::uint8_t reg, Device::regvalue_t value);
-    Device::regvalue_t get_register(std::uint16_t dev_id, std::uint8_t reg);
+    void node_reset(std::uint16_t node_id);
+    Device::regvalue_t set_register(std::uint16_t node_id, std::uint8_t reg, Device::regvalue_t value);
+    Device::regvalue_t get_register(std::uint16_t node_id, std::uint8_t reg);
+    Device::regvalue_t set_register_bit(std::uint16_t node_id, std::uint8_t reg, std::uint8_t bit_num);
+    Device::regvalue_t clear_register_bit(std::uint16_t node_id, std::uint8_t reg, std::uint8_t bit_num);
+    Device::regvalue_t toggle_register_bit(std::uint16_t node_id, std::uint8_t reg, std::uint8_t bit_num);
 };

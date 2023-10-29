@@ -64,7 +64,15 @@ void TCPClientThread::thread_recv_msg() {
         SPDLOG_LOGGER_TRACE(logger, "Recv JSON from client: {}: {}.", get_client_idstring().c_str(), json.dump());
     }
     jsonrpcpp::Parser parser;
-    jsonrpcpp::entity_ptr msg = parser.parse_json(json);
+    jsonrpcpp::entity_ptr msg;
+    try {
+        msg = parser.parse_json(json);
+    }
+    catch (const jsonrpcpp::RpcException& e) {
+        SPDLOG_LOGGER_ERROR(logger, "Recv invalid JSONRPC from client: {}: {}.", get_client_idstring().c_str(), e.what());
+        h9socket.send(jsonrpcpp::ParseErrorException(e.what()).to_json());
+        return;
+    }
 
     if (msg && msg->is_request()) {
         jsonrpcpp::request_ptr request = std::dynamic_pointer_cast<jsonrpcpp::Request>(msg);

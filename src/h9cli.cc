@@ -35,6 +35,11 @@ class H9CliConfigurator: public H9Configurator {
         H9Configurator("h9cli", "Command line interface to the H9.") {}
 };
 
+static int quote_detector(char *line, int index) {
+    //printf("quote_detector %s %d\n",line, index);
+    return index > 0 && line[index - 1] == '\\' && !quote_detector(line, index - 1);
+}
+
 int main(int argc, char** argv) {
     H9CliConfigurator h9;
     h9.logger_initial_setup();
@@ -56,17 +61,22 @@ int main(int argc, char** argv) {
         exit(EXIT_FAILURE);
     }
 
-    CLIParsingDriver& cli = CLIParsingDriver::get();
-    cli.set_connector(&h9_connector);
+    CLIParsingDriver& cli = CLIParsingDriver::create(&h9_connector);
 
-    rl_completer_word_break_characters = " \t\n\\'`@$><=;|&{(";
+    //rl_completer_word_break_characters = " \t\n\\'`@$><=;|&{(";
     rl_attempted_completion_function = cli_completion_wrapper;
+    rl_completer_quote_characters = "\"'";
+    rl_char_is_quoted_p = &quote_detector;
+    rl_completer_word_break_characters = " ";
     //    rl_special_prefixes = "\"";
     //    rl_basic_quote_characters = "";
 
-    rl_sort_completion_matches = 0;
+    rl_sort_completion_matches = 1;
+
+    std::string prompt = "\033[38;5;172mh9cli \033[m@\033[38;5;153m" + h9_connector.hostname() + "\033[m> ";
+
     while (true) {
-        char* input = readline("\033[38;5;172mh9 \033[m@\033[38;5;153mh9.local\033[m> ");
+        char* input = readline(prompt.c_str());
 
         if (!input)
             break;
@@ -76,8 +86,10 @@ int main(int argc, char** argv) {
 
         // write_readline_history();
         int parse_res = cli.parse(input);
-        if (parse_res)
-            continue;
+
+        if (parse_res == 0) {
+            cli.execute();
+        }
         // exec_unit(cli_parser.result, &cmd_ctx);
 
         free(input);

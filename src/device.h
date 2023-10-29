@@ -62,18 +62,22 @@ class Device: protected Node {
     //    virtual H9Value execute_device_specific_method(const std::string &method_name, const H9Tuple& tuple);
     //
     //    std::uint16_t get_device_id() const noexcept;
-    std::uint16_t device_type() const noexcept;
-    std::uint64_t device_version() const noexcept;
-    std::uint16_t device_version_major() const noexcept;
-    std::uint16_t device_version_minor() const noexcept;
-    std::uint16_t device_version_patch() const noexcept;
-    std::string device_name() const noexcept;
-    std::time_t device_created_time() const noexcept;
-    std::time_t device_last_seen_time() const noexcept;
-    std::string device_description() const noexcept;
+    [[nodiscard]] std::uint16_t device_type() const noexcept;
+    [[nodiscard]] std::uint64_t device_version() const noexcept;
+    [[nodiscard]] std::uint16_t device_version_major() const noexcept;
+    [[nodiscard]] std::uint16_t device_version_minor() const noexcept;
+    [[nodiscard]] std::uint16_t device_version_patch() const noexcept;
+    [[nodiscard]] std::string device_name() const noexcept;
+    [[nodiscard]] std::time_t device_created_time() const noexcept;
+    [[nodiscard]] std::time_t device_last_seen_time() const noexcept;
+    [[nodiscard]] std::string device_description() const noexcept;
 
+    void node_reset();
     regvalue_t set_register(std::uint8_t reg, regvalue_t value);
     regvalue_t get_register(std::uint8_t reg);
+    regvalue_t set_register_bit(std::uint8_t reg, std::uint8_t bit_num);
+    regvalue_t clear_register_bit(std::uint8_t reg, std::uint8_t bit_num);
+    regvalue_t toggle_register_bit(std::uint8_t reg, std::uint8_t bit_num);
 };
 
 #endif // H9_DEVICE_H

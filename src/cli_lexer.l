@@ -25,45 +25,23 @@
 "="                     return cli_drv.tee_token(yy::parser::make_ASSIGN());
 ":"                     return cli_drv.tee_token(yy::parser::make_COLON());
 
-node                    {
-                            //printf("!- node token mach\n");
-                            return cli_drv.tee_token(yy::parser::make_T_NODE());
-                        }
+cli                     return cli_drv.tee_token(yy::parser::make_T_CLI());
+clear_cache             return cli_drv.tee_token(yy::parser::make_T_CLEAR_CACHE());
 
-restart                 {
-                            //printf("!- restart token mach\n");
-                            return cli_drv.tee_token(yy::parser::make_T_RESTART());
-                        }
+h9d                     return cli_drv.tee_token(yy::parser::make_T_H9D());
+discover                return cli_drv.tee_token(yy::parser::make_T_DISCOVER());
 
-reg                     {
-                            //printf("!- reg token mach\n");
-                            return cli_drv.tee_token(yy::parser::make_T_REG());
-                        }
+node                    return cli_drv.tee_token(yy::parser::make_T_NODE());
 
-set                     {
-                            //printf("!- set token mach\n");
-                            return cli_drv.tee_token(yy::parser::make_T_SET());
-                        }
+reset                   return cli_drv.tee_token(yy::parser::make_T_RESET());
+info                    return cli_drv.tee_token(yy::parser::make_T_INFO());
 
-get                     {
-                            //printf("!- get token mach\n");
-                            return cli_drv.tee_token(yy::parser::make_T_GET());
-                        }
-
-setbit                  {
-                            //printf("!- setbit token mach\n");
-                            return cli_drv.tee_token(yy::parser::make_T_SETBIT());
-                        }
-
-clearbit                {
-                            //printf("!- clearbit token mach\n");
-                            return cli_drv.tee_token(yy::parser::make_T_CLEARBIT());
-                        }
-
-togglebit               {
-                            //printf("!- togglebit token mach\n");
-                            return cli_drv.tee_token(yy::parser::make_T_TOGGLEBIT());
-                        }
+reg                     return cli_drv.tee_token(yy::parser::make_T_REG());
+set                     return cli_drv.tee_token(yy::parser::make_T_SET());
+get                     return cli_drv.tee_token(yy::parser::make_T_GET());
+setbit                  return cli_drv.tee_token(yy::parser::make_T_SETBIT());
+clearbit                return cli_drv.tee_token(yy::parser::make_T_CLEARBIT());
+togglebit               return cli_drv.tee_token(yy::parser::make_T_TOGGLEBIT());
 
 [0-9]+                  {
                             //printf("!- number token mach\n");
@@ -84,12 +62,16 @@ b[01]{1,32}             {
                             return cli_drv.tee_token(yy::parser::make_NUMBER(tmp));
                         }
 
+([0-9A-Za-z]|(\\[ ]))+  {
+                            return cli_drv.tee_token(yy::parser::make_STRING(cli_drv.unescape(std::string(yytext))));
+                        }
+
 \"[^\n\"]+\"            {
-                            std::string val = {yytext};
-                            val.erase(0, 1);
+                            std::string val = {&yytext[1]};
+                            //val.erase(0, 1);
                             val.pop_back();
                             //std::cout << "string: " << val << '\n';
-                            return cli_drv.tee_token(yy::parser::make_STRING(val));
+                            return cli_drv.tee_token(yy::parser::make_QUOTED_STRING(val));
                         }
 
 .|[^ \t\n]+             {
