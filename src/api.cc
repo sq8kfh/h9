@@ -129,7 +129,7 @@ nlohmann::json API::authenticate(TCPClientThread* client_thread, const jsonrpcpp
 
 nlohmann::json API::get_nodes_list(TCPClientThread* client_thread, const jsonrpcpp::Id& id, const jsonrpcpp::Parameter& params) {
     nlohmann::json r = nlohmann::json::array();
-    for (auto& d : dev_mgr->get_devices_list()) {
+    for (auto& d : dev_mgr->get_nodes_list()) {
         r.push_back({{"id", d.id}, {"type", d.type}, {"name", d.name}});
     }
     return std::move(r);
@@ -150,8 +150,8 @@ nlohmann::json API::get_node_info(TCPClientThread* client_thread, const jsonrpcp
         SPDLOG_DEBUG("Dump '{}' calling params: {}.", __FUNCTION__, params.to_json().dump());
         throw jsonrpcpp::InvalidParamsException(e.what(), id);
     }
-    NodeMgr::DeviceInfo device_info;
-    if (dev_mgr->get_device_info(node_id, device_info) < 0) {
+    NodeMgr::NodeInfo device_info;
+    if (dev_mgr->get_node_info(node_id, device_info) < 0) {
         throw jsonrpcpp::RequestException(jsonrpcpp::Error("Node " + std::to_string(node_id) + "does not exist.", NODE_DOES_NOT_EXIST), id);
     }
 
@@ -237,7 +237,7 @@ nlohmann::json API::get_registers_list(TCPClientThread* client_thread, const jso
         SPDLOG_DEBUG("Dump '{}' calling params: {}.", __FUNCTION__, params.to_json().dump());
         throw jsonrpcpp::InvalidParamsException(e.what(), id);
     }
-    if (dev_mgr->is_device_exist(node_id)) {
+    if (dev_mgr->is_node_exist(node_id)) {
         nlohmann::json r = nlohmann::json::array();
 
         for (auto& reg : dev_mgr->get_registers_list(node_id)) {

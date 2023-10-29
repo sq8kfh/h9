@@ -162,7 +162,7 @@ void H9dConfigurator::logger_setup() {
     auto bus = spdlog::stdout_color_mt(bus_logger_name);
     auto frame_console = spdlog::stdout_color_mt(frames_logger_name);
     auto tcpserver_console = spdlog::stdout_color_mt(tcp_logger_name);
-    auto devices_console = spdlog::stdout_color_mt(devices_logger_name);
+    auto devices_console = spdlog::stdout_color_mt(nodes_logger_name);
     auto vendpoint_console = spdlog::stdout_color_mt(vendpoint_logger_name);
 
     if (log_file_sink) {

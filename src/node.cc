@@ -76,7 +76,7 @@ Node::Node(NodeMgr* node_mgr, Bus* bus, std::uint16_t node_id, std::uint16_t nod
     _device_name("unknown"),
     _device_description(""),
     _created_time(std::time(nullptr)) {
-    logger = spdlog::get(H9dConfigurator::devices_logger_name);
+    logger = spdlog::get(H9dConfigurator::nodes_logger_name);
 
     SPDLOG_LOGGER_INFO(logger, "Create device descriptor: id: {} type: {} version: {}.{}.{}.", node_id, node_type,
                   device_version_major(), device_version_minor(), device_version_patch());

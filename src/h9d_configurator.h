@@ -26,7 +26,7 @@ class H9dConfigurator {
     constexpr static char frames_recv_to_file_logger_name[] = "frames_recv_to_file";
     constexpr static char frames_sent_to_file_logger_name[] = "frames_sent_to_file";
     constexpr static char tcp_logger_name[] = "tcp";
-    constexpr static char devices_logger_name[] = "dev";
+    constexpr static char nodes_logger_name[] = "node";
     constexpr static char vendpoint_logger_name[] = "vend";
 
     constexpr static int default_source_id = 509;

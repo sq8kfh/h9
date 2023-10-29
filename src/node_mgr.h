@@ -49,23 +49,23 @@ class NodeMgr: public FrameSubject {
 
     virtual void on_frame_recv(const ExtH9Frame& frame) noexcept;
 
-    std::shared_mutex devices_map_mtx;
+    std::shared_mutex nodes_map_mtx;
 
-    std::map<std::uint16_t, Node*> devices_map;
+    std::map<std::uint16_t, Node*> nodes_map;
 
     std::mutex frame_queue_mtx;
     std::condition_variable frame_queue_cv; // TODO: counting_semaphore (C++20)?
     std::queue<ExtH9Frame> frame_queue;
 
-    std::atomic_bool devices_update_thread_run;
-    std::thread devices_update_thread_desc;
-    void devices_update_thread();
+    std::atomic_bool nodes_update_thread_run;
+    std::thread nodes_update_thread_desc;
+    void nodes_update_thread();
 
-    Node* build_device(std::uint16_t node_id, std::uint16_t node_type, std::uint64_t node_version) noexcept;
-    void add_device(std::uint16_t node_id, std::uint16_t node_type, std::uint64_t node_version) noexcept;
+    Node* build_node(std::uint16_t node_id, std::uint16_t node_type, std::uint64_t node_version) noexcept;
+    void add_node(std::uint16_t node_id, std::uint16_t node_type, std::uint64_t node_version) noexcept;
 
   public:
-    struct DeviceDsc {
+    struct NodeDsc {
         std::uint16_t id;
         std::uint16_t type;
         std::uint16_t version_major;
@@ -74,7 +74,7 @@ class NodeMgr: public FrameSubject {
         std::string name;
     };
 
-    struct DeviceInfo: public DeviceDsc {
+    struct NodeInfo: public NodeDsc {
         std::time_t created_time;
         std::time_t last_seen_time;
         std::string description;
@@ -83,7 +83,7 @@ class NodeMgr: public FrameSubject {
     explicit NodeMgr(Bus* bus);
     NodeMgr(const NodeMgr& a) = delete;
     ~NodeMgr();
-    void load_devices_description(const std::string& devices_description_filename);
+    void load_devices_description(const std::string& nodes_description_filename);
 
     void response_timeout_duration(int response_timeout_duration);
     int response_timeout_duration();
@@ -91,8 +91,8 @@ class NodeMgr: public FrameSubject {
     int discover() noexcept;
 
     int active_devices_count() noexcept;
-    bool is_device_exist(std::uint16_t node_id) noexcept;
-    std::vector<NodeMgr::DeviceDsc> get_devices_list() noexcept;
+    bool is_node_exist(std::uint16_t node_id) noexcept;
+    std::vector<NodeMgr::NodeDsc> get_nodes_list() noexcept;
 
     //    int attach_event_observer(TCPClientThread* observer, const std::string& event_name, std::uint16_t dev_id) noexcept;
     //    int detach_event_observer(TCPClientThread* observer, const std::string& event_name, std::uint16_t dev_id) noexcept;
@@ -103,7 +103,7 @@ class NodeMgr: public FrameSubject {
 
     std::vector<Node::RegisterDsc> get_registers_list(std::uint16_t node_id) noexcept;
 
-    int get_device_info(std::uint16_t dev_id, DeviceInfo& device_info);
+    int get_node_info(std::uint16_t dev_id, NodeInfo& device_info);
     void node_reset(std::uint16_t node_id);
     Node::regvalue_t set_register(std::uint16_t node_id, std::uint8_t reg, Node::regvalue_t value);
     Node::regvalue_t get_register(std::uint16_t node_id, std::uint8_t reg);
