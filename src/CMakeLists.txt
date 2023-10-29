@@ -42,11 +42,10 @@ set(H9D_SRC h9d.cc config.h config_gen.h
         api.cc api.h
         client_frame_obs.cc client_frame_obs.h
         metrics_collector.cc metrics_collector.h
+        raw_node.cc raw_node.h
+        send_frame_result.h
         node_mgr.cc node_mgr.h
         node.cc node.h
-        send_frame_result.h
-        devices_mgr.cc devices_mgr.h
-        device.cc device.h
         devicedescloader.cc devicedescloader.h
         virtual_driver.cc virtual_driver.h
         virtual_endpoint.cc virtual_endpoint.h

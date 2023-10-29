@@ -1,330 +1,442 @@
 /*
  * H9 project
  *
- * Created by SQ8KFH on 2020-11-08.
+ * Created by SQ8KFH on 2020-11-23.
  *
- * Copyright (C) 2020-2023 Kamil Palkowski. All rights reserved.
+ * Copyright (C) 2020-2021 Kamil Palkowski. All rights reserved.
  */
 
 #include "node.h"
 
-#include <arpa/inet.h>
-#include <spdlog/spdlog.h>
-#include "bus.h"
-#include "node_mgr.h"
-#include <fmt/core.h>
+#include <cassert>
 
-void Node::on_frame_recv(const ExtH9Frame& frame) noexcept {
-    frame_promise_set_mtx.lock();
-    for (auto it = frame_promise_set.begin(); it != frame_promise_set.end();) {
-        if ((*it)->on_frame(frame)) {
-            it = frame_promise_set.erase(it);
-        }
-        else {
-            ++it;
-        }
-    }
-    frame_promise_set_mtx.unlock();
+#include "dev_node_exception.h"
+#include "h9d_configurator.h"
+#include "tcpclientthread.h"
+
+DeviceDescLoader Node::nodedescloader;
+
+// void Device::update_device_state(H9frame frame) noexcept {
+////    update_device_last_seen_time();
+////
+////    if (frame.type == H9frame::Type::REG_EXTERNALLY_CHANGED || frame.type == H9frame::Type::REG_INTERNALLY_CHANGED ||
+////        frame.type == H9frame::Type::REG_VALUE_BROADCAST) { // && frame.source_id == 32 && frame.data[0] == 10) {
+////        DeviceEvent event_msg(node_id, "register_change");
+////
+////        event_msg.add_value("register_id", frame.data[0]);
+////        event_msg.add_value("value_len", frame.dlc-1);
+////        uint64_t tmp_value = 0;
+////        for (int i=1; i < frame.dlc; ++i) {
+////            tmp_value <<= 8;
+////            tmp_value |= frame.data[i];
+////        }
+////        event_msg.add_value("value", tmp_value);
+////
+////        notify_event_observer("register_change", std::move(event_msg));
+////    }
+//}
+
+ void Node::update_device_last_seen_time() noexcept {
+     _last_seen_time = std::time(nullptr);
 }
 
-Node::FramePromise* Node::create_frame_promise(H9FrameComparator comparator) {
-    auto p = new FramePromise(this, comparator);
-    frame_promise_set_mtx.lock();
-    frame_promise_set.insert(p);
-    frame_promise_set_mtx.unlock();
+////void Device::attach_event_observer(TCPClientThread *observer, const std::string& event_name) noexcept {
+////    event_name_mtx.lock();
+////    event_observers[event_name].insert(observer);
+////    event_name_mtx.unlock();
+////    h9_log_info("Attach observer %s to '%s' event on device %hu", observer->get_client_idstring().c_str(), event_name.c_str(), get_node_id());
+////}
+////
+////void Device::detach_event_observer(TCPClientThread *observer, const std::string& event_name) noexcept {
+////    event_name_mtx.lock();
+////    event_observers[event_name].erase(observer);
+////    event_name_mtx.unlock();
+////    h9_log_info("Detach observer %s from '%s' event on device %hu", observer->get_client_idstring().c_str(), event_name.c_str(), get_node_id());
+////}
+////
+////void Device::notify_event_observer(std::string event_name, GenericMsg msg) noexcept {
+////    event_name_mtx.lock();
+////    for (auto observer : event_observers[event_name]) {
+////        h9_log_debug("Notify observer %s, event '%s' on device %hu", observer->get_client_idstring().c_str(), event_name.c_str(), node_id);
+////        try {
+////            (*observer).send_msg(msg);
+////        }
+////        catch (std::runtime_error& e) {
+////            h9_log_err("Notify observer %s error: %s", observer->get_client_idstring().c_str(), e.what());
+////        }
+////    }
+////    event_name_mtx.unlock();
+////}
 
-    return p;
-}
+Node::Node(NodeMgr* node_mgr, Bus* bus, std::uint16_t node_id, std::uint16_t node_type, std::uint64_t node_version) noexcept:
+    RawNode(node_mgr, bus, node_id),
+    //Node(std::move(node)),
+    _device_type(node_type),
+    _device_version(node_version),
+    _device_name("unknown"),
+    _device_description(""),
+    _created_time(std::time(nullptr)) {
+    logger = spdlog::get(H9dConfigurator::devices_logger_name);
 
-void Node::destroy_frame_promise(FramePromise* frame_promise) {
-    frame_promise_set_mtx.lock();
-    frame_promise_set.erase(frame_promise);
-    delete frame_promise;
-    frame_promise_set_mtx.unlock();
-}
+    SPDLOG_LOGGER_INFO(logger, "Create device descriptor: id: {} type: {} version: {}.{}.{}.", node_id, node_type,
+                  device_version_major(), device_version_minor(), device_version_patch());
 
-Node::Node(NodeMgr* node_mgr, Bus* bus, std::uint16_t node_id) noexcept:
-    FrameObserver(node_mgr, H9FrameComparator(node_id)),
-    node_mgr(node_mgr),
-    bus(bus),
-    _node_id(node_id) {
-}
+    _last_seen_time = _created_time;
 
-Node::~Node() noexcept {
-}
-
-std::uint16_t Node::node_id() noexcept {
-    return _node_id;
-}
-
-ssize_t Node::reset(const std::string& origin) noexcept {
-    H9FrameComparator comparator;
-    comparator.set_source_id(_node_id);
-    comparator.set_type(H9frame::Type::ERROR);
-    comparator.set_type_in_alternate_set(H9frame::Type::NODE_TURNED_ON);
-    comparator.seqnum_override_for_alternate_set(0);
-
-    FramePromise* frame_promise = create_frame_promise(comparator);
-
-    ExtH9Frame req(origin, H9frame::Type::NODE_RESET, _node_id, 0, {});
-
-    int seqnum = bus->send_frame(req);
-    frame_promise->set_comparator_seqnum(seqnum);
-
-    auto future = frame_promise->get_future();
-
-    if (future.wait_for(std::chrono::seconds(node_mgr->response_timeout_duration())) != std::future_status::ready) {
-        destroy_frame_promise(frame_promise);
-        return TIMEOUT_ERROR; // timeout
-    }
-
-    ExtH9Frame res = future.get();
-
-    destroy_frame_promise(frame_promise);
-
-    if (res.type() == H9frame::Type::NODE_TURNED_ON) {
-        // TODO: zrobic cos z data?
-        return res.dlc();
-    }
-    else if (res.type() == H9frame::Type::ERROR && res.dlc() == 1) {
-        return -res.data()[0];
+    if (nodedescloader.get_device_name_by_type(node_type) != "") {
+        _device_name = nodedescloader.get_device_name_by_type(node_type);
+        _device_description = nodedescloader.get_device_description_by_type(node_type);
     }
 
-    return MALFORMED_FRAME_ERROR;
+    register_map[1] = {1, "Node type", "uint", 16, true, false, {}, ""};
+    register_map[2] = {2, "Node version", "uint", 48, true, false, {}, ""};
+    register_map[3] = {3, "Build metadata", "str", 48, true, false, {}, ""};
+    register_map[4] = {4, "Node id", "uint", 9, true, true, {}, ""};
+    register_map[5] = {5, "MCU type", "uint", 8, true, false, {}, ""};
+
+    for (const auto &it: nodedescloader.get_device_register_by_type(node_type)) {
+        register_map[it.first] = {it.second.number, it.second.name, it.second.type, it.second.size, it.second.readable, it.second.writable, it.second.bits_names, it.second.description};
+    }
 }
 
-int32_t Node::get_node_type(const std::string& origin) noexcept {
-    std::uint16_t buf;
-    ssize_t ret = get_reg(origin, REG_NODE_TYPE, sizeof(buf), reinterpret_cast<std::uint8_t*>(&buf));
-    if (ret == 2) {
-        return ntohs(buf);
-    }
-    else if (ret >= 0) {
-        return MALFORMED_FRAME_ERROR;
-    }
-    return ret;
-}
+// std::vector<std::string> Device::get_events_list() noexcept {
+//    std::vector<std::string> ret;
+//    ret.push_back("register_change");
+//
+//    return ret;
+//}
 
-int64_t Node::get_node_version(const std::string& origin, std::uint16_t* major, std::uint16_t* minor, std::uint16_t* patch) noexcept {
-    std::uint16_t buf[3];
-    ssize_t ret = get_reg(origin, REG_NODE_VERSION, sizeof(buf), reinterpret_cast<std::uint8_t*>(&buf));
-    if (ret == 6) {
-        std::uint16_t tmp = ntohs(buf[0]);
-        ret = tmp;
-        if (major)
-            *major = tmp;
-
-        tmp = ntohs(buf[1]);
-        ret = (ret << 16) | tmp;
-        if (minor)
-            *minor = tmp;
-
-        tmp = ntohs(buf[2]);
-        ret = (ret << 16) | tmp;
-        if (patch)
-            *patch = tmp;
-    }
-    else if (ret >= 0) {
-        return MALFORMED_FRAME_ERROR;
+std::vector<Node::RegisterDsc> Node::get_registers_list() noexcept {
+    std::vector<Node::RegisterDsc> ret;
+    for (const auto& reg : register_map) {
+        ret.push_back(reg.second);
     }
     return ret;
 }
 
-int32_t Node::get_mcu_type(const std::string& origin) noexcept {
-    std::uint16_t buf;
-    ssize_t ret = get_reg(origin, REG_NODE_MCU_TYPE, sizeof(buf), reinterpret_cast<std::uint8_t*>(&buf));
-    if (ret == 2) {
-        return ntohs(buf);
-    }
-    else if (ret >= 0) {
-        return MALFORMED_FRAME_ERROR;
-    }
-    return ret;
+// std::vector<std::string> Device::get_device_specific_methods() noexcept {
+//     return std::vector<std::string>();
+// }
+//
+// H9Value Device::execute_device_specific_method(const std::string &method_name, const H9Tuple& tuple) {
+//     assert(0);
+// }
+//
+// std::uint16_t Device::get_device_id() const noexcept {
+//     return node_id;
+// }
+
+std::uint16_t Node::device_type() const noexcept {
+    return _device_type;
 }
 
-void Node::firmware_update(const std::string& origin, void (*progress_callback)(int percentage)) {
-    // TODO: implement frimware update
+ std::uint64_t Node::device_version() const noexcept {
+     return _device_version;
+ }
+
+std::uint16_t Node::device_version_major() const noexcept {
+    return static_cast<std::uint16_t>(_device_version >> 32);
 }
 
-ssize_t Node::bit_operation(const std::string& origin, H9frame::Type type, std::uint8_t reg, std::uint8_t bit, std::size_t length, std::uint8_t* reg_after_set) noexcept {
-    H9FrameComparator comparator;
-    comparator.set_source_id(_node_id);
-    comparator.set_type(H9frame::Type::REG_EXTERNALLY_CHANGED);
-    comparator.set_first_data_byte(reg);
-    comparator.set_type_in_alternate_set(H9frame::Type::ERROR);
+std::uint16_t Node::device_version_minor() const noexcept {
+    return static_cast<std::uint16_t>(_device_version >> 16);
+}
 
-    FramePromise* frame_promise = create_frame_promise(comparator);
+std::uint16_t Node::device_version_patch() const noexcept {
+    return static_cast<std::uint16_t>(_device_version);
+}
 
-    ExtH9Frame req(origin, type, _node_id, 2, {reg, bit});
+std::string Node::device_name() const noexcept {
+    return _device_name;
+}
 
-    int seqnum = bus->send_frame(req);
-    frame_promise->set_comparator_seqnum(seqnum);
+std::time_t Node::device_created_time() const noexcept {
+    return _created_time;
+}
 
-    auto future = frame_promise->get_future();
+std::time_t Node::device_last_seen_time() const noexcept {
+    return _last_seen_time;
+}
 
-    if (future.wait_for(std::chrono::seconds(node_mgr->response_timeout_duration())) != std::future_status::ready) {
-        destroy_frame_promise(frame_promise);
-        return TIMEOUT_ERROR; // timeout
+std::string Node::device_description() const noexcept {
+    return _device_description;
+}
+
+void Node::node_reset() {
+    ssize_t ret;
+    if ((ret = reset("h9d")) < 0) {
+        if (ret == RawNode::TIMEOUT_ERROR) throw TimeoutException();
+        else if (ret == RawNode::MALFORMED_FRAME_ERROR) throw MalformedFrameException();
+        else throw NodeException(-ret);
     }
+}
 
-    ExtH9Frame res = future.get();
-
-    destroy_frame_promise(frame_promise);
-
-    if (res.type() == H9frame::Type::REG_EXTERNALLY_CHANGED && res.dlc() > 1) {
-        if (reg_after_set) {
-            size_t max = length < res.dlc() - 1 ? length : res.dlc() - 1;
-
-            for (int i = 0; i < max; ++i) {
-                reg_after_set[i] = res.data()[i + 1];
+Node::regvalue_t Node::set_register(std::uint8_t reg, Node::regvalue_t value) {
+    if (register_map.count(reg)) {
+        if (register_map[reg].writable) {
+            if (std::holds_alternative<std::int64_t>(value) && register_map[reg].type != "str") {
+                auto v = std::get<std::int64_t>(value);
+                if (register_map[reg].size <= 8) {
+                    std::uint8_t tmp = v & ((1 << register_map[reg].size) - 1);
+                    std::uint8_t val;
+                    ssize_t ret;
+                    if ((ret = set_reg("h9d", reg, tmp, &val)) < 0) {
+                        if (ret == RawNode::TIMEOUT_ERROR) throw TimeoutException();
+                        else if (ret == RawNode::MALFORMED_FRAME_ERROR) throw MalformedFrameException();
+                        else throw NodeException(-ret);
+                    }
+                    else if (ret != sizeof(val)) {
+                        throw SizeMismatchException();
+                    }
+                    return {val};
+                }
+                else if (register_map[reg].size <= 16) {
+                    std::uint16_t tmp = v & ((1 << register_map[reg].size) - 1);
+                    std::uint16_t val;
+                    ssize_t ret;
+                    if ((ret = set_reg("h9d", reg, tmp, &val)) < 0) {
+                        if (ret == RawNode::TIMEOUT_ERROR) throw TimeoutException();
+                        else if (ret == RawNode::MALFORMED_FRAME_ERROR) throw MalformedFrameException();
+                        else throw NodeException(-ret);
+                    }
+                    else if (ret != sizeof(val)) {
+                        throw SizeMismatchException();
+                    }
+                    return {val};
+                }
+                else if (register_map[reg].size <= 32) {
+                    std::uint32_t tmp = v & ((1 << register_map[reg].size) - 1);
+                    std::uint32_t val;
+                    ssize_t ret;
+                    if ((ret = set_reg("h9d", reg, tmp, &val)) < 0) {
+                        if (ret == RawNode::TIMEOUT_ERROR) throw TimeoutException();
+                        else if (ret == RawNode::MALFORMED_FRAME_ERROR) throw MalformedFrameException();
+                        else throw NodeException(-ret);
+                    }
+                    else if (ret != sizeof(val)) {
+                        throw SizeMismatchException();
+                    }
+                    return {val};
+                }
             }
-        }
+            else if (std::holds_alternative<std::string>(value) && register_map[reg].type == "str") {
+                auto v = std::get<std::string>(value);
+                size_t len = register_map[reg].size / 8;
+                len = len < v.size() ? len : v.size();
 
-        return res.dlc() - 1;
-    }
-    else if (res.type() == H9frame::Type::ERROR && res.dlc() == 1) {
-        return -res.data()[0];
-    }
+                ssize_t ret_len = (register_map[reg].size + 7)/8 + 1;
+                auto *ret_buf = new std::uint8_t[ret_len];
 
-    return MALFORMED_FRAME_ERROR;
-}
+                ssize_t ret;
+                if ((ret = set_reg("h9d", reg, len, reinterpret_cast<const std::uint8_t *>(v.c_str()), ret_buf, ret_len)) < 0) {
+                    if (ret == RawNode::TIMEOUT_ERROR) throw TimeoutException();
+                    else if (ret == RawNode::MALFORMED_FRAME_ERROR) throw MalformedFrameException();
+                    else throw NodeException(-ret);
+                }
 
-ssize_t Node::set_bit(const std::string& origin, std::uint8_t reg, std::uint8_t bit, std::size_t length, std::uint8_t* reg_after_set) noexcept {
-    return bit_operation(origin, H9frame::Type::SET_BIT, reg, bit, length, reg_after_set);
-}
+                ret_buf[ret] = '\0';
+                std::string ret_str = {reinterpret_cast<char*>(ret_buf)};
+                delete [] ret_buf;
 
-ssize_t Node::clear_bit(const std::string& origin, std::uint8_t reg, std::uint8_t bit, std::size_t length, std::uint8_t* reg_after_set) noexcept {
-    return bit_operation(origin, H9frame::Type::CLEAR_BIT, reg, bit, length, reg_after_set);
-}
-
-ssize_t Node::toggle_bit(const std::string& origin, std::uint8_t reg, std::uint8_t bit, std::size_t length, std::uint8_t* reg_after_set) noexcept {
-    return bit_operation(origin, H9frame::Type::TOGGLE_BIT, reg, bit, length, reg_after_set);
-}
-
-ssize_t Node::set_reg(const std::string& origin, std::uint8_t reg, std::size_t length, const std::uint8_t* reg_val, std::uint8_t* reg_after_set, ssize_t reg_after_set_length) noexcept {
-    H9FrameComparator comparator;
-    comparator.set_source_id(_node_id);
-    comparator.set_type(H9frame::Type::REG_EXTERNALLY_CHANGED);
-    comparator.set_first_data_byte(reg);
-    comparator.set_type_in_alternate_set(H9frame::Type::ERROR);
-
-    FramePromise* frame_promise = create_frame_promise(comparator);
-
-    std::vector<std::uint8_t> data = {reg};
-    data.insert(data.end(), reg_val, &reg_val[length + 1]);
-
-    ExtH9Frame req(origin, H9frame::Type::SET_REG, _node_id, length + 1, data);
-
-    int seqnum = bus->send_frame(req);
-    frame_promise->set_comparator_seqnum(seqnum);
-
-    auto future = frame_promise->get_future();
-
-    if (future.wait_for(std::chrono::seconds(node_mgr->response_timeout_duration())) != std::future_status::ready) {
-        destroy_frame_promise(frame_promise);
-        return TIMEOUT_ERROR; // timeout
-    }
-
-    ExtH9Frame res = future.get();
-
-    destroy_frame_promise(frame_promise);
-
-    if (res.type() == H9frame::Type::REG_EXTERNALLY_CHANGED && res.dlc() > 1) {
-        if (reg_after_set) {
-            reg_after_set_length = reg_after_set_length < 0 ? length : reg_after_set_length;
-            size_t max = length < res.dlc() - 1 ? reg_after_set_length : res.dlc() - 1;
-
-            for (int i = 0; i < max; ++i) {
-                reg_after_set[i] = res.data()[i + 1];
+                return {ret_str};
             }
+            else if (std::holds_alternative<std::vector<std::uint8_t>>(value)) {
+                auto v = std::get<std::vector<std::uint8_t>>(value);
+                size_t len = (register_map[reg].size + 7)/8;
+                if (len == v.size()) {
+                    auto *ret_buf = new std::uint8_t[len];
+
+                    ssize_t ret;
+                    if ((ret = set_reg("h9d", reg, len, v.data(), ret_buf)) < 0) {
+                        delete [] ret_buf;
+                        if (ret == RawNode::TIMEOUT_ERROR) throw TimeoutException();
+                        else if (ret == RawNode::MALFORMED_FRAME_ERROR) throw MalformedFrameException();
+                        else throw NodeException(-ret);
+                    }
+                    else if (ret != len) {
+                        throw SizeMismatchException();
+                    }
+
+                    Node::regvalue_t ret_v = {std::vector<std::uint8_t> (ret_buf, ret_buf+ret)};
+                    delete [] ret_buf;
+                    return std::move(ret_v);
+                }
+            }
+            throw UnsupportedRegisterDataConversionException(reg);
         }
-
-        return res.dlc() - 1;
+        throw RegisterNotWritableException(reg);
     }
-    else if (res.type() == H9frame::Type::ERROR && res.dlc() == 1) {
-        return -res.data()[0];
+    else {
+        throw RegisterNotExistException(reg);
     }
-
-    return MALFORMED_FRAME_ERROR;
 }
 
-ssize_t Node::set_reg(const std::string& origin, std::uint8_t reg, std::uint8_t reg_val, std::uint8_t* reg_after_set) noexcept {
-    return set_reg(origin, reg, sizeof(reg_val), &reg_val, reg_after_set);
-}
+Node::regvalue_t Node::get_register(std::uint8_t reg) {
+    if (register_map.count(reg)) {
+        if (register_map[reg].readable) {
+            if (register_map[reg].type != "str") {
+                if (register_map[reg].size <= 8) {
+                    std::uint8_t val;
+                    ssize_t ret;
+                    if ((ret = get_reg("h9d", reg, &val)) < 0) {
+                        if (ret == RawNode::TIMEOUT_ERROR) throw TimeoutException();
+                        else if (ret == RawNode::MALFORMED_FRAME_ERROR) throw MalformedFrameException();
+                        else throw NodeException(-ret);
+                    }
+                    else if (ret != sizeof(val)) {
+                        throw SizeMismatchException();
+                    }
+                    return {val};
+                }
+                else if (register_map[reg].size <= 16) {
+                    std::uint16_t val;
+                    ssize_t ret;
+                    if ((ret = get_reg("h9d", reg, &val)) < 0) {
+                        if (ret == RawNode::TIMEOUT_ERROR) throw TimeoutException();
+                        else if (ret == RawNode::MALFORMED_FRAME_ERROR) throw MalformedFrameException();
+                        else throw NodeException(-ret);
+                    }
+                    else if (ret != sizeof(val)) {
+                        throw SizeMismatchException();
+                    }
+                    return {val};
+                }
+                else if (register_map[reg].size <= 32) {
+                    std::uint32_t val;
+                    ssize_t ret;
+                    if ((ret = get_reg("h9d", reg, &val)) < 0) {
+                        if (ret == RawNode::TIMEOUT_ERROR) throw TimeoutException();
+                        else if (ret == RawNode::MALFORMED_FRAME_ERROR) throw MalformedFrameException();
+                        else throw NodeException(-ret);
+                    }
+                    else if (ret != sizeof(val)) {
+                        throw SizeMismatchException();
+                    }
+                    return {val};
+                }
+                else {
+                    size_t len = (register_map[reg].size + 7) / 8;
+                    auto *buf = new std::uint8_t[len];
 
-ssize_t Node::set_reg(const std::string& origin, std::uint8_t reg, std::uint16_t reg_val, std::uint16_t* reg_after_set) noexcept {
-    std::uint16_t buf = htons(reg_val);
-    ssize_t ret = set_reg(origin, reg, sizeof(buf), reinterpret_cast<std::uint8_t*>(&buf), reinterpret_cast<std::uint8_t*>(reg_after_set));
-    if (reg_after_set) {
-        *reg_after_set = ntohs(*reg_after_set);
-    }
-    return ret;
-}
-
-ssize_t Node::set_reg(const std::string& origin, std::uint8_t reg, std::uint32_t reg_val, std::uint32_t* reg_after_set) noexcept {
-    std::uint32_t buf = htonl(reg_val);
-    ssize_t ret = set_reg(origin, reg, sizeof(buf), reinterpret_cast<std::uint8_t*>(&buf), reinterpret_cast<std::uint8_t*>(reg_after_set));
-    if (reg_after_set) {
-        *reg_after_set = ntohl(*reg_after_set);
-    }
-    return ret;
-}
-
-ssize_t Node::get_reg(const std::string& origin, std::uint8_t reg, std::size_t length, std::uint8_t* reg_val) noexcept {
-    H9FrameComparator comparator;
-    comparator.set_source_id(_node_id);
-    comparator.set_type(H9frame::Type::REG_VALUE);
-    comparator.set_first_data_byte(reg);
-    comparator.set_type_in_alternate_set(H9frame::Type::ERROR);
-
-    FramePromise* frame_promise = create_frame_promise(comparator);
-
-    ExtH9Frame req(origin, H9frame::Type::GET_REG, _node_id, 1, {reg});
-
-    int seqnum = bus->send_frame(req);
-    frame_promise->set_comparator_seqnum(seqnum);
-
-    auto future = frame_promise->get_future();
-
-    if (future.wait_for(std::chrono::seconds(node_mgr->response_timeout_duration())) != std::future_status::ready) {
-        destroy_frame_promise(frame_promise);
-        return TIMEOUT_ERROR; // timeout
-    }
-
-    ExtH9Frame res = future.get();
-
-    destroy_frame_promise(frame_promise);
-
-    if (res.type() == H9frame::Type::REG_VALUE && res.dlc() > 1) {
-        size_t ret = length < res.dlc() - 1 ? length : res.dlc() - 1;
-
-        for (int i = 0; i < ret; ++i) {
-            reg_val[i] = res.data()[i + 1];
+                    ssize_t ret;
+                    if ((ret = get_reg("h9d", reg, len, buf)) < 0) {
+                        delete [] buf;
+                        if (ret == RawNode::TIMEOUT_ERROR) throw TimeoutException();
+                        else if (ret == RawNode::MALFORMED_FRAME_ERROR) throw MalformedFrameException();
+                        else throw NodeException(-ret);
+                    }
+                    else if (ret != len) {
+                        throw SizeMismatchException();
+                    }
+                    Node::regvalue_t ret_v = {std::vector<std::uint8_t> (buf, buf+ret)};
+                    delete [] buf;
+                    return std::move(ret_v);
+                }
+            }
+            else if (register_map[reg].type == "str") {
+                size_t len = (register_map[reg].size + 7)/8 + 1;
+                auto *buf = new std::uint8_t[len];
+                ssize_t ret;
+                if ((ret = get_reg("h9d", reg, len - 1, buf)) < 0) {
+                    delete [] buf;
+                    if (ret == RawNode::TIMEOUT_ERROR) throw TimeoutException();
+                    else if (ret == RawNode::MALFORMED_FRAME_ERROR) throw MalformedFrameException();
+                    else throw NodeException(-ret);
+                }
+                buf[ret] = '\0';
+                std::string ret_str = {reinterpret_cast<char*>(buf)};
+                delete [] buf;
+                return std::move(ret_str);
+            }
+            throw UnsupportedRegisterDataConversionException(reg);
         }
-
-        return res.dlc() - 1;
+        throw RegisterNotReadableException(reg);
     }
-    else if (res.type() == H9frame::Type::ERROR && res.dlc() == 1) {
-        return -res.data()[0];
+    else {
+        throw RegisterNotExistException(reg);
     }
-
-    return MALFORMED_FRAME_ERROR;
 }
 
-ssize_t Node::get_reg(const std::string& origin, std::uint8_t reg, std::uint8_t* reg_val) noexcept {
-    return get_reg(origin, reg, 1, reg_val);
+Node::regvalue_t Node::set_register_bit(std::uint8_t reg, std::uint8_t bit_num) {
+    if (register_map.count(reg)) {
+        if (register_map[reg].writable) {
+            if (register_map[reg].type != "str") {
+                size_t result_len = (register_map[reg].size + 7) / 8;
+                auto *result_buf = new std::uint8_t[result_len];
+
+                ssize_t ret;
+                if ((ret = set_bit("h9d", reg, bit_num, result_len, result_buf)) < 0) {
+                    delete [] result_buf;
+                    if (ret == RawNode::TIMEOUT_ERROR) throw TimeoutException();
+                    else if (ret == RawNode::MALFORMED_FRAME_ERROR) throw MalformedFrameException();
+                    else throw NodeException(-ret);
+                }
+
+                Node::regvalue_t ret_v = {std::vector<std::uint8_t> (result_buf, result_buf+ret)};
+                delete [] result_buf;
+                return std::move(ret_v);
+            }
+            throw UnsupportedRegisterDataConversionException(reg);
+        }
+        throw RegisterNotWritableException(reg);
+    }
+    else {
+        throw RegisterNotExistException(reg);
+    }
 }
 
-ssize_t Node::get_reg(const std::string& origin, std::uint8_t reg, std::uint16_t* reg_val) noexcept {
-    std::uint16_t buf;
-    ssize_t ret = get_reg(origin, reg, sizeof(buf), reinterpret_cast<std::uint8_t*>(&buf));
-    *reg_val = ntohs(buf);
-    return ret;
+Node::regvalue_t Node::clear_register_bit(std::uint8_t reg, std::uint8_t bit_num) {
+    if (register_map.count(reg)) {
+        if (register_map[reg].writable) {
+            if (register_map[reg].type != "str") {
+                size_t result_len = (register_map[reg].size + 7) / 8;
+                auto *result_buf = new std::uint8_t[result_len];
+
+                ssize_t ret;
+                if ((ret = clear_bit("h9d", reg, bit_num, result_len, result_buf)) < 0) {
+                    delete [] result_buf;
+                    if (ret == RawNode::TIMEOUT_ERROR) throw TimeoutException();
+                    else if (ret == RawNode::MALFORMED_FRAME_ERROR) throw MalformedFrameException();
+                    else throw NodeException(-ret);
+                }
+
+                Node::regvalue_t ret_v = {std::vector<std::uint8_t> (result_buf, result_buf+ret)};
+                delete [] result_buf;
+                return std::move(ret_v);
+            }
+            throw UnsupportedRegisterDataConversionException(reg);
+        }
+        throw RegisterNotWritableException(reg);
+    }
+    else {
+        throw RegisterNotExistException(reg);
+    }
 }
 
-ssize_t Node::get_reg(const std::string& origin, std::uint8_t reg, std::uint32_t* reg_val) noexcept {
-    std::uint32_t buf;
-    ssize_t ret = get_reg(origin, reg, sizeof(buf), reinterpret_cast<std::uint8_t*>(&buf));
-    *reg_val = ntohl(buf);
-    return ret;
+Node::regvalue_t Node::toggle_register_bit(std::uint8_t reg, std::uint8_t bit_num) {
+    if (register_map.count(reg)) {
+        if (register_map[reg].writable) {
+            if (register_map[reg].type != "str") {
+                size_t result_len = (register_map[reg].size + 7) / 8;
+                auto *result_buf = new std::uint8_t[result_len];
+
+                ssize_t ret;
+                if ((ret = toggle_bit("h9d", reg, bit_num, result_len, result_buf)) < 0) {
+                    delete [] result_buf;
+                    if (ret == RawNode::TIMEOUT_ERROR) throw TimeoutException();
+                    else if (ret == RawNode::MALFORMED_FRAME_ERROR) throw MalformedFrameException();
+                    else throw NodeException(-ret);
+                }
+
+                Node::regvalue_t ret_v = {std::vector<std::uint8_t> (result_buf, result_buf+ret)};
+                delete [] result_buf;
+                return std::move(ret_v);
+            }
+            throw UnsupportedRegisterDataConversionException(reg);
+        }
+        throw RegisterNotWritableException(reg);
+    }
+    else {
+        throw RegisterNotExistException(reg);
+    }
 }

@@ -14,7 +14,7 @@
 #include <string>
 
 #include "bus.h"
-#include "devices_mgr.h"
+#include "node_mgr.h"
 #include "tcpserver.h"
 #include "virtual_endpoint.h"
 
@@ -63,7 +63,7 @@ class H9dConfigurator {
 
     void configure_bus(Bus* bus, VirtualEndpoint* vendpoint);
     void configure_virtual_endpoint(VirtualEndpoint* vendpoint);
-    void configure_devices_mgr(DevicesMgr* devices_mgr);
+    void configure_devices_mgr(NodeMgr* devices_mgr);
     void configure_tcpserver(TCPServer* server);
 
     static std::string version_string();

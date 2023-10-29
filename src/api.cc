@@ -150,7 +150,7 @@ nlohmann::json API::get_node_info(TCPClientThread* client_thread, const jsonrpcp
         SPDLOG_DEBUG("Dump '{}' calling params: {}.", __FUNCTION__, params.to_json().dump());
         throw jsonrpcpp::InvalidParamsException(e.what(), id);
     }
-    DevicesMgr::DeviceInfo device_info;
+    NodeMgr::DeviceInfo device_info;
     if (dev_mgr->get_device_info(node_id, device_info) < 0) {
         throw jsonrpcpp::RequestException(jsonrpcpp::Error("Node " + std::to_string(node_id) + "does not exist.", NODE_DOES_NOT_EXIST), id);
     }
@@ -297,7 +297,7 @@ nlohmann::json API::get_register_value(TCPClientThread* client_thread, const jso
 nlohmann::json API::set_register_value(TCPClientThread* client_thread, const jsonrpcpp::Id& id, const jsonrpcpp::Parameter& params) {
     std::uint16_t node_id = 0xffff;
     std::uint8_t reg = 0;
-    Device::regvalue_t val;
+    Node::regvalue_t val;
     try {
         node_id = params.param_map.at("node_id").get<std::uint16_t>();
         reg = params.param_map.at("reg").get<std::uint8_t>();
@@ -472,7 +472,7 @@ nlohmann::json API::toggle_register_bit(TCPClientThread* client_thread, const js
 }
 
 
-API::API(Bus* bus, DevicesMgr* dev_mgr):
+API::API(Bus* bus, NodeMgr* dev_mgr):
     bus(bus),
     dev_mgr(dev_mgr) {
     api_methods["get_version"] = &API::get_version;

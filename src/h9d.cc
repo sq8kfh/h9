@@ -23,9 +23,9 @@
 #include "api.h"
 #include "bus.h"
 #include "h9d_configurator.h"
-#include "tcpserver.h"
-#include "devices_mgr.h"
 #include "metrics_collector.h"
+#include "node_mgr.h"
+#include "tcpserver.h"
 #include "virtual_endpoint.h"
 
 int main(int argc, char** argv) {
@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
 
     virtual_endpoint.activate();
 
-    DevicesMgr devices_mgr(&bus);
+    NodeMgr devices_mgr(&bus);
     configurator.configure_devices_mgr(&devices_mgr);
 
     devices_mgr.discover();
