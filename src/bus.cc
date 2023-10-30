@@ -62,16 +62,20 @@ void Bus::recv_thread() {
         else {
             for (const auto& [socket, bus_driver] : bus) {
                 if (event_notificator.is_socket_event(number_of_events, socket)) {
+                    int ret;
+                    do {
+                        BusFrame frame;
+                        ret = bus_driver->recv_frame(&frame);
+                        if (ret > 0) {
+                            ++received_frames_counter;
+                            ++(*received_frames_counter_by_type[H9frame::to_underlying(frame.type())]);
 
-                    BusFrame frame;
-                    bus_driver->recv_frame(&frame);
-                    ++received_frames_counter;
-                    ++(*received_frames_counter_by_type[H9frame::to_underlying(frame.type())]);
+                            SPDLOG_LOGGER_DEBUG(frames_logger, "Recv frame {} from {}.", frame, bus_driver->name);
+                            frames_recv_file_logger->info(SimpleJSONBusFrameWraper(frame));
 
-                    SPDLOG_LOGGER_DEBUG(frames_logger, "Recv frame {} from {}.", frame, bus_driver->name);
-                    frames_recv_file_logger->info(SimpleJSONBusFrameWraper(frame));
-
-                    notify_frame_observer(frame);
+                            notify_frame_observer(frame);
+                        }
+                    } while (ret - 1 > 0);
                 }
             }
         }

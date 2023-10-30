@@ -77,10 +77,10 @@ void NodeDevMgr::nodes_dev_update_thread() {
 }
 
 void NodeDevMgr::update_dev_after_node_discovered(std::uint16_t node_id, std::uint16_t node_type) {
-    if (node_id == 100) {
+    if (node_id == 32) {
         devs_map_mtx.lock();
         if (devs_map.count("*") == 0) {
-            auto* dev = new AntennaSwitchDev(this, 100);
+            auto* dev = new AntennaSwitchDev(this, 32);
             devs_map["*"] = dev;
             devs_map_mtx.unlock();
 

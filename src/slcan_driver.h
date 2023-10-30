@@ -9,6 +9,7 @@
 #pragma once
 
 #include "bus_driver.h"
+#include <queue>
 
 class SlcanDriver: public BusDriver {
   private:
@@ -16,19 +17,21 @@ class SlcanDriver: public BusDriver {
     bool noblock;
     std::string recv_buf;
 
+    std::queue<H9frame> recv_queue;
+
     // TODO: Zmienic na kolejke
     std::shared_ptr<BusFrame> last_send;
 
   public:
     SlcanDriver(const std::string& name, const std::string& tty);
-    int open();
+    int open() override;
 
     static std::string build_slcan_msg(const H9frame& frame);
     static H9frame parse_slcan_msg(const std::string& slcan_data);
 
   private:
-    int recv_data(H9frame* frame);
-    int send_data(std::shared_ptr<BusFrame> busframe);
-    void parse_response(const std::string& response);
+    int recv_data(H9frame* frame) override;
+    int send_data(std::shared_ptr<BusFrame> busframe) override;
+    void parse_buf();
     void send_ack();
 };

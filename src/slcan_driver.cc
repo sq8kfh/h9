@@ -10,6 +10,7 @@
 
 #include <fcntl.h>
 #include <iomanip>
+#include <spdlog/spdlog.h>
 #include <sstream>
 #include <system_error>
 #include <termios.h>
@@ -34,7 +35,7 @@ int SlcanDriver::open() {
             fcntl(socket_fd, F_SETFL, 0);
     }
 
-    struct termios options;
+    termios options;
 
     tcgetattr(socket_fd, &options);
 
@@ -124,25 +125,32 @@ H9frame SlcanDriver::parse_slcan_msg(const std::string& slcan_data) {
 }
 
 int SlcanDriver::recv_data(H9frame* frame) {
-    std::uint8_t buf[100];
-    ssize_t nbyte = read(socket_fd, buf, sizeof(buf) - 1);
-    if (nbyte <= 0) {
-        if (nbyte == 0 || errno == ENXIO) {
-            close();
+    if (recv_queue.empty()) {
+        std::uint8_t buf[100];
+        ssize_t nbyte = read(socket_fd, buf, sizeof(buf) - 1);
+        if (nbyte <= 0) {
+            if (nbyte == 0 || errno == ENXIO) {
+                close();
+            }
+            throw std::system_error(errno, std::system_category(), std::to_string(errno) + __FILE__ + std::string(":") + std::to_string(__LINE__));
         }
-        throw std::system_error(errno, std::system_category(), std::to_string(errno) + __FILE__ + std::string(":") + std::to_string(__LINE__));
-    }
-    buf[nbyte] = '\0';
-    // std::cout << "recv raw(" << nbyte << "): " << buf << std::endl;
-    for (int i = 0; i < nbyte; ++i) {
-        recv_buf.push_back(buf[i]);
-        if (buf[i] == '\r' || buf[i] == '\a') {
-            parse_response(recv_buf);
-            recv_buf.clear();
+        buf[nbyte] = '\0';
+        SPDLOG_TRACE("recv raw({}): {}", nbyte, (char*)&buf[0]);
+        for (int i = 0; i < nbyte; ++i) {
+            recv_buf.push_back(buf[i]);
+            if (buf[i] == '\r' || buf[i] == '\a') {
+                parse_buf();
+                recv_buf.clear();
+            }
         }
     }
+    if (!recv_queue.empty()) {
+        *frame = recv_queue.front();
+        recv_queue.pop();
 
-    return nbyte;
+        return recv_queue.empty() ? 1 : 2;
+    }
+    return -1;
 }
 
 int SlcanDriver::send_data(std::shared_ptr<BusFrame> busframe) {
@@ -160,22 +168,16 @@ int SlcanDriver::send_data(std::shared_ptr<BusFrame> busframe) {
     return nbyte;
 }
 
-void SlcanDriver::parse_response(const std::string& response) {
-    switch (response[0]) {
+void SlcanDriver::parse_buf() {
+    switch (recv_buf[0]) {
     case '\r':
-        // std::cout << "pare \\r" << std::endl;
         if (last_send) {
-            // const H9frame* tmp = last_send;
             frame_sent_correctly(last_send);
             last_send = nullptr;
-            // printf("debug: %p\n", tmp);
         }
-
         break;
-        /*case 'T':
-            if (response.size() >= 10)
-                on_frame_recv(parse_slcan_msg(response));*/
-        // send_ack();
+    case 'T':
+        recv_queue.push(parse_slcan_msg(recv_buf));
         break;
     }
 }

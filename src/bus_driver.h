@@ -37,7 +37,7 @@ class BusDriver {
     const std::string name;
 
     explicit BusDriver(const std::string& name, std::string driver_name);
-    virtual ~BusDriver();
+    virtual ~BusDriver() = default;
 
     // TODO: uporzadowac zwracana wartosci i obsluge bledow - logowanie najlepiej wywalic na zewnatrz
 

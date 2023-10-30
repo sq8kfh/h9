@@ -44,10 +44,8 @@ int LoopDriver::recv_data(H9frame* frame) {
     if (ret == -1) {
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
-    //    else {
-    //        on_frame_recv(buf);
-    //    }
-    return ret;
+
+    return ret != 0 ? 1 : 0;
 }
 
 int LoopDriver::send_data(std::shared_ptr<BusFrame> busframe) {

@@ -30,9 +30,6 @@ BusDriver::BusDriver(const std::string& name, std::string driver_name):
     logger = spdlog::get("bus");
 }
 
-BusDriver::~BusDriver() {
-}
-
 int BusDriver::get_scoket() {
     return socket_fd;
 }
@@ -44,15 +41,17 @@ void BusDriver::close() {
 
 int BusDriver::send_frame(std::shared_ptr<BusFrame> busframe) {
     ++sent_frames_counter;
-    return send_data(busframe);
+    return send_data(std::move(busframe));
 }
 
 int BusDriver::recv_frame(BusFrame* busframe) {
     H9frame frame;
     int ret = recv_data(&frame);
 
-    *busframe = std::move(BusFrame(frame, name, 0, 0));
+    if (ret > 0) {
+        *busframe = std::move(BusFrame(frame, name, 0, 0));
 
-    ++received_frames_counter;
+        ++received_frames_counter;
+    }
     return ret;
 }
