@@ -41,8 +41,11 @@ class NodeDevMgr: public FrameSubject {
             FrameObserver(bus, H9FrameComparator()),
             node_mgr(node_mgr) {}
 
-        void on_frame_recv(const ExtH9Frame& frame) {
+        void on_frame_recv(const ExtH9Frame& frame) override {
             node_mgr->on_frame_recv(frame);
+        }
+
+        void on_frame_send(const ExtH9Frame& frame) override {
         }
     };
 
@@ -93,7 +96,7 @@ class NodeDevMgr: public FrameSubject {
     void response_timeout_duration(int response_timeout_duration);
     int response_timeout_duration();
 
-    int discover() noexcept;
+    int discover();
 
     int active_devices_count() noexcept;
     bool is_node_exist(std::uint16_t node_id) noexcept;

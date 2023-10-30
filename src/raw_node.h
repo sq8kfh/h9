@@ -43,7 +43,13 @@ class RawNode: public FrameObserver {
         bool on_frame(const ExtH9Frame& frame) {
             if (comparator == frame) {
                 if (comparator_has_seqnum) {
-                    promise.set_value(frame);
+                    try {
+                        promise.set_value(frame);
+                    }
+                    catch (std::future_error& e) {
+                        SPDLOG_CRITICAL("{}", e.what());
+                        throw;
+                    }
                     return true;
                 }
                 else {
@@ -58,8 +64,10 @@ class RawNode: public FrameObserver {
             comparator.set_seqnum(seqnum);
             comparator_has_seqnum = true;
             while (!frame_storage.empty()) {
-                if (on_frame(frame_storage.front()) ){
+                if (on_frame(frame_storage.front())) {
                     node->frame_promise_set.erase(this);
+                    node->frame_promise_set_mtx.unlock();
+                    return;
                 }
                 frame_storage.pop();
             }
@@ -77,17 +85,19 @@ class RawNode: public FrameObserver {
     std::mutex frame_promise_set_mtx;
     std::set<FramePromise*> frame_promise_set;
 
-    void on_frame_recv(const ExtH9Frame& frame) noexcept;
+    void on_frame_recv(const ExtH9Frame& frame) override;
+    void on_frame_send(const ExtH9Frame& frame) override;
     FramePromise* create_frame_promise(H9FrameComparator comparator);
     void destroy_frame_promise(FramePromise* frame_promise);
 
-    ssize_t bit_operation(const std::string& origin, H9frame::Type type, std::uint8_t reg, std::uint8_t bit, std::size_t length = 0, std::uint8_t* reg_after_set = nullptr) noexcept;
+    ssize_t bit_operation(const std::string& origin, H9frame::Type type, std::uint8_t reg, std::uint8_t bit, std::size_t length = 0, std::uint8_t* reg_after_set = nullptr);
 
   protected:
     const std::uint16_t _node_id;
     RawNode(NodeDevMgr* node_mgr, Bus* bus, std::uint16_t node_id) noexcept;
 
     friend NodeDevMgr;
+
   public:
     constexpr static std::uint8_t REG_NODE_TYPE = 1;
     constexpr static std::uint8_t REG_NODE_VERSION = 2;
@@ -98,11 +108,11 @@ class RawNode: public FrameObserver {
     constexpr static ssize_t TIMEOUT_ERROR = -1000;
     constexpr static ssize_t MALFORMED_FRAME_ERROR = -1001;
 
-    ~RawNode() noexcept;
+    ~RawNode() = default;
 
-    std::uint16_t node_id() noexcept;
+    std::uint16_t node_id() const noexcept;
 
-    ssize_t reset(const std::string& origin) noexcept;
+    ssize_t reset(const std::string& origin);
 
     int32_t get_node_type(const std::string& origin) noexcept;
     int64_t get_node_version(const std::string& origin, std::uint16_t* major = nullptr, std::uint16_t* minor = nullptr, std::uint16_t* patch = nullptr) noexcept;
@@ -110,14 +120,14 @@ class RawNode: public FrameObserver {
 
     void firmware_update(const std::string& origin, void (*progress_callback)(int percentage));
 
-    ssize_t set_bit(const std::string& origin, std::uint8_t reg, std::uint8_t bit, std::size_t length = 0, std::uint8_t* reg_after_set = nullptr) noexcept;
-    ssize_t clear_bit(const std::string& origin, std::uint8_t reg, std::uint8_t bit, std::size_t length = 0, std::uint8_t* reg_after_set = nullptr) noexcept;
-    ssize_t toggle_bit(const std::string& origin, std::uint8_t reg, std::uint8_t bit, std::size_t length = 0, std::uint8_t* reg_after_set = nullptr) noexcept;
+    ssize_t set_bit(const std::string& origin, std::uint8_t reg, std::uint8_t bit, std::size_t length = 0, std::uint8_t* reg_after_set = nullptr);
+    ssize_t clear_bit(const std::string& origin, std::uint8_t reg, std::uint8_t bit, std::size_t length = 0, std::uint8_t* reg_after_set = nullptr);
+    ssize_t toggle_bit(const std::string& origin, std::uint8_t reg, std::uint8_t bit, std::size_t length = 0, std::uint8_t* reg_after_set = nullptr);
 
-    ssize_t set_reg(const std::string& origin, std::uint8_t reg, std::size_t length, const std::uint8_t* reg_val, std::uint8_t* reg_after_set = nullptr, ssize_t reg_after_set_length = -1) noexcept;
-    ssize_t set_reg(const std::string& origin, std::uint8_t reg, std::uint8_t reg_val, std::uint8_t* reg_after_set = nullptr) noexcept;
-    ssize_t set_reg(const std::string& origin, std::uint8_t reg, std::uint16_t reg_val, std::uint16_t* reg_after_set = nullptr) noexcept;
-    ssize_t set_reg(const std::string& origin, std::uint8_t reg, std::uint32_t reg_val, std::uint32_t* reg_after_set = nullptr) noexcept;
+    ssize_t set_reg(const std::string& origin, std::uint8_t reg, std::size_t length, const std::uint8_t* reg_val, std::uint8_t* reg_after_set = nullptr, ssize_t reg_after_set_length = -1);
+    ssize_t set_reg(const std::string& origin, std::uint8_t reg, std::uint8_t reg_val, std::uint8_t* reg_after_set = nullptr);
+    ssize_t set_reg(const std::string& origin, std::uint8_t reg, std::uint16_t reg_val, std::uint16_t* reg_after_set = nullptr);
+    ssize_t set_reg(const std::string& origin, std::uint8_t reg, std::uint32_t reg_val, std::uint32_t* reg_after_set = nullptr);
 
     /// Read registry from the node
     /// @param[in] origin client idstring
@@ -127,10 +137,10 @@ class RawNode: public FrameObserver {
     /// @retval >=0  Number of read byte
     /// @retval TIMEOUT_ERROR on timeout
     /// @retval -H9Frame::Error on node error (received ERROR frame)
-    ssize_t get_reg(const std::string& origin, std::uint8_t reg, std::size_t length, std::uint8_t* reg_val) noexcept;
-    ssize_t get_reg(const std::string& origin, std::uint8_t reg, std::uint8_t* reg_val) noexcept;
-    ssize_t get_reg(const std::string& origin, std::uint8_t reg, std::uint16_t* reg_val) noexcept;
-    ssize_t get_reg(const std::string& origin, std::uint8_t reg, std::uint32_t* reg_val) noexcept;
+    ssize_t get_reg(const std::string& origin, std::uint8_t reg, std::size_t length, std::uint8_t* reg_val);
+    ssize_t get_reg(const std::string& origin, std::uint8_t reg, std::uint8_t* reg_val);
+    ssize_t get_reg(const std::string& origin, std::uint8_t reg, std::uint16_t* reg_val);
+    ssize_t get_reg(const std::string& origin, std::uint8_t reg, std::uint32_t* reg_val);
 };
 
 #endif // H9_RAW_NODE_H

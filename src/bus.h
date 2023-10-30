@@ -56,6 +56,7 @@ class Bus: public FrameSubject {
     IOEventQueue event_notificator;
     std::thread recv_thread_desc;
 
+    std::priority_queue<std::shared_ptr<BusFrame>, std::vector<std::shared_ptr<BusFrame>>, BusFrameLess> forward_queue;
     std::priority_queue<std::shared_ptr<BusFrame>, std::vector<std::shared_ptr<BusFrame>>, BusFrameLess> send_queue;
     std::mutex send_queue_mtx;
 
@@ -66,8 +67,11 @@ class Bus: public FrameSubject {
     constexpr static int number_of_frame_types = 1 << H9frame::H9FRAME_TYPE_BIT_LENGTH;
     MetricsCollector::counter_t* sent_frames_counter_by_type[number_of_frame_types];
     MetricsCollector::counter_t* received_frames_counter_by_type[number_of_frame_types];
+    bool recv_thread_send();
+    bool recv_thread_forward();
     void recv_thread();
 
+    bool _forwarding;
   public:
     Bus();
     Bus(const Bus&) = delete;
@@ -75,6 +79,7 @@ class Bus: public FrameSubject {
     ~Bus();
 
     void bus_default_source_id(std::uint16_t bus_id);
+    void forwarding(bool v);
 
     void add_driver(BusDriver* bus_driver);
     int endpoint_count();

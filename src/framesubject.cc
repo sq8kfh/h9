@@ -30,12 +30,24 @@ void FrameSubject::detach_frame_observer(FrameObserver* observer) {
     frame_observers_mtx.unlock();
 }
 
-void FrameSubject::notify_frame_observer(const ExtH9Frame& frame) {
+void FrameSubject::notify_frame_recv_observer(const ExtH9Frame& frame) {
     frame_observers_mtx.lock();
     for (auto const& o : frame_observers) {
         if (o.first == frame) {
             for (auto const& observer : o.second) {
                 observer->on_frame_recv(frame);
+            }
+        }
+    }
+    frame_observers_mtx.unlock();
+}
+
+void FrameSubject::notify_frame_send_observer(const ExtH9Frame& frame) {
+    frame_observers_mtx.lock();
+    for (auto const& o : frame_observers) {
+        if (o.first == frame) {
+            for (auto const& observer : o.second) {
+                observer->on_frame_send(frame);
             }
         }
     }

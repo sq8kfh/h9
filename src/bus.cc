@@ -13,6 +13,70 @@
 
 #include "h9d_configurator.h"
 
+bool Bus::recv_thread_send() {
+    std::shared_ptr<BusFrame> bus_frame = nullptr;
+
+    send_queue_mtx.lock();
+    bool queue_empty = send_queue.empty();
+    if (!queue_empty) {
+        bus_frame = send_queue.top();
+        send_queue.pop();
+        // size_of_send_queue = send_queue.size();
+    }
+    send_queue_mtx.unlock();
+
+    if (queue_empty)
+        return false;
+
+    bus_frame->activate_send_finish_promise(bus.size());
+    if (!bus_frame->raw()) {
+        bus_frame->source_id(_bus_id);
+        bus_frame->seqnum(next_seqnum);
+        ++next_seqnum;
+        if (next_seqnum > H9frame::H9FRAME_SEQNUM_MAX_VALUE) {
+            next_seqnum = 0;
+        }
+    }
+
+    ++sent_frames_counter;
+    ++(*sent_frames_counter_by_type[H9frame::to_underlying(bus_frame->type())]);
+
+    for (const auto& [socket, bus_driver] : bus) {
+        bus_driver->send_frame(bus_frame);
+
+        SPDLOG_LOGGER_DEBUG(frames_logger, "Send frame {} to {}.", *bus_frame, bus_driver->name);
+        frames_sent_file_logger->info(SimpleJSONBusFrameWraper(*bus_frame));
+    }
+
+    notify_frame_send_observer(*bus_frame);
+
+    return true;
+}
+
+bool Bus::recv_thread_forward() {
+    std::shared_ptr<BusFrame> bus_frame = nullptr;
+
+    if (forward_queue.empty())
+        return false;
+
+    bus_frame = forward_queue.top();
+    forward_queue.pop();
+
+    for (const auto& [socket, bus_driver] : bus) {
+        if (bus_driver->name == bus_frame->origin())
+            continue;
+
+        if (bus_frame->local_origin_frame())
+            continue;
+
+        bus_driver->send_frame(bus_frame);
+
+        SPDLOG_LOGGER_DEBUG(frames_logger, "Forward frame {} to {}.", *bus_frame, bus_driver->name);
+        //frames_sent_file_logger->info(SimpleJSONBusFrameWraper(*bus_frame));
+    }
+    return true;
+}
+
 void Bus::recv_thread() {
     SPDLOG_LOGGER_INFO(logger, "The bus manager is running...");
 
@@ -24,39 +88,14 @@ void Bus::recv_thread() {
         if (event_notificator.is_async_event(number_of_events)) {
             while (true) {
                 SPDLOG_LOGGER_TRACE(logger, "Event queue loop");
-                std::shared_ptr<BusFrame> bus_frame = nullptr;
 
-                send_queue_mtx.lock();
-                bool queue_empty = send_queue.empty();
-                if (!queue_empty) {
-                    bus_frame = send_queue.top();
-                    send_queue.pop();
-                    // size_of_send_queue = send_queue.size();
-                }
-                send_queue_mtx.unlock();
+                bool ret = false;
 
-                if (queue_empty)
-                    break;
+                if (_forwarding)
+                    ret |= recv_thread_forward();
+                ret |= recv_thread_send();
 
-                bus_frame->set_number_of_active_bus(bus.size());
-                if (!bus_frame->raw()) {
-                    bus_frame->source_id(_bus_id);
-                    bus_frame->seqnum(next_seqnum);
-                    ++next_seqnum;
-                    if (next_seqnum > H9frame::H9FRAME_SEQNUM_MAX_VALUE) {
-                        next_seqnum = 0;
-                    }
-                }
-
-                ++sent_frames_counter;
-                ++(*sent_frames_counter_by_type[H9frame::to_underlying(bus_frame->type())]);
-
-                for (const auto& [socket, bus_driver] : bus) {
-                    bus_driver->send_frame(bus_frame);
-
-                    SPDLOG_LOGGER_DEBUG(frames_logger, "Send frame {} to {}.", *bus_frame, bus_driver->name);
-                    frames_sent_file_logger->info(SimpleJSONBusFrameWraper(*bus_frame));
-                }
+                if (!ret) break;
             }
         }
         else {
@@ -70,10 +109,18 @@ void Bus::recv_thread() {
                             ++received_frames_counter;
                             ++(*received_frames_counter_by_type[H9frame::to_underlying(frame.type())]);
 
-                            SPDLOG_LOGGER_DEBUG(frames_logger, "Recv frame {} from {}.", frame, bus_driver->name);
+                            SPDLOG_LOGGER_DEBUG(frames_logger, "Recv frame {}.", frame);
                             frames_recv_file_logger->info(SimpleJSONBusFrameWraper(frame));
 
-                            notify_frame_observer(frame);
+                            notify_frame_recv_observer(frame);
+
+                            if (_forwarding) {
+                                bool queue_empty = forward_queue.empty();
+                                forward_queue.push(std::make_shared<BusFrame>(std::move(frame)));
+                                if (queue_empty) {
+                                    event_notificator.trigger_async_event();
+                                }
+                            }
                         }
                     } while (ret - 1 > 0);
                 }
@@ -84,6 +131,7 @@ void Bus::recv_thread() {
 
 Bus::Bus():
     run(true),
+    _forwarding(false),
     sent_frames_counter(MetricsCollector::make_counter("bus.send_frames")),
     received_frames_counter(MetricsCollector::make_counter("bus.received_frames")) {
     // size_of_send_queue(MetricsCollector::make_counter("bus.size_of_send_queue")) {
@@ -91,6 +139,7 @@ Bus::Bus():
     frames_logger = spdlog::get(H9dConfigurator::frames_logger_name);
     frames_recv_file_logger = spdlog::get(H9dConfigurator::frames_recv_to_file_logger_name);
     frames_sent_file_logger = spdlog::get(H9dConfigurator::frames_sent_to_file_logger_name);
+
 
     next_seqnum = 0;
 
@@ -117,6 +166,10 @@ void Bus::bus_default_source_id(std::uint16_t bus_id) {
     _bus_id = bus_id;
 }
 
+void Bus::forwarding(bool v) {
+    _forwarding = v;
+}
+
 void Bus::add_driver(BusDriver* bus_driver) {
     SPDLOG_LOGGER_INFO(logger, "Adding '{}' endpoint (driver: {})...", bus_driver->name, bus_driver->driver_name);
     bus[bus_driver->open()] = bus_driver;
@@ -140,6 +193,8 @@ int Bus::send_frame(ExtH9Frame frame, bool raw) {
 
 std::future<SendFrameResult> Bus::send_frame_noblock(ExtH9Frame frame, bool raw) {
     std::shared_ptr<BusFrame> busframe(new BusFrame(std::move(frame), raw));
+
+    busframe->mark_as_local_origin();
 
     send_queue_mtx.lock();
     bool queue_empty = send_queue.empty();

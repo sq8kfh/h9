@@ -19,8 +19,7 @@ class SlcanDriver: public BusDriver {
 
     std::queue<H9frame> recv_queue;
 
-    // TODO: Zmienic na kolejke
-    std::shared_ptr<BusFrame> last_send;
+    std::queue<std::shared_ptr<BusFrame>> last_send;
 
   public:
     SlcanDriver(const std::string& name, const std::string& tty);

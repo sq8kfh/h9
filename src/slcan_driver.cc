@@ -20,7 +20,6 @@ SlcanDriver::SlcanDriver(const std::string& name, const std::string& tty):
     BusDriver(name, "SLCAN"),
     _tty(tty) {
     noblock = false;
-    last_send = nullptr;
 }
 
 int SlcanDriver::open() {
@@ -135,7 +134,7 @@ int SlcanDriver::recv_data(H9frame* frame) {
             throw std::system_error(errno, std::system_category(), std::to_string(errno) + __FILE__ + std::string(":") + std::to_string(__LINE__));
         }
         buf[nbyte] = '\0';
-        SPDLOG_TRACE("recv raw({}): {}", nbyte, (char*)&buf[0]);
+        //SPDLOG_TRACE("recv raw({}): {}", nbyte, (char*)&buf[0]);
         for (int i = 0; i < nbyte; ++i) {
             recv_buf.push_back(buf[i]);
             if (buf[i] == '\r' || buf[i] == '\a') {
@@ -163,7 +162,8 @@ int SlcanDriver::send_data(std::shared_ptr<BusFrame> busframe) {
         }
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
-    last_send = busframe;
+
+    last_send.push(busframe);
 
     return nbyte;
 }
@@ -171,9 +171,10 @@ int SlcanDriver::send_data(std::shared_ptr<BusFrame> busframe) {
 void SlcanDriver::parse_buf() {
     switch (recv_buf[0]) {
     case '\r':
-        if (last_send) {
-            frame_sent_correctly(last_send);
-            last_send = nullptr;
+        if (!last_send.empty()) {
+            auto tmp = last_send.front();
+            last_send.pop();
+            frame_sent_correctly(tmp);
         }
         break;
     case 'T':

@@ -25,4 +25,5 @@ class FrameObserver {
     FrameObserver(const FrameObserver&) = delete;
     ~FrameObserver();
     virtual void on_frame_recv(const ExtH9Frame& frame) = 0;
+    virtual void on_frame_send(const ExtH9Frame& frame) = 0;
 };

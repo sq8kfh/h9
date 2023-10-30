@@ -27,9 +27,12 @@ class BusFrame: public ExtH9Frame {
     unsigned int _send_counter;
     unsigned int _send_fail_counter;
 
+    bool _local_frame;
     bool _raw;
+    bool _activate_promise;
   public:
     BusFrame();
+    BusFrame(BusFrame&& a) = default;
     // BusFrame(const BusFrame&) = delete;
     // BusFrame& operator=(const BusFrame&) = delete;
     BusFrame(const H9frame& frame, const std::string& origin, std::uint64_t orgin_client_id, std::uint64_t orgin_msg_id);
@@ -38,14 +41,16 @@ class BusFrame: public ExtH9Frame {
 
     ~BusFrame();
 
-    bool raw();
+    bool raw() const;
+    bool local_origin_frame() const;
+    void mark_as_local_origin();
 
-    std::uint64_t get_orgin_client_id(void) const;
-    std::uint64_t get_orgin_msg_id(void) const;
+    std::uint64_t get_orgin_client_id() const;
+    std::uint64_t get_orgin_msg_id() const;
 
     std::promise<SendFrameResult>& get_send_promise();
-    void set_number_of_active_bus(unsigned int v);
-    bool is_sent_finish();
+    void activate_send_finish_promise(unsigned int active_buses);
+    bool is_sent_finish() const;
     void inc_send_counter();
     void inc_send_fail_counter();
 };

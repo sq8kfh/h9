@@ -1,7 +1,7 @@
 from h9 import H9Frame, send_frame
 
 antenna = 0
-id = 100
+id = 32
 
 def on_frame(frame):
     print(__name__, "on_frame()")

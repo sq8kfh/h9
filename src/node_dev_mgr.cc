@@ -18,7 +18,7 @@
 #include "tcpclientthread.h"
 
 void NodeDevMgr::on_frame_recv(const ExtH9Frame& frame) noexcept {
-    notify_frame_observer(frame);
+    notify_frame_recv_observer(frame);
 
     frame_queue_mtx.lock();
     frame_queue.push(frame);
@@ -160,7 +160,7 @@ int NodeDevMgr::response_timeout_duration() {
     return _response_timeout_duration;
 }
 
-int NodeDevMgr::discover() noexcept {
+int NodeDevMgr::discover() {
     ExtH9Frame frame("h9d", H9frame::Type::DISCOVER, H9frame::BROADCAST_ID, 0, {});
 
     return bus->send_frame(frame);

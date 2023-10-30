@@ -15,7 +15,7 @@
 #include "bus.h"
 #include "node_dev_mgr.h"
 
-void RawNode::on_frame_recv(const ExtH9Frame& frame) noexcept {
+void RawNode::on_frame_recv(const ExtH9Frame& frame) {
     frame_promise_set_mtx.lock();
     for (auto it = frame_promise_set.begin(); it != frame_promise_set.end();) {
         if ((*it)->on_frame(frame)) {
@@ -26,6 +26,9 @@ void RawNode::on_frame_recv(const ExtH9Frame& frame) noexcept {
         }
     }
     frame_promise_set_mtx.unlock();
+}
+
+void RawNode::on_frame_send(const ExtH9Frame& frame) {
 }
 
 RawNode::FramePromise* RawNode::create_frame_promise(H9FrameComparator comparator) {
@@ -51,14 +54,11 @@ RawNode::RawNode(NodeDevMgr* node_mgr, Bus* bus, std::uint16_t node_id) noexcept
     _node_id(node_id) {
 }
 
-RawNode::~RawNode() noexcept {
-}
-
-std::uint16_t RawNode::node_id() noexcept {
+std::uint16_t RawNode::node_id() const noexcept {
     return _node_id;
 }
 
-ssize_t RawNode::reset(const std::string& origin) noexcept {
+ssize_t RawNode::reset(const std::string& origin) {
     H9FrameComparator comparator;
     comparator.set_source_id(_node_id);
     comparator.set_type(H9frame::Type::ERROR);
@@ -147,7 +147,7 @@ void RawNode::firmware_update(const std::string& origin, void (*progress_callbac
     // TODO: implement frimware update
 }
 
-ssize_t RawNode::bit_operation(const std::string& origin, H9frame::Type type, std::uint8_t reg, std::uint8_t bit, std::size_t length, std::uint8_t* reg_after_set) noexcept {
+ssize_t RawNode::bit_operation(const std::string& origin, H9frame::Type type, std::uint8_t reg, std::uint8_t bit, std::size_t length, std::uint8_t* reg_after_set) {
     H9FrameComparator comparator;
     comparator.set_source_id(_node_id);
     comparator.set_type(H9frame::Type::REG_EXTERNALLY_CHANGED);
@@ -190,19 +190,19 @@ ssize_t RawNode::bit_operation(const std::string& origin, H9frame::Type type, st
     return MALFORMED_FRAME_ERROR;
 }
 
-ssize_t RawNode::set_bit(const std::string& origin, std::uint8_t reg, std::uint8_t bit, std::size_t length, std::uint8_t* reg_after_set) noexcept {
+ssize_t RawNode::set_bit(const std::string& origin, std::uint8_t reg, std::uint8_t bit, std::size_t length, std::uint8_t* reg_after_set) {
     return bit_operation(origin, H9frame::Type::SET_BIT, reg, bit, length, reg_after_set);
 }
 
-ssize_t RawNode::clear_bit(const std::string& origin, std::uint8_t reg, std::uint8_t bit, std::size_t length, std::uint8_t* reg_after_set) noexcept {
+ssize_t RawNode::clear_bit(const std::string& origin, std::uint8_t reg, std::uint8_t bit, std::size_t length, std::uint8_t* reg_after_set) {
     return bit_operation(origin, H9frame::Type::CLEAR_BIT, reg, bit, length, reg_after_set);
 }
 
-ssize_t RawNode::toggle_bit(const std::string& origin, std::uint8_t reg, std::uint8_t bit, std::size_t length, std::uint8_t* reg_after_set) noexcept {
+ssize_t RawNode::toggle_bit(const std::string& origin, std::uint8_t reg, std::uint8_t bit, std::size_t length, std::uint8_t* reg_after_set) {
     return bit_operation(origin, H9frame::Type::TOGGLE_BIT, reg, bit, length, reg_after_set);
 }
 
-ssize_t RawNode::set_reg(const std::string& origin, std::uint8_t reg, std::size_t length, const std::uint8_t* reg_val, std::uint8_t* reg_after_set, ssize_t reg_after_set_length) noexcept {
+ssize_t RawNode::set_reg(const std::string& origin, std::uint8_t reg, std::size_t length, const std::uint8_t* reg_val, std::uint8_t* reg_after_set, ssize_t reg_after_set_length) {
     H9FrameComparator comparator;
     comparator.set_source_id(_node_id);
     comparator.set_type(H9frame::Type::REG_EXTERNALLY_CHANGED);
@@ -249,11 +249,11 @@ ssize_t RawNode::set_reg(const std::string& origin, std::uint8_t reg, std::size_
     return MALFORMED_FRAME_ERROR;
 }
 
-ssize_t RawNode::set_reg(const std::string& origin, std::uint8_t reg, std::uint8_t reg_val, std::uint8_t* reg_after_set) noexcept {
+ssize_t RawNode::set_reg(const std::string& origin, std::uint8_t reg, std::uint8_t reg_val, std::uint8_t* reg_after_set) {
     return set_reg(origin, reg, sizeof(reg_val), &reg_val, reg_after_set);
 }
 
-ssize_t RawNode::set_reg(const std::string& origin, std::uint8_t reg, std::uint16_t reg_val, std::uint16_t* reg_after_set) noexcept {
+ssize_t RawNode::set_reg(const std::string& origin, std::uint8_t reg, std::uint16_t reg_val, std::uint16_t* reg_after_set) {
     std::uint16_t buf = htons(reg_val);
     ssize_t ret = set_reg(origin, reg, sizeof(buf), reinterpret_cast<std::uint8_t*>(&buf), reinterpret_cast<std::uint8_t*>(reg_after_set));
     if (reg_after_set) {
@@ -262,7 +262,7 @@ ssize_t RawNode::set_reg(const std::string& origin, std::uint8_t reg, std::uint1
     return ret;
 }
 
-ssize_t RawNode::set_reg(const std::string& origin, std::uint8_t reg, std::uint32_t reg_val, std::uint32_t* reg_after_set) noexcept {
+ssize_t RawNode::set_reg(const std::string& origin, std::uint8_t reg, std::uint32_t reg_val, std::uint32_t* reg_after_set) {
     std::uint32_t buf = htonl(reg_val);
     ssize_t ret = set_reg(origin, reg, sizeof(buf), reinterpret_cast<std::uint8_t*>(&buf), reinterpret_cast<std::uint8_t*>(reg_after_set));
     if (reg_after_set) {
@@ -271,7 +271,7 @@ ssize_t RawNode::set_reg(const std::string& origin, std::uint8_t reg, std::uint3
     return ret;
 }
 
-ssize_t RawNode::get_reg(const std::string& origin, std::uint8_t reg, std::size_t length, std::uint8_t* reg_val) noexcept {
+ssize_t RawNode::get_reg(const std::string& origin, std::uint8_t reg, std::size_t length, std::uint8_t* reg_val) {
     H9FrameComparator comparator;
     comparator.set_source_id(_node_id);
     comparator.set_type(H9frame::Type::REG_VALUE);
@@ -312,18 +312,18 @@ ssize_t RawNode::get_reg(const std::string& origin, std::uint8_t reg, std::size_
     return MALFORMED_FRAME_ERROR;
 }
 
-ssize_t RawNode::get_reg(const std::string& origin, std::uint8_t reg, std::uint8_t* reg_val) noexcept {
+ssize_t RawNode::get_reg(const std::string& origin, std::uint8_t reg, std::uint8_t* reg_val) {
     return get_reg(origin, reg, 1, reg_val);
 }
 
-ssize_t RawNode::get_reg(const std::string& origin, std::uint8_t reg, std::uint16_t* reg_val) noexcept {
+ssize_t RawNode::get_reg(const std::string& origin, std::uint8_t reg, std::uint16_t* reg_val) {
     std::uint16_t buf;
     ssize_t ret = get_reg(origin, reg, sizeof(buf), reinterpret_cast<std::uint8_t*>(&buf));
     *reg_val = ntohs(buf);
     return ret;
 }
 
-ssize_t RawNode::get_reg(const std::string& origin, std::uint8_t reg, std::uint32_t* reg_val) noexcept {
+ssize_t RawNode::get_reg(const std::string& origin, std::uint8_t reg, std::uint32_t* reg_val) {
     std::uint32_t buf;
     ssize_t ret = get_reg(origin, reg, sizeof(buf), reinterpret_cast<std::uint8_t*>(&buf));
     *reg_val = ntohl(buf);

@@ -29,5 +29,6 @@ class FrameSubject {
     void detach_frame_observer(FrameObserver* observer);
 
   protected:
-    void notify_frame_observer(const ExtH9Frame& frame);
+    void notify_frame_recv_observer(const ExtH9Frame& frame);
+    void notify_frame_send_observer(const ExtH9Frame& frame);
 };

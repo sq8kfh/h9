@@ -283,6 +283,7 @@ void H9dConfigurator::load_configuration() {
 
     cfg_opt_t cfg_bus_opts[] = {
         CFG_INT("source_id", default_source_id, CFGF_NONE),
+        CFG_BOOL("forwarding", cfg_true, CFGF_NONE),
         CFG_INT("response_timeout_duration", default_response_timeout_duration, CFGF_NONE),
         CFG_STR("devices_description_filename", nullptr, CFGF_NONE),
         CFG_SEC("endpoint", cfg_endpoint_sec, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
@@ -405,6 +406,9 @@ void H9dConfigurator::drop_privileges() {
 void H9dConfigurator::configure_bus(Bus* bus, VirtualEndpoint* vendpoint) {
     cfg_t* cfg_bus= cfg_getsec(cfg, "bus");
     bus->bus_default_source_id(cfg_getint(cfg_bus, "source_id"));
+
+    bool tmp = cfg_getbool(cfg_bus, "forwarding") == cfg_true;
+    bus->forwarding(tmp);
 
     int n = cfg_size(cfg_bus, "endpoint");
     for (int i = 0; i < n; i++) {
