@@ -18,6 +18,12 @@
 #include "metrics_collector.h"
 
 class BusDriver {
+  public:
+    static constexpr int EMPTY_BUF = -1;
+    static constexpr int SOCKET_CLOSE = 0;
+    static constexpr int RECV_FRAME = 1;
+    static constexpr int RECV_FRAME_DATA_IN_BUF = 2;
+
   private:
     MetricsCollector::counter_t& sent_frames_counter;
     MetricsCollector::counter_t& received_frames_counter;
@@ -32,6 +38,7 @@ class BusDriver {
 
     void frame_sent_correctly(std::shared_ptr<BusFrame> busframe);
     void frame_sent_incorrectly(std::shared_ptr<BusFrame> busframe);
+
   public:
     const std::string driver_name;
     const std::string name;

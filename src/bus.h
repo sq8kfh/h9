@@ -50,6 +50,8 @@ class Bus: public FrameSubject {
     std::uint8_t next_seqnum;
     std::uint16_t _bus_id;
 
+    bool _forwarding;
+
     std::atomic_bool run;
     std::map<int, BusDriver*> bus;
 
@@ -70,8 +72,6 @@ class Bus: public FrameSubject {
     bool recv_thread_send();
     bool recv_thread_forward();
     void recv_thread();
-
-    bool _forwarding;
   public:
     Bus();
     Bus(const Bus&) = delete;

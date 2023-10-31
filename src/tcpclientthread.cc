@@ -203,6 +203,15 @@ void TCPClientThread::entity(const std::string& entity) noexcept {
     _entity = entity;
 }
 
+bool TCPClientThread::authenticated() const noexcept {
+    return _authenticated;
+}
+
+void TCPClientThread::authenticate(const std::string& entity) noexcept {
+    this->entity(entity);
+    _authenticated = true;
+}
+
 std::string TCPClientThread::get_client_idstring() const noexcept {
     return entity() + "@" + get_remote_address() + ":" + get_remote_port();
 }

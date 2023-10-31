@@ -30,7 +30,7 @@ int VirtualDriver::recv_data(H9frame* frame) {
     if (ret == -1) {
         throw std::system_error(errno, std::generic_category(), __FILE__ + std::string(":") + std::to_string(__LINE__));
     }
-    return ret != 0 ? 1 : 0;
+    return ret != 0 ? RECV_FRAME : SOCKET_CLOSE;
 }
 
 int VirtualDriver::send_data(std::shared_ptr<BusFrame> busframe) {

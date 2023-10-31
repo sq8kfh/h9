@@ -52,6 +52,7 @@ class TCPClientThread {
     std::atomic_bool thread_running;
 
     std::string _entity;
+    bool _authenticated;
 
     ClientFrameObs* _frame_observer;
     DevStatusObserver* _dev_status_observer;
@@ -77,6 +78,10 @@ class TCPClientThread {
     std::string get_remote_port() const noexcept;
     std::string entity() const noexcept;
     void entity(const std::string& entity) noexcept;
+
+    bool authenticated() const noexcept;
+    void authenticate(const std::string& entity) noexcept;
+
     std::string get_client_idstring() const noexcept;
 
     bool is_running();

@@ -48,7 +48,7 @@ int BusDriver::recv_frame(BusFrame* busframe) {
     H9frame frame;
     int ret = recv_data(&frame);
 
-    if (ret > 0) {
+    if (ret >= BusDriver::RECV_FRAME) {
         *busframe = std::move(BusFrame(frame, name, 0, 0));
 
         ++received_frames_counter;

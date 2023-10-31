@@ -44,7 +44,11 @@ bool Bus::recv_thread_send() {
     for (const auto& [socket, bus_driver] : bus) {
         bus_driver->send_frame(bus_frame);
 
-        SPDLOG_LOGGER_DEBUG(frames_logger, "Send frame {} to {}.", *bus_frame, bus_driver->name);
+        if (bus_frame->raw())
+            SPDLOG_LOGGER_DEBUG(frames_logger, "Send raw frame {} to {}.", *bus_frame, bus_driver->name);
+        else
+            SPDLOG_LOGGER_DEBUG(frames_logger, "Send frame {} to {}.", *bus_frame, bus_driver->name);
+
         frames_sent_file_logger->info(SimpleJSONBusFrameWraper(*bus_frame));
     }
 
@@ -72,23 +76,28 @@ bool Bus::recv_thread_forward() {
         bus_driver->send_frame(bus_frame);
 
         SPDLOG_LOGGER_DEBUG(frames_logger, "Forward frame {} to {}.", *bus_frame, bus_driver->name);
-        //frames_sent_file_logger->info(SimpleJSONBusFrameWraper(*bus_frame));
     }
     return true;
 }
 
 void Bus::recv_thread() {
-    SPDLOG_LOGGER_INFO(logger, "The bus manager is running...");
+    //pthread_setname_np(recv_thread_desc.native_handle(), "bus");
+
+    if (_forwarding)
+        SPDLOG_LOGGER_INFO(logger, "Frame forwarding is enable.");
+    else
+        SPDLOG_LOGGER_INFO(logger, "Frame forwarding is disabled.");
+
+    SPDLOG_LOGGER_INFO(logger, "Data bus default source id: {}.", _bus_id);
 
     for (const auto& [socket, driver] : bus) {
         event_notificator.attach_socket(socket);
     }
+    SPDLOG_LOGGER_INFO(logger, "Data bus manager is running...");
     while (run) {
         int number_of_events = event_notificator.wait();
         if (event_notificator.is_async_event(number_of_events)) {
             while (true) {
-                SPDLOG_LOGGER_TRACE(logger, "Event queue loop");
-
                 bool ret = false;
 
                 if (_forwarding)
@@ -105,7 +114,7 @@ void Bus::recv_thread() {
                     do {
                         BusFrame frame;
                         ret = bus_driver->recv_frame(&frame);
-                        if (ret > 0) {
+                        if (ret >= BusDriver::RECV_FRAME) {
                             ++received_frames_counter;
                             ++(*received_frames_counter_by_type[H9frame::to_underlying(frame.type())]);
 
@@ -122,11 +131,12 @@ void Bus::recv_thread() {
                                 }
                             }
                         }
-                    } while (ret - 1 > 0);
+                    } while (ret - 1 >= BusDriver::RECV_FRAME);
                 }
             }
         }
     }
+    SPDLOG_LOGGER_INFO(logger, "Data bus manager stopped.");
 }
 
 Bus::Bus():
@@ -139,7 +149,6 @@ Bus::Bus():
     frames_logger = spdlog::get(H9dConfigurator::frames_logger_name);
     frames_recv_file_logger = spdlog::get(H9dConfigurator::frames_recv_to_file_logger_name);
     frames_sent_file_logger = spdlog::get(H9dConfigurator::frames_sent_to_file_logger_name);
-
 
     next_seqnum = 0;
 

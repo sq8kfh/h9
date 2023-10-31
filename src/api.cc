@@ -115,7 +115,7 @@ nlohmann::json API::get_stats(TCPClientThread* client_thread, const jsonrpcpp::I
 nlohmann::json API::authenticate(TCPClientThread* client_thread, const jsonrpcpp::Id& id, const jsonrpcpp::Parameter& params) {
     try {
         std::string entity = params.param_map.at("entity").get<std::string>();
-        client_thread->entity(entity);
+        client_thread->authenticate(entity);
         nlohmann::json r = {{"authentication", true}};
         return std::move(r);
     }
@@ -506,7 +506,7 @@ API::API(Bus* bus, NodeDevMgr* dev_mgr):
 }
 
 jsonrpcpp::Response API::call(TCPClientThread* client_thread, const jsonrpcpp::request_ptr& request) {
-    if (api_methods.count(request->method())) {
+    if (api_methods.count(request->method()) && (client_thread->authenticated() || request->method() == "authenticate")) {
         nlohmann::json r = (this->*api_methods[request->method()])(client_thread, request->id(), request->params());
 
         jsonrpcpp::Response res(request->id(), r);

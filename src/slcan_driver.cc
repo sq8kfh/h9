@@ -147,9 +147,9 @@ int SlcanDriver::recv_data(H9frame* frame) {
         *frame = recv_queue.front();
         recv_queue.pop();
 
-        return recv_queue.empty() ? 1 : 2;
+        return recv_queue.empty() ? RECV_FRAME : RECV_FRAME_DATA_IN_BUF;
     }
-    return -1;
+    return EMPTY_BUF;
 }
 
 int SlcanDriver::send_data(std::shared_ptr<BusFrame> busframe) {
