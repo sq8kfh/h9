@@ -165,3 +165,25 @@ int TCPServer::connected_clients_count() {
     tcpclientthread_list_mtx.unlock();
     return ret;
 }
+
+std::vector<TCPServer::ClientInfo> TCPServer::get_clients_list() {
+    std::vector<TCPServer::ClientInfo> ret;
+    tcpclientthread_list_mtx.lock();
+
+    ret.reserve(tcpclientthread_list.size());
+    for(auto client : tcpclientthread_list) {
+        ret.push_back({
+            client->get_client_idstring(),
+            client->entity(),
+            client->connection_time,
+            client->authenticated(),
+            client->get_remote_address(),
+            client->get_remote_port(),
+            client->is_frame_observer_set(),
+            client->is_dev_status_observer_set()
+        });
+    }
+
+    tcpclientthread_list_mtx.unlock();
+    return ret;
+}

@@ -4,11 +4,15 @@
  */
 
 #include "command_executor.h"
-#include <spdlog/spdlog.h>
+
+#include <fmt/chrono.h>
 #include <iostream>
+#include <spdlog/spdlog.h>
 
-CommandExecutor::CommandExecutor(H9Connector* h9d_conn): h9d(h9d_conn) {
+#include "fmt_helpers.h"
 
+CommandExecutor::CommandExecutor(H9Connector* h9d_conn):
+    h9d(h9d_conn) {
 }
 
 void CommandExecutor::get_and_parse_response(const jsonrpcpp::Id& request_id, const std::string& method) {
@@ -30,7 +34,7 @@ void CommandExecutor::get_and_parse_response(const jsonrpcpp::Id& request_id, co
     if (raw_msg->is_response()) {
         jsonrpcpp::response_ptr msg = std::dynamic_pointer_cast<jsonrpcpp::Response>(raw_msg);
 
-        //if (msg->is_error()) { //it is now work
+        // if (msg->is_error()) { //it is now work
         if (msg->error().operator bool()) {
             auto err = msg->error();
 
@@ -65,20 +69,44 @@ void CommandExecutor::print_response(const std::string& method, const nlohmann::
         strptime(result["last_seen_time"].get<std::string>().c_str(), "%FT%TZ", &lst_utc);
 
         time_t ct_utc_ts = timegm(&ct_utc);
-        time_t lst_utc_ts = timegm(&ct_utc);
+        time_t lst_utc_ts = timegm(&lst_utc);
 
         std::tm ct_tm;
         localtime_r(&ct_utc_ts, &ct_tm);
         std::tm lst_tm;
         localtime_r(&lst_utc_ts, &lst_tm);
 
-        std::cout << "Name:          " << result["name"].get<std::string>() << std::endl;
-        std::cout << "ID:            " << result["id"] << std::endl;
-        std::cout << "Type:          " << result["type"] << std::endl;
-        std::cout << "Version:       " << result["version_major"] << '.' << result["version_minor"] << '.' << result["version_patch"] << std::endl;
-        std::cout << "Created time:  " << std::put_time(&ct_tm, "%Y-%m-%d %H:%M:%S")<< std::endl;
-        std::cout << "Last seen:     " << std::put_time(&lst_tm, "%Y-%m-%d %H:%M:%S") << std::endl;
-        std::cout << "Description:   " << result["description"] << std::endl;
+        auto now = std::time(nullptr);
+
+        fmt::println("Name:          {}", result["name"].get<std::string>());
+        fmt::println("ID:            {}", result["id"].get<std::uint16_t>());
+        fmt::println("Type:          {}", result["type"].get<std::uint16_t>());
+        fmt::println("Version:       {}.{}.{}", result["version_major"].get<std::uint16_t>(), result["version_minor"].get<std::uint16_t>(), result["version_patch"].get<std::uint16_t>());
+        fmt::println("Created time:  {:%F %T} ({} ago)", ct_tm, format_uptime(now - ct_utc_ts));
+        fmt::println("Last seen:     {:%F %T} ({} ago)", lst_tm, format_uptime(now - lst_utc_ts));
+        fmt::println("Description:   {}", result["description"].get<std::string>());
+    }
+    else if (method == "get_tcp_clients") {
+        for (auto& client : result) {
+            tm ct_utc;
+            strptime(client["connection_time"].get<std::string>().c_str(), "%FT%TZ", &ct_utc);
+            time_t ct_utc_ts = timegm(&ct_utc);
+            std::tm ct_tm;
+            localtime_r(&ct_utc_ts, &ct_tm);
+
+            auto now = std::time(nullptr);
+
+            fmt::println("{}", client["id"].get<std::string>());
+            fmt::println("    entity:              {}", client["entity"].get<std::string>());
+            fmt::println("    remote address:      {}", client["remote_address"].get<std::string>());
+            fmt::println("    remote port:         {}", client["remote_port"].get<std::string>());
+            fmt::println("    connection time:     {:%F %T} (for {})", ct_tm, format_uptime(now - ct_utc_ts));
+            fmt::println("    authenticated:       {}", client["authenticated"].get<bool>());
+            fmt::println("    frame subscription:  {}", client["frame_subscription"].get<bool>());
+            fmt::println("    dev subscription:    {}", client["dev_subscription"].get<bool>());
+            if (client != result.back())
+                fmt::println("");
+        }
     }
     else {
         std::cout << result << std::endl;

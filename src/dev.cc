@@ -42,3 +42,7 @@ void Dev::attach_dev_status_observer(DevStatusObserver* obs) {
 void Dev::detach_dev_status_observer(DevStatusObserver* obs) {
     dev_status_observer.erase(std::remove(dev_status_observer.begin(), dev_status_observer.end(), obs), dev_status_observer.end());
 }
+
+nlohmann::json Dev::dev_call(const TCPClientThread* client_thread, const jsonrpcpp::Id& id, const jsonrpcpp::Parameter& params) {
+    throw jsonrpcpp::InvalidParamsException("Dev object does not provide method.", id);
+}

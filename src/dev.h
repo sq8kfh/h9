@@ -7,6 +7,7 @@
 
 #include "node.h"
 #include "node_dev_mgr.h"
+#include <jsonrpcpp/jsonrpcpp.hpp>
 
 class DevStatusObserver;
 
@@ -26,4 +27,5 @@ class Dev: public Node::NodeStateObserver {
     void detach_dev_status_observer(DevStatusObserver* obs);
     void update_dev_state(std::uint16_t node_id, const ExtH9Frame& frame) override = 0;
     virtual void init() = 0;
+    virtual nlohmann::json dev_call(const TCPClientThread* client_thread, const jsonrpcpp::Id& id, const jsonrpcpp::Parameter& params);
 };

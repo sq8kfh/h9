@@ -26,7 +26,7 @@ class SlcanDriver: public BusDriver {
     int open() override;
 
     static std::string build_slcan_msg(const H9frame& frame);
-    static H9frame parse_slcan_msg(const std::string& slcan_data);
+    static bool parse_slcan_msg(const std::string& slcan_data, H9frame* frame);
 
   private:
     int recv_data(H9frame* frame) override;

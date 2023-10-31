@@ -40,6 +40,11 @@ static int quote_detector(char *line, int index) {
     return index > 0 && line[index - 1] == '\\' && !quote_detector(line, index - 1);
 }
 
+void write_readline_history() {
+    std::string const HOME = std::getenv("HOME") ? std::getenv("HOME") : ".";
+    write_history((HOME + "/.h9cli_history").c_str());
+}
+
 int main(int argc, char** argv) {
     H9CliConfigurator h9;
     h9.logger_initial_setup();
@@ -75,6 +80,10 @@ int main(int argc, char** argv) {
 
     std::string prompt = "\033[38;5;172mh9cli \033[m@\033[38;5;153m" + h9_connector.hostname() + "\033[m> ";
 
+    std::string const HOME = std::getenv("HOME") ? std::getenv("HOME") : ".";
+    read_history((HOME + "/.h9cli_history").c_str());
+    atexit(write_readline_history);
+
     while (true) {
         char* input = readline(prompt.c_str());
 
@@ -84,7 +93,7 @@ int main(int argc, char** argv) {
         if (strlen(input))
             add_history(input);
 
-        // write_readline_history();
+        write_readline_history();
         int parse_res = cli.parse(input);
 
         if (parse_res == 0) {

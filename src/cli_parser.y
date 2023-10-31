@@ -35,6 +35,8 @@
 
 %token T_H9D            "h9d"
 %token T_DISCOVER       "discover"
+%token T_TCPCLIENT      "tcpclient"
+%token T_LIST           "list"
 
 %token T_NODE           "node"
 %token T_RESET          "reset"
@@ -111,7 +113,10 @@ h9d_command:
                                             jsonrpcpp::Id id(0);
                                             $$ = jsonrpcpp::Request(id, "discover_nodes");
                                         }
-
+    | "h9d" "tcpclient" "list"          {
+                                            jsonrpcpp::Id id(0);
+                                            $$ = jsonrpcpp::Request(id, "get_tcp_clients");
+                                        }
 node_exp:
     "node" num_exp			            {
 	                                        cli_drv.set_last_parsed_node_id($2);

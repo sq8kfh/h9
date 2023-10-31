@@ -95,7 +95,10 @@ std::string SlcanDriver::build_slcan_msg(const H9frame& frame) {
     return buf.str();
 }
 
-H9frame SlcanDriver::parse_slcan_msg(const std::string& slcan_data) {
+bool SlcanDriver::parse_slcan_msg(const std::string& slcan_data, H9frame* frame) {
+    if (slcan_data.size() < 10)
+        return false;
+
     H9frame res = H9frame();
 
     uint32_t id = std::stoi(slcan_data.substr(1, 8), nullptr, 16);
@@ -115,12 +118,16 @@ H9frame SlcanDriver::parse_slcan_msg(const std::string& slcan_data) {
     uint32_t dlc = std::stoi(slcan_data.substr(9, 1), nullptr, 16);
     res.dlc = static_cast<std::uint8_t>(dlc);
 
+    if (slcan_data.size() < (10 + 2*res.dlc))
+        return false;
+
     for (int i = 0; i < dlc; ++i) {
         uint32_t tmp = std::stoi(slcan_data.substr(10 + i * 2, 2), nullptr, 16);
         res.data[i] = static_cast<std::uint8_t>(tmp);
     }
 
-    return res;
+    *frame = res;
+    return true;
 }
 
 int SlcanDriver::recv_data(H9frame* frame) {
@@ -169,17 +176,20 @@ int SlcanDriver::send_data(std::shared_ptr<BusFrame> busframe) {
 }
 
 void SlcanDriver::parse_buf() {
-    switch (recv_buf[0]) {
-    case '\r':
+    if (recv_buf[0] == '\r') {
         if (!last_send.empty()) {
             auto tmp = last_send.front();
             last_send.pop();
             frame_sent_correctly(tmp);
         }
-        break;
-    case 'T':
-        recv_queue.push(parse_slcan_msg(recv_buf));
-        break;
+    }
+    else if (recv_buf[0] == 'T') {
+        H9frame frame;
+        if (parse_slcan_msg(recv_buf, &frame))
+            recv_queue.push(frame);
+        else {
+            SPDLOG_LOGGER_ERROR(logger, "Recv malformed SLCAN command: '{}' from {}.", recv_buf.replace(recv_buf.find('\r'), 1, "\\r"), name);
+        }
     }
 }
 

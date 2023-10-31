@@ -152,6 +152,7 @@ void TCPClientThread::send(jsonrpcpp::entity_ptr msg) {
 }
 
 TCPClientThread::TCPClientThread(int sockfd, API* api, TCPServer* server):
+    connection_time(std::time(nullptr)),
     h9socket(sockfd),
     api(api),
     server(server),
@@ -182,9 +183,17 @@ void TCPClientThread::set_frame_observer(ClientFrameObs* frame_observer) {
     _frame_observer = frame_observer;
 }
 
+bool TCPClientThread::is_frame_observer_set() const {
+    return _frame_observer != nullptr;
+}
+
 void TCPClientThread::set_dev_status_observer(DevStatusObserver* dev_status_observer) {
     delete _dev_status_observer;
     _dev_status_observer = dev_status_observer;
+}
+
+bool TCPClientThread::is_dev_status_observer_set() const {
+    return _dev_status_observer != nullptr;
 }
 
 std::string TCPClientThread::get_remote_address() const noexcept {

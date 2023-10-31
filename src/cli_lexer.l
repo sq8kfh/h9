@@ -30,7 +30,8 @@ clear_cache             return cli_drv.tee_token(yy::parser::make_T_CLEAR_CACHE(
 
 h9d                     return cli_drv.tee_token(yy::parser::make_T_H9D());
 discover                return cli_drv.tee_token(yy::parser::make_T_DISCOVER());
-
+tcpclient               return cli_drv.tee_token(yy::parser::make_T_TCPCLIENT());
+list                    return cli_drv.tee_token(yy::parser::make_T_LIST());
 node                    return cli_drv.tee_token(yy::parser::make_T_NODE());
 
 reset                   return cli_drv.tee_token(yy::parser::make_T_RESET());

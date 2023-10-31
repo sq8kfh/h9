@@ -60,6 +60,9 @@ int main(int argc, char** argv) {
 
     TCPServer server(&api);
     configurator.configure_tcpserver(&server);
+
+    api.set_tcp_server(&server);
+
     server.run();
 
     return EXIT_FAILURE;

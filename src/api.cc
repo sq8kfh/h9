@@ -12,9 +12,13 @@
 
 #include <spdlog/spdlog.h>
 
+#include "bus.h"
 #include "dev_node_exception.h"
-#include "h9d_configurator.h"
 #include "dev_status_observer.h"
+#include "h9d_configurator.h"
+#include "node_dev_mgr.h"
+#include "tcpclientthread.h"
+#include "tcpserver.h"
 
 nlohmann::json API::get_version(TCPClientThread* client_thread, const jsonrpcpp::Id& id, const jsonrpcpp::Parameter& params) {
     nlohmann::json r({{"version", H9dConfigurator::version()}});
@@ -64,6 +68,27 @@ nlohmann::json API::subscribe(TCPClientThread* client_thread, const jsonrpcpp::I
         SPDLOG_DEBUG("Dump '{}' calling params: {}.", __FUNCTION__, params.to_json().dump());
         throw jsonrpcpp::InvalidParamsException(e.what(), id);
     }
+}
+
+nlohmann::json API::get_tcp_clients(TCPClientThread* client_thread, const jsonrpcpp::Id& id, const jsonrpcpp::Parameter& params) {
+    nlohmann::json r = nlohmann::json::array();
+    for(auto& dsc : tcp_server->get_clients_list()) {
+        char ct[std::size("yyyy-mm-ddThh:mm:ssZ")];
+        std::strftime(std::data(ct), std::size(ct), "%FT%TZ", std::gmtime(&dsc.connection_time));
+
+        r.push_back({
+                { "id", dsc.idstring },
+                { "entity", dsc.entity },
+                { "connection_time", ct },
+                { "authenticated", dsc.authenticated },
+                { "remote_address", dsc.remote_address },
+                { "remote_port", dsc.remote_port },
+                { "frame_subscription", dsc.frame_subscription },
+                { "dev_subscription", dsc.dev_subscription },
+        });
+
+    }
+    return std::move(r);
 }
 
 nlohmann::json API::send_frame(TCPClientThread* client_thread, const jsonrpcpp::Id& id, const jsonrpcpp::Parameter& params) {
@@ -159,21 +184,6 @@ nlohmann::json API::get_node_info(TCPClientThread* client_thread, const jsonrpcp
         throw jsonrpcpp::RequestException(jsonrpcpp::Error("Node " + std::to_string(node_id) + "does not exist.", NODE_DOES_NOT_EXIST), id);
     }
 
-    //     struct DeviceDsc {
-    //        std::uint16_t id;
-    //        std::uint16_t type;
-    //        std::uint16_t version_major;
-    //        std::uint16_t version_minor;
-    //        std::uint16_t version_patch;
-    //        std::string name;
-    //    };
-    //
-    //    struct DeviceInfo: public DeviceDsc {
-    //        std::time_t created_time;
-    //        std::time_t last_seen_time;
-    //        std::string description;
-    //    };
-
     char ct[std::size("yyyy-mm-ddThh:mm:ssZ")];
     char lst[std::size("yyyy-mm-ddThh:mm:ssZ")];
     std::strftime(std::data(ct), std::size(ct), "%FT%TZ", std::gmtime(&device_info.created_time));
@@ -221,7 +231,7 @@ nlohmann::json API::node_reset(TCPClientThread* client_thread, const jsonrpcpp::
         throw jsonrpcpp::RequestException(jsonrpcpp::Error(e.what(), -1), id);
     }
 
-    //nlohmann::json::boolean_t r = true;
+    // nlohmann::json::boolean_t r = true;
 
     return true;
 }
@@ -483,12 +493,37 @@ nlohmann::json API::get_devs_list(TCPClientThread* client_thread, const jsonrpcp
     return std::move(r);
 }
 
+nlohmann::json API::dev_call(TCPClientThread* client_thread, const jsonrpcpp::Id& id, const jsonrpcpp::Parameter& params) {
+    std::string dev_id;
+    nlohmann::json r;
+
+    try {
+        dev_id = params.param_map.at("dev_id").get<std::string>();
+        params.param_map.at("method").get<std::string>(); // exist check
+
+        r = node_dev_mgr->call_dev_method(dev_id, client_thread, id, params);
+    }
+    catch (std::out_of_range& e) {
+        SPDLOG_ERROR("Incorrect parameters during invoke '{}' by {} - {}", __FUNCTION__, client_thread->get_client_idstring(), e.what());
+        SPDLOG_DEBUG("Dump '{}' calling params: {}.", __FUNCTION__, params.to_json().dump());
+        throw jsonrpcpp::InvalidParamsException(e.what(), id);
+    }
+    catch (nlohmann::detail::type_error& e) {
+        SPDLOG_ERROR("Incorrect parameters during invoke '{}' by {} - {}", __FUNCTION__, client_thread->get_client_idstring(), e.what());
+        SPDLOG_DEBUG("Dump '{}' calling params: {}.", __FUNCTION__, params.to_json().dump());
+        throw jsonrpcpp::InvalidParamsException(e.what(), id);
+    }
+
+    return std::move(r);
+}
+
 API::API(Bus* bus, NodeDevMgr* dev_mgr):
     bus(bus),
     node_dev_mgr(dev_mgr) {
     api_methods["get_version"] = &API::get_version;
     api_methods["get_methods_list"] = &API::get_methods_list;
     api_methods["subscribe"] = &API::subscribe;
+    api_methods["get_tcp_clients"] = &API::get_tcp_clients;
     api_methods["send_frame"] = &API::send_frame;
     api_methods["get_stats"] = &API::get_stats;
     api_methods["authenticate"] = &API::authenticate;
@@ -503,6 +538,11 @@ API::API(Bus* bus, NodeDevMgr* dev_mgr):
     api_methods["clear_register_bit"] = &API::clear_register_bit;
     api_methods["toggle_register_bit"] = &API::toggle_register_bit;
     api_methods["get_devs_list"] = &API::get_devs_list;
+    api_methods["dev_call"] = &API::dev_call;
+}
+
+void API::set_tcp_server(TCPServer* tcp_server) {
+    this->tcp_server = tcp_server;
 }
 
 jsonrpcpp::Response API::call(TCPClientThread* client_thread, const jsonrpcpp::request_ptr& request) {

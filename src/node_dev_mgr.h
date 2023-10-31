@@ -16,6 +16,7 @@
 #include <shared_mutex>
 #include <spdlog/spdlog.h>
 #include <thread>
+#include <jsonrpcpp/jsonrpcpp.hpp>
 
 #include "bus.h"
 #include "frameobserver.h"
@@ -121,7 +122,8 @@ class NodeDevMgr: public FrameSubject {
     };
 
     std::vector<NodeDevMgr::DevDsc> get_devs_list() noexcept;
+    nlohmann::json call_dev_method(const std::string& dev_id, const TCPClientThread* client_thread, const jsonrpcpp::Id& id, const jsonrpcpp::Parameter& params);
 
-    void attach_dev_state_observer(std::string dev_id, DevStatusObserver* obs);
-    void detach_dev_state_observer(std::string dev_id, DevStatusObserver* obs);
+    void attach_dev_state_observer(const std::string& dev_id, DevStatusObserver* obs);
+    void detach_dev_state_observer(const std::string& dev_id, DevStatusObserver* obs);
 };

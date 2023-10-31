@@ -27,6 +27,12 @@ void NodeDevMgr::on_frame_recv(const ExtH9Frame& frame) noexcept {
 }
 
 void NodeDevMgr::nodes_dev_update_thread() {
+#if defined(__APPLE__) && defined(__MACH__)
+    pthread_setname_np("node_dev");
+#elif defined(__linux__)
+    pthread_setname_np(recv_thread_desc.native_handle(), "node_dev");
+#endif
+
     while (nodes_update_thread_run) {
         std::unique_lock<std::mutex> lk(frame_queue_mtx);
         frame_queue_cv.wait(lk, [this]() { return !frame_queue.empty(); });
@@ -351,6 +357,7 @@ std::vector<NodeDevMgr::DevDsc> NodeDevMgr::get_devs_list() noexcept {
     devs_map_mtx.lock_shared();
     std::vector<NodeDevMgr::DevDsc> ret;
 
+    ret.reserve(devs_map.size());
     for (auto it : devs_map) {
         ret.push_back({it.first, it.second->type()});
     }
@@ -359,7 +366,23 @@ std::vector<NodeDevMgr::DevDsc> NodeDevMgr::get_devs_list() noexcept {
     return std::move(ret);
 }
 
-void NodeDevMgr::attach_dev_state_observer(std::string dev_id, DevStatusObserver* obs) {
+nlohmann::json NodeDevMgr::call_dev_method(const std::string& dev_id, const TCPClientThread* client_thread, const jsonrpcpp::Id& id, const jsonrpcpp::Parameter& params) {
+    nlohmann::json r;
+    devs_map_mtx.lock_shared();
+    if (devs_map.count("*")) {
+        try {
+            r = devs_map["*"]->dev_call(client_thread, id, params);
+        }
+        catch (...) {
+            devs_map_mtx.unlock_shared();
+            throw;
+        }
+    }
+    devs_map_mtx.unlock_shared();
+    return r;
+}
+
+void NodeDevMgr::attach_dev_state_observer(const std::string& dev_id, DevStatusObserver* obs) {
     devs_map_mtx.lock_shared();
     if (devs_map.count(dev_id)) {
         devs_map[dev_id]->attach_dev_status_observer(obs);
@@ -370,7 +393,7 @@ void NodeDevMgr::attach_dev_state_observer(std::string dev_id, DevStatusObserver
     throw DeviceNotExistException();
 }
 
-void NodeDevMgr::detach_dev_state_observer(std::string dev_id, DevStatusObserver* obs) {
+void NodeDevMgr::detach_dev_state_observer(const std::string& dev_id, DevStatusObserver* obs) {
     devs_map_mtx.lock_shared();
     if (devs_map.count(dev_id)) {
         devs_map[dev_id]->detach_dev_status_observer(obs);

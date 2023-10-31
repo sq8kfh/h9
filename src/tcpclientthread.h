@@ -67,12 +67,16 @@ class TCPClientThread {
     void close_connection();
 
   public:
+    const std::time_t connection_time;
+
     TCPClientThread(int sockfd, API* api, TCPServer* server);
     TCPClientThread(const TCPClientThread& a) = delete;
     ~TCPClientThread();
 
     void set_frame_observer(ClientFrameObs* frame_observer);
+    bool is_frame_observer_set() const;
     void set_dev_status_observer(DevStatusObserver* dev_status_observer);
+    bool is_dev_status_observer_set() const;
 
     std::string get_remote_address() const noexcept;
     std::string get_remote_port() const noexcept;

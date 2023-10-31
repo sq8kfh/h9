@@ -49,6 +49,17 @@ class TCPServer {
 
     // friend void ExecutorAdapter::cleanup_connection();
   public:
+    struct ClientInfo {
+        std::string idstring;
+        std::string entity;
+        std::time_t connection_time;
+        bool authenticated;
+        std::string remote_address;
+        std::string remote_port;
+        bool frame_subscription;
+        bool dev_subscription;
+    };
+
     explicit TCPServer(API* api) noexcept;
     TCPServer(const TCPServer& a) = delete;
     ~TCPServer();
@@ -56,4 +67,6 @@ class TCPServer {
     void run();
     void cleanup_tcpclientthread(TCPClientThread* client);
     int connected_clients_count();
+
+    std::vector<ClientInfo> get_clients_list();
 };
