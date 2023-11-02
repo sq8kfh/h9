@@ -11,14 +11,15 @@
 #include "config.h"
 
 #include <atomic>
+#include <jsonrpcpp/jsonrpcpp.hpp>
 #include <map>
 #include <queue>
 #include <shared_mutex>
 #include <spdlog/spdlog.h>
 #include <thread>
-#include <jsonrpcpp/jsonrpcpp.hpp>
 
 #include "bus.h"
+#include "dev_loader.h"
 #include "frameobserver.h"
 #include "framesubject.h"
 #include "node.h"
@@ -57,13 +58,18 @@ class NodeDevMgr: public FrameSubject {
 
     std::shared_mutex nodes_map_mtx;
     std::shared_mutex devs_map_mtx;
+    std::shared_mutex dev_status_observer_mtx;
 
     std::map<std::uint16_t, Node*> nodes_map;
+    std::vector<Dev*> loaded_inactive_dev;
     std::map<std::string, Dev*> devs_map;
+    std::vector<DevStatusObserver*> dev_status_observer;
 
     std::mutex frame_queue_mtx;
     std::condition_variable frame_queue_cv; // TODO: counting_semaphore (C++20)?
     std::queue<ExtH9Frame> frame_queue;
+
+    DevLoader dev_desc_loader;
 
     std::atomic_bool nodes_update_thread_run;
     std::thread nodes_update_thread_desc;
@@ -93,6 +99,7 @@ class NodeDevMgr: public FrameSubject {
     NodeDevMgr(const NodeDevMgr& a) = delete;
     ~NodeDevMgr();
     void load_nodes_description(const std::string& nodes_description_filename);
+    void load_devs_configuration(const std::string& devs_description_filename);
 
     void response_timeout_duration(int response_timeout_duration);
     int response_timeout_duration();
@@ -124,6 +131,9 @@ class NodeDevMgr: public FrameSubject {
     std::vector<NodeDevMgr::DevDsc> get_devs_list() noexcept;
     nlohmann::json call_dev_method(const std::string& dev_id, const TCPClientThread* client_thread, const jsonrpcpp::Id& id, const jsonrpcpp::Parameter& params);
 
+    void emit_dev_state(const std::string& dev_id, const nlohmann::json& dev_status);
     void attach_dev_state_observer(const std::string& dev_id, DevStatusObserver* obs);
     void detach_dev_state_observer(const std::string& dev_id, DevStatusObserver* obs);
+
+    void add_dev(Dev* dev);
 };

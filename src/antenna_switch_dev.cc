@@ -7,14 +7,14 @@
 
 #include "dev_node_exception.h"
 
-AntennaSwitchDev::AntennaSwitchDev(NodeDevMgr*node_mgr, std::uint16_t switch_node_id):
-    Dev("AntennaSwitchDev", node_mgr, {switch_node_id}),
+AntennaSwitchDev::AntennaSwitchDev(std::string name, NodeDevMgr*node_mgr, std::uint16_t switch_node_id):
+    Dev("AntennaSwitchDev", name, node_mgr, {switch_node_id}),
     switch_node_id(switch_node_id),
     controller_node_id(0xffff) {
 }
 
-AntennaSwitchDev::AntennaSwitchDev(NodeDevMgr*node_mgr, std::uint16_t switch_node_id, std::uint16_t controller_node_id):
-    Dev("AntennaSwitchDev", node_mgr, {switch_node_id, controller_node_id}),
+AntennaSwitchDev::AntennaSwitchDev(std::string name, NodeDevMgr*node_mgr, std::uint16_t switch_node_id, std::uint16_t controller_node_id):
+    Dev("AntennaSwitchDev", name, node_mgr, {switch_node_id, controller_node_id}),
     switch_node_id(switch_node_id),
     controller_node_id(controller_node_id) {
 }

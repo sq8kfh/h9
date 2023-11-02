@@ -46,14 +46,18 @@ set(H9D_SRC h9d.cc config.h config_gen.h
         send_frame_result.h
         node_dev_mgr.cc node_dev_mgr.h
         node.cc node.h
-        devicedescloader.cc devicedescloader.h
+        node_desc_loader.cc node_desc_loader.h
         virtual_driver.cc virtual_driver.h
         virtual_endpoint.cc virtual_endpoint.h
         virtual_py_node.cc virtual_py_node.h
         py_h9.cc py_h9.h
         dev_node_exception.cc dev_node_exception.h
         dev.cc dev.h
-        antenna_switch_dev.cc antenna_switch_dev.h dev_status_observer.cc dev_status_observer.h fmt_helpers.cc fmt_helpers.h)
+        antenna_switch_dev.cc antenna_switch_dev.h
+        dev_status_observer.cc dev_status_observer.h
+        fmt_helpers.cc fmt_helpers.h
+        dev_loader.cc dev_loader.h
+        libconfuse_helper.cc libconfuse_helper.h)
 
 set(CLIENT_COMMON_SRC config.h config_gen.h
         h9frame.cc h9frame.h
@@ -61,7 +65,9 @@ set(CLIENT_COMMON_SRC config.h config_gen.h
         h9socket.cc h9socket.h
         h9msgsocket.cc h9msgsocket.h
         h9connector.cc h9connector.h
-        h9_configurator.cc h9_configurator.h fmt_helpers.cc fmt_helpers.h)
+        h9_configurator.cc h9_configurator.h
+        fmt_helpers.cc fmt_helpers.h
+        libconfuse_helper.cc libconfuse_helper.h)
 
 set(H9SNIFFER_SRC h9sniffer.cc config.h config_gen.h)
 

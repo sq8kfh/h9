@@ -24,6 +24,7 @@
 #include "slcan_driver.h"
 #include "socketcan_driver.h"
 #include "git_version.h"
+#include "libconfuse_helper.h"
 
 namespace {
 std::string last_confuse_error_message = "";
@@ -285,7 +286,8 @@ void H9dConfigurator::load_configuration() {
         CFG_INT("source_id", default_source_id, CFGF_NONE),
         CFG_BOOL("forwarding", cfg_true, CFGF_NONE),
         CFG_INT("response_timeout_duration", default_response_timeout_duration, CFGF_NONE),
-        CFG_STR("devices_description_filename", nullptr, CFGF_NONE),
+        CFG_STR("nodes_description_filename", nullptr, CFGF_NONE),
+        CFG_STR("devs_configuration_filename", nullptr, CFGF_NONE),
         CFG_SEC("endpoint", cfg_endpoint_sec, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
         CFG_END()};
 
@@ -305,6 +307,9 @@ void H9dConfigurator::load_configuration() {
 
     cfg = cfg_init(cfg_opts, CFGF_NONE);
     cfg_set_error_function(cfg, cfg_err_func);
+    cfg_set_validate_func(cfg, "bus|source_id", confuse_helpers::validate_node_id);
+    cfg_set_validate_func(cfg, "virtual_endpoint|node_id", confuse_helpers::validate_node_id);
+
     int ret = cfg_parse(cfg, config_file.c_str());
 
     if (ret == CFG_FILE_ERROR) {
@@ -505,8 +510,11 @@ void H9dConfigurator::configure_virtual_endpoint(VirtualEndpoint* vendpoint) {
 void H9dConfigurator::configure_devices_mgr(NodeDevMgr* devices_mgr) {
     cfg_t* cfg_bus= cfg_getsec(cfg, "bus");
     devices_mgr->response_timeout_duration(cfg_getint(cfg_bus, "response_timeout_duration"));
-    if (cfg_getstr(cfg_bus, "devices_description_filename")) {
-        devices_mgr->load_nodes_description(cfg_getstr(cfg_bus, "devices_description_filename"));
+    if (cfg_getstr(cfg_bus, "nodes_description_filename")) {
+        devices_mgr->load_nodes_description(cfg_getstr(cfg_bus, "nodes_description_filename"));
+    }
+    if (cfg_getstr(cfg_bus, "devs_configuration_filename")) {
+        devices_mgr->load_devs_configuration(cfg_getstr(cfg_bus, "devs_configuration_filename"));
     }
 }
 

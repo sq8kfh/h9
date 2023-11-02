@@ -14,7 +14,7 @@
 #include "h9d_configurator.h"
 #include "tcpclientthread.h"
 
-DeviceDescLoader Node::nodedescloader;
+NodeDescLoader Node::nodedescloader;
 
 void Node::update_node_state(const ExtH9Frame& frame) {
     for (auto obs: node_state_observers) {
@@ -49,9 +49,9 @@ Node::Node(NodeDevMgr* node_mgr, Bus* bus, std::uint16_t node_id, std::uint16_t 
 
     _last_seen_time = _created_time;
 
-    if (nodedescloader.get_device_name_by_type(node_type) != "") {
-        _device_name = nodedescloader.get_device_name_by_type(node_type);
-        _device_description = nodedescloader.get_device_description_by_type(node_type);
+    if (nodedescloader.get_node_name_by_type(node_type) != "") {
+        _device_name = nodedescloader.get_node_name_by_type(node_type);
+        _device_description = nodedescloader.get_node_description_by_type(node_type);
     }
 
     register_map[1] = {1, "Node type", "uint", 16, true, false, {}, ""};
@@ -60,7 +60,7 @@ Node::Node(NodeDevMgr* node_mgr, Bus* bus, std::uint16_t node_id, std::uint16_t 
     register_map[4] = {4, "Node id", "uint", 9, true, true, {}, ""};
     register_map[5] = {5, "MCU type", "uint", 8, true, false, {}, ""};
 
-    for (const auto &it: nodedescloader.get_device_register_by_type(node_type)) {
+    for (const auto &it: nodedescloader.get_node_register_by_type(node_type)) {
         register_map[it.first] = {it.second.number, it.second.name, it.second.type, it.second.size, it.second.readable, it.second.writable, it.second.bits_names, it.second.description};
     }
 }

@@ -12,6 +12,7 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include "git_version.h"
+#include "libconfuse_helper.h"
 
 namespace {
 void cfg_err_func(cfg_t* cfg, const char* fmt, va_list args) {
@@ -112,6 +113,7 @@ void H9Configurator::load_configuration() {
     cfg = cfg_init(cfg_opts, CFGF_NONE);
 
     cfg_set_error_function(cfg, cfg_err_func);
+    cfg_set_validate_func(cfg, "DefaultSourceID", confuse_helpers::validate_node_id);
 
     int result = cfg_parse(cfg, config_file.c_str());
     if (result == CFG_PARSE_ERROR) {

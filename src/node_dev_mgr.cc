@@ -11,9 +11,10 @@
 #include <cassert>
 #include <utility>
 
-#include "antenna_switch_dev.h"
 #include "bus.h"
+#include "dev.h"
 #include "dev_node_exception.h"
+#include "dev_status_observer.h"
 #include "h9d_configurator.h"
 #include "tcpclientthread.h"
 
@@ -83,17 +84,38 @@ void NodeDevMgr::nodes_dev_update_thread() {
 }
 
 void NodeDevMgr::update_dev_after_node_discovered(std::uint16_t node_id, std::uint16_t node_type) {
-    if (node_id == 32) {
-        devs_map_mtx.lock();
-        if (devs_map.count("*") == 0) {
-            auto* dev = new AntennaSwitchDev(this, 32);
-            devs_map["*"] = dev;
-            devs_map_mtx.unlock();
+    for (auto it = loaded_inactive_dev.begin(); it != loaded_inactive_dev.end();) {
+        auto dev = *it;
 
-            dev->init();
+        nodes_map_mtx.lock_shared();
+        bool can_be_activate = true;
+        for (auto id : dev->get_nodes_id()) {
+            if (nodes_map.count(id) == 0) {
+                can_be_activate = false;
+                break;
+            }
+        }
+        nodes_map_mtx.unlock_shared();
+
+        if (can_be_activate) {
+            devs_map_mtx.lock();
+            if (devs_map.count(dev->name) == 0) {
+                SPDLOG_LOGGER_INFO(logger, "Dev '{}' activating...", dev->name);
+                dev->activate();
+                devs_map[dev->name] = dev;
+
+                devs_map_mtx.unlock();
+
+                dev->init();
+            }
+            else {
+                devs_map_mtx.unlock();
+            }
+
+            it = loaded_inactive_dev.erase(it);
         }
         else {
-            devs_map_mtx.unlock();
+            ++it;
         }
     }
 }
@@ -154,8 +176,14 @@ NodeDevMgr::~NodeDevMgr() {
 }
 
 void NodeDevMgr::load_nodes_description(const std::string& nodes_description_filename) {
-    SPDLOG_LOGGER_INFO(logger, "Loading devices description file: '{}'.", nodes_description_filename);
+    SPDLOG_LOGGER_INFO(logger, "Loading nodes description file: '{}'.", nodes_description_filename);
     Node::nodedescloader.load_file(nodes_description_filename);
+}
+
+void NodeDevMgr::load_devs_configuration(const std::string& devs_description_filename) {
+    SPDLOG_LOGGER_INFO(logger, "Loading devs description file: '{}'.", devs_description_filename);
+
+    dev_desc_loader.load_file(devs_description_filename, this);
 }
 
 void NodeDevMgr::response_timeout_duration(int response_timeout_duration) {
@@ -359,7 +387,7 @@ std::vector<NodeDevMgr::DevDsc> NodeDevMgr::get_devs_list() noexcept {
 
     ret.reserve(devs_map.size());
     for (auto it : devs_map) {
-        ret.push_back({it.first, it.second->type()});
+        ret.push_back({it.first, it.second->type});
     }
 
     devs_map_mtx.unlock_shared();
@@ -369,9 +397,9 @@ std::vector<NodeDevMgr::DevDsc> NodeDevMgr::get_devs_list() noexcept {
 nlohmann::json NodeDevMgr::call_dev_method(const std::string& dev_id, const TCPClientThread* client_thread, const jsonrpcpp::Id& id, const jsonrpcpp::Parameter& params) {
     nlohmann::json r;
     devs_map_mtx.lock_shared();
-    if (devs_map.count("*")) {
+    if (devs_map.count(dev_id)) {
         try {
-            r = devs_map["*"]->dev_call(client_thread, id, params);
+            r = devs_map[dev_id]->dev_call(client_thread, id, params);
         }
         catch (...) {
             devs_map_mtx.unlock_shared();
@@ -382,24 +410,27 @@ nlohmann::json NodeDevMgr::call_dev_method(const std::string& dev_id, const TCPC
     return r;
 }
 
-void NodeDevMgr::attach_dev_state_observer(const std::string& dev_id, DevStatusObserver* obs) {
-    devs_map_mtx.lock_shared();
-    if (devs_map.count(dev_id)) {
-        devs_map[dev_id]->attach_dev_status_observer(obs);
-        devs_map_mtx.unlock_shared();
-        return;
+void NodeDevMgr::emit_dev_state(const std::string& dev_id, const nlohmann::json& dev_status) {
+    dev_status_observer_mtx.lock_shared();
+    for (auto obs : dev_status_observer) {
+        obs->on_dev_state_update(dev_status);
     }
-    devs_map_mtx.unlock_shared();
-    throw DeviceNotExistException();
+    dev_status_observer_mtx.unlock_shared();
+}
+
+void NodeDevMgr::attach_dev_state_observer(const std::string& dev_id, DevStatusObserver* obs) {
+    dev_status_observer_mtx.lock();
+    dev_status_observer.push_back(obs);
+    dev_status_observer_mtx.unlock();
 }
 
 void NodeDevMgr::detach_dev_state_observer(const std::string& dev_id, DevStatusObserver* obs) {
-    devs_map_mtx.lock_shared();
-    if (devs_map.count(dev_id)) {
-        devs_map[dev_id]->detach_dev_status_observer(obs);
-        devs_map_mtx.unlock_shared();
-        return;
-    }
-    devs_map_mtx.unlock_shared();
-    throw DeviceNotExistException();
+    dev_status_observer_mtx.lock();
+    dev_status_observer.erase(std::remove(dev_status_observer.begin(), dev_status_observer.end(), obs), dev_status_observer.end());
+    dev_status_observer_mtx.unlock();
+}
+
+void NodeDevMgr::add_dev(Dev* dev) {
+    loaded_inactive_dev.push_back(dev);
+    SPDLOG_LOGGER_INFO(logger, "Added dev: '{}', type: {}", dev->name, dev->type);
 }

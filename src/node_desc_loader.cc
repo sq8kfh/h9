@@ -6,42 +6,22 @@
  * Copyright (C) 2020-2023 Kamil Palkowski. All rights reserved.
  */
 
-#include "devicedescloader.h"
+#include "node_desc_loader.h"
 
 #include "spdlog/spdlog.h"
+#include "libconfuse_helper.h"
 
-static void cfg_err_func(cfg_t* cfg, const char* fmt, va_list args) {
-    char msgbuf[1024];
-    vsnprintf(msgbuf, sizeof(msgbuf), fmt, args);
-    // last_confuse_error_message = msgbuf;
-    SPDLOG_ERROR(msgbuf);
-    // SPDLOG_ERROR(fmt, args);
-    //  Logger::default_log.vlog(Log::Level::WARN, __FILE__, __LINE__, fmt, args);
-}
-
-static int conf_valid_type(cfg_t* cfg, cfg_opt_t* opt) {
-    if (strcmp(cfg_opt_getnstr(opt, 0), "uint") == 0)
-        return 0;
-    else if (strcmp(cfg_opt_getnstr(opt, 0), "str") == 0)
-        return 0;
-    else if (strcmp(cfg_opt_getnstr(opt, 0), "bool") == 0)
-        return 0;
-
-    cfg_error(cfg, "invalid value for option '%s': %s", cfg_opt_name(opt), cfg_opt_getnstr(opt, 0));
-    return -1;
-}
-
-DeviceDescLoader::DeviceDescLoader():
+NodeDescLoader::NodeDescLoader():
     cfg(nullptr) {
 }
 
-DeviceDescLoader::~DeviceDescLoader() {
+NodeDescLoader::~NodeDescLoader() {
     if (cfg) {
         cfg_free(cfg);
     }
 }
 
-void DeviceDescLoader::load_file(std::string devices_desc_file) {
+void NodeDescLoader::load_file(const std::string& nodes_desc_file) {
     cfg_opt_t cfg_register_sec[] = {
         CFG_STR("name", nullptr, CFGF_NONE),
         CFG_STR("type", nullptr, CFGF_NONE),
@@ -53,38 +33,41 @@ void DeviceDescLoader::load_file(std::string devices_desc_file) {
         CFG_STR("description", "", CFGF_NONE),
         CFG_END()};
 
-    cfg_opt_t cfg_device_sec[] = {
+    cfg_opt_t cfg_type_sec[] = {
         CFG_STR("name", nullptr, CFGF_NONE),
         CFG_STR("description", "", CFGF_NONE),
         CFG_SEC("register", cfg_register_sec, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
         CFG_END()};
 
     cfg_opt_t cfg_opts[] = {
-        CFG_SEC("device", cfg_device_sec, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
+        CFG_SEC("node_type", cfg_type_sec, CFGF_MULTI | CFGF_TITLE | CFGF_NO_TITLE_DUPES),
         CFG_END()};
 
     cfg = cfg_init(cfg_opts, CFGF_NONE);
-    cfg_set_error_function(cfg, cfg_err_func);
-    cfg_set_validate_func(cfg, "device|register|type", conf_valid_type);
-    int ret = cfg_parse(cfg, devices_desc_file.c_str());
+    cfg_set_error_function(cfg, confuse_helpers::cfg_err_func);
+    cfg_set_validate_func(cfg, "node_type|register|type", confuse_helpers::validate_node_register_type);
+    cfg_set_validate_func(cfg, "node_type|register|size", confuse_helpers::validate_node_register_size);
+    cfg_set_validate_func(cfg, "node_type", confuse_helpers::validate_node_type_sec);
+    cfg_set_validate_func(cfg, "node_type|register",confuse_helpers::validate_node_register_number_sec);
+    int ret = cfg_parse(cfg, nodes_desc_file.c_str());
 
     if (ret == CFG_FILE_ERROR) {
-        SPDLOG_ERROR("Devices description file ({}) - file error", devices_desc_file.c_str());
+        SPDLOG_ERROR("Nodes description file ({}) - file error", nodes_desc_file.c_str());
         cfg_free(cfg);
         return;
     }
     else if (ret == CFG_PARSE_ERROR) {
-        SPDLOG_ERROR("Devices description file ({}) - parse error", devices_desc_file.c_str());
+        SPDLOG_ERROR("Nodes description file ({}) - parse error", nodes_desc_file.c_str());
         cfg_free(cfg);
         return;
     }
 
-    int dn = cfg_size(cfg, "device");
+    int dn = cfg_size(cfg, "node_type");
     for (int di = 0; di < dn; ++di) {
-        cfg_t* device = cfg_getnsec(cfg, "device", di);
+        cfg_t* device = cfg_getnsec(cfg, "node_type", di);
         int device_type = std::stoul(cfg_title(device));
 
-        auto& desc = devices[device_type];
+        auto& desc = types[device_type];
         desc.name = std::string(cfg_getstr(device, "name"));
         desc.description = std::string(cfg_getstr(device, "description"));
 
@@ -111,23 +94,23 @@ void DeviceDescLoader::load_file(std::string devices_desc_file) {
     }
 }
 
-std::string DeviceDescLoader::get_device_name_by_type(std::uint16_t type) {
-    if (devices.count(type)) {
-        return devices[type].name;
+std::string NodeDescLoader::get_node_name_by_type(std::uint16_t type) {
+    if (types.count(type)) {
+        return types[type].name;
     }
     return "";
 }
 
-std::string DeviceDescLoader::get_device_description_by_type(std::uint16_t type) {
-    if (devices.count(type)) {
-        return devices[type].description;
+std::string NodeDescLoader::get_node_description_by_type(std::uint16_t type) {
+    if (types.count(type)) {
+        return types[type].description;
     }
     return "";
 }
 
-std::map<std::uint16_t, DeviceDescLoader::RegisterDesc> DeviceDescLoader::get_device_register_by_type(std::uint16_t type) {
-    if (devices.count(type)) {
-        return devices[type].registers;
+std::map<std::uint16_t, NodeDescLoader::RegisterDesc> NodeDescLoader::get_node_register_by_type(std::uint16_t type) {
+    if (types.count(type)) {
+        return types[type].registers;
     }
-    return std::map<std::uint16_t, DeviceDescLoader::RegisterDesc>();
+    return std::map<std::uint16_t, NodeDescLoader::RegisterDesc>();
 }

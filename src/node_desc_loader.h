@@ -15,7 +15,7 @@
 #include <string>
 #include <vector>
 
-class DeviceDescLoader {
+class NodeDescLoader {
   public:
     struct RegisterDesc {
         std::uint8_t number;
@@ -28,7 +28,7 @@ class DeviceDescLoader {
         std::string description;
     };
 
-    struct DeviceDesc {
+    struct NodeDesc {
         std::string name;
         std::string description;
         std::map<std::uint16_t, RegisterDesc> registers;
@@ -36,14 +36,14 @@ class DeviceDescLoader {
 
   private:
     cfg_t* cfg;
-    std::map<std::uint16_t, DeviceDesc> devices;
+    std::map<std::uint16_t, NodeDesc> types;
 
   public:
-    DeviceDescLoader();
-    ~DeviceDescLoader();
-    void load_file(std::string devices_desc_file);
+    NodeDescLoader();
+    ~NodeDescLoader();
+    void load_file(const std::string& nodes_desc_file);
 
-    std::string get_device_name_by_type(std::uint16_t type);
-    std::string get_device_description_by_type(std::uint16_t type);
-    std::map<std::uint16_t, RegisterDesc> get_device_register_by_type(std::uint16_t type);
+    std::string get_node_name_by_type(std::uint16_t type);
+    std::string get_node_description_by_type(std::uint16_t type);
+    std::map<std::uint16_t, RegisterDesc> get_node_register_by_type(std::uint16_t type);
 };

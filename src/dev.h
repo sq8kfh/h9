@@ -5,24 +5,28 @@
 
 #pragma once
 
+#include <jsonrpcpp/jsonrpcpp.hpp>
+
 #include "node.h"
 #include "node_dev_mgr.h"
-#include <jsonrpcpp/jsonrpcpp.hpp>
 
 class DevStatusObserver;
 
 class Dev: public Node::NodeStateObserver {
   private:
-    std::vector<std::uint16_t> dependent_from_nodes;
-    std::vector<DevStatusObserver*> dev_status_observer;
-    const std::string _type;
+    std::vector<std::uint16_t> dependent_on_nodes;
   protected:
-    NodeDevMgr*node_mgr;
-    Dev(std::string type, NodeDevMgr*node_mgr, std::vector<std::uint16_t> nodes);
+    NodeDevMgr* node_mgr;
+    Dev(std::string type, std::string name, NodeDevMgr*node_mgr, std::vector<std::uint16_t> nodes);
     virtual ~Dev();
     void emit_dev_state(const nlohmann::json& dev_status);
   public:
-    std::string type();
+    const std::string type;
+    const std::string name;
+
+    void activate();
+    const std::vector<std::uint16_t>& get_nodes_id();
+
     void attach_dev_status_observer(DevStatusObserver* obs);
     void detach_dev_status_observer(DevStatusObserver* obs);
     void update_dev_state(std::uint16_t node_id, const ExtH9Frame& frame) override = 0;

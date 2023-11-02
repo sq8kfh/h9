@@ -18,7 +18,7 @@
 #include <variant>
 #include <vector>
 
-#include "devicedescloader.h"
+#include "node_desc_loader.h"
 #include "raw_node.h"
 
 class NodeDevMgr;
@@ -26,7 +26,7 @@ class TCPClientThread;
 
 class Node: protected RawNode {
   public:
-    using RegisterDsc = DeviceDescLoader::RegisterDesc;
+    using RegisterDsc = NodeDescLoader::RegisterDesc;
     using regvalue_t = std::variant<std::string, std::int64_t, std::vector<std::uint8_t>>;
 
     class NodeStateObserver {
@@ -36,7 +36,7 @@ class Node: protected RawNode {
 
   private:
     std::shared_ptr<spdlog::logger> logger;
-    static DeviceDescLoader nodedescloader;
+    static NodeDescLoader nodedescloader;
 
     const std::uint16_t _device_type;
     const std::uint64_t _device_version;
