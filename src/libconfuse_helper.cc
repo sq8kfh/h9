@@ -29,6 +29,16 @@ int validate_node_id(cfg_t* cfg, cfg_opt_t* opt) {
     return 0;
 }
 
+int validate_node_type(cfg_t* cfg, cfg_opt_t* opt) {
+    auto type = cfg_opt_getnint(opt, cfg_opt_size(opt) - 1);
+    if (type < 1 || type > 0xffff) {
+        cfg_error(cfg, "option '%s' in section '%s' must have a value between 1-%d", opt->name, cfg->name, H9frame::H9FRAME_SOURCE_ID_MAX_VALUE);
+        return -1;
+    }
+
+    return 0;
+}
+
 int validate_node_register_type(cfg_t* cfg, cfg_opt_t* opt) {
     char* type = cfg_opt_getnstr(opt, cfg_opt_size(opt) - 1);
 

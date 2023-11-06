@@ -76,8 +76,8 @@ void VirtualPyNode::send_turned_on_broadcast() {
 
     frame.dlc = 8;
 
-    frame.data[0] = (NODE_TYPE >> 8) & 0xff;
-    frame.data[1] = (NODE_TYPE)&0xff;
+    frame.data[0] = (node_type >> 8) & 0xff;
+    frame.data[1] = (node_type)&0xff;
     frame.data[2] = (VERSION_MAJOR >> 8);
     frame.data[3] = VERSION_MAJOR & 0xff;
     frame.data[4] = (VERSION_MINOR >> 8) & 0xff;
@@ -100,9 +100,9 @@ void VirtualPyNode::call_py_on_frame(const H9frame& frame) {
             Py_DECREF(pValue);
         }
         else {
-            //TODO: co robic jak sie funkcja pythona wysypie? zignorwac czy wywalic modul?
-            //Py_DECREF(on_frame_func);
-            //on_frame_func = nullptr;
+            // TODO: co robic jak sie funkcja pythona wysypie? zignorwac czy wywalic modul?
+            // Py_DECREF(on_frame_func);
+            // on_frame_func = nullptr;
             PyErr_Print();
             SPDLOG_LOGGER_WARN(logger, "Call 'on_frame' function failed.");
         }
@@ -120,8 +120,9 @@ bool VirtualPyNode::send_frame(const H9frame& frame) {
     return false;
 }
 
-VirtualPyNode::VirtualPyNode(int node_id, const std::string& py_path, const std::string& py_module, VirtualEndpoint* vendpoint):
+VirtualPyNode::VirtualPyNode(std::uint16_t node_id, std::uint16_t node_type, const std::string& py_path, const std::string& py_module, VirtualEndpoint* vendpoint):
     node_id(node_id),
+    node_type(node_type),
     py_module(py_module),
     on_frame_func(nullptr) {
     virtual_endpoint = vendpoint;
@@ -147,7 +148,7 @@ VirtualPyNode::VirtualPyNode(int node_id, const std::string& py_path, const std:
 
     PyObject* sysPath = PySys_GetObject("path");
     PyList_Append(sysPath, PyUnicode_FromString(py_path.c_str()));
-    //PySys_SetPath(L"/Users/crowx/projekty/h9/h9/virtual_node");
+    // PySys_SetPath(L"/Users/crowx/projekty/h9/h9/virtual_node");
 
     PyObject* h9log = PyModule_Create(&h9log_module);
     PyObject* sys = PyImport_ImportModule("sys");
@@ -163,18 +164,22 @@ VirtualPyNode::VirtualPyNode(int node_id, const std::string& py_path, const std:
     Py_DECREF(sys);
     Py_DECREF(pName);
 
-    if (pModule != NULL) {
+    if (pModule != nullptr) {
         on_frame_func = PyObject_GetAttrString(pModule, "on_frame");
         if (on_frame_func && PyCallable_Check(on_frame_func)) {
             SPDLOG_LOGGER_INFO(logger, "Loaded 'on_frame' method for '{}' PyNode.", py_module);
         }
         else {
+            Py_XDECREF(on_frame_func);
+            Py_DECREF(pModule);
+
+            on_frame_func = nullptr;
+            pModule = nullptr;
+
             if (PyErr_Occurred())
                 PyErr_Print();
             SPDLOG_LOGGER_WARN(logger, "Cannot find 'on_frame' function in '{}' PyNode.", py_module);
         }
-        Py_XDECREF(on_frame_func);
-        Py_DECREF(pModule);
     }
     else {
         PyErr_Print();
@@ -186,7 +191,7 @@ VirtualPyNode::VirtualPyNode(int node_id, const std::string& py_path, const std:
 
 VirtualPyNode::~VirtualPyNode() {
     Py_XDECREF(on_frame_func);
-    //    Py_FinalizeEx();
+    Py_FinalizeEx();
     SPDLOG_LOGGER_INFO(logger, "Unload Python virtual node: '{}' with id: {}.", py_module, node_id);
 };
 
@@ -200,8 +205,8 @@ void VirtualPyNode::on_frame(const H9frame& frame) {
         res.destination_id = frame.source_id;
 
         res.dlc = 8;
-        res.data[0] = (NODE_TYPE >> 8) & 0xff;
-        res.data[1] = (NODE_TYPE)&0xff;
+        res.data[0] = (node_type >> 8) & 0xff;
+        res.data[1] = (node_type)&0xff;
         res.data[2] = (VERSION_MAJOR >> 8);
         res.data[3] = VERSION_MAJOR & 0xff;
         res.data[4] = (VERSION_MINOR >> 8) & 0xff;
@@ -257,8 +262,8 @@ void VirtualPyNode::on_frame(const H9frame& frame) {
 
             res.data[0] = frame.data[0];
             if (frame.data[0] == 1) { // type
-                res.data[1] = (NODE_TYPE >> 8) & 0xff;
-                res.data[2] = (NODE_TYPE ) & 0xff;
+                res.data[1] = (node_type >> 8) & 0xff;
+                res.data[2] = (node_type)&0xff;
                 res.dlc = 3;
             }
             else if (frame.data[0] == 2) {
@@ -273,17 +278,17 @@ void VirtualPyNode::on_frame(const H9frame& frame) {
             else if (frame.data[0] == 3) {
                 int max = 6 < py_module.size() ? 6 : py_module.size();
 
-                for (int i = 0; i < max; ++i){
-                    res.data[i+1] = py_module.at(i);
+                for (int i = 0; i < max; ++i) {
+                    res.data[i + 1] = py_module.at(i);
                 }
-                res.dlc = max+1;
+                res.dlc = max + 1;
             }
             else if (frame.data[0] == 4) {
                 res.data[1] = (new_node_id >> 8) & 0x01;
-                res.data[2] = (new_node_id) & 0xff;
+                res.data[2] = (new_node_id)&0xff;
                 res.dlc = 3;
             }
-            else if (frame.data[0] == 5) { //cpu type
+            else if (frame.data[0] == 5) { // cpu type
                 res.data[1] = 0xff;
                 res.dlc = 2;
             }

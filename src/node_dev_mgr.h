@@ -65,6 +65,8 @@ class NodeDevMgr: public FrameSubject {
     std::map<std::string, Dev*> devs_map;
     std::vector<DevStatusObserver*> dev_status_observer;
 
+    std::map<std::uint16_t, std::vector<Dev*>> node_state_observers;
+
     std::mutex frame_queue_mtx;
     std::condition_variable frame_queue_cv; // TODO: counting_semaphore (C++20)?
     std::queue<ExtH9Frame> frame_queue;
@@ -110,8 +112,8 @@ class NodeDevMgr: public FrameSubject {
     bool is_node_exist(std::uint16_t node_id) noexcept;
     std::vector<NodeDevMgr::NodeDsc> get_nodes_list() noexcept;
 
-    void attach_node_state_observer(std::uint16_t node_id, Node::NodeStateObserver* obs);
-    void detach_node_state_observer(std::uint16_t node_id, Node::NodeStateObserver* obs);
+    void attach_node_state_observer(std::uint16_t node_id, Dev* obs);
+    void detach_node_state_observer(std::uint16_t node_id, Dev* obs);
 
     std::vector<Node::RegisterDsc> get_registers_list(std::uint16_t node_id) noexcept;
 
@@ -122,6 +124,8 @@ class NodeDevMgr: public FrameSubject {
     Node::regvalue_t set_register_bit(std::uint16_t node_id, std::uint8_t reg, std::uint8_t bit_num);
     Node::regvalue_t clear_register_bit(std::uint16_t node_id, std::uint8_t reg, std::uint8_t bit_num);
     Node::regvalue_t toggle_register_bit(std::uint16_t node_id, std::uint8_t reg, std::uint8_t bit_num);
+
+    std::uint8_t get_reg_value_from_frame(std::uint16_t node_id, const ExtH9Frame& frame, Node::regvalue_t* value);
 
     struct DevDsc {
         std::string name;

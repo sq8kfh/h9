@@ -12,7 +12,7 @@
 
 class DevStatusObserver;
 
-class Dev: public Node::NodeStateObserver {
+class Dev {
   private:
     std::vector<std::uint16_t> dependent_on_nodes;
   protected:
@@ -29,7 +29,7 @@ class Dev: public Node::NodeStateObserver {
 
     void attach_dev_status_observer(DevStatusObserver* obs);
     void detach_dev_status_observer(DevStatusObserver* obs);
-    void update_dev_state(std::uint16_t node_id, const ExtH9Frame& frame) override = 0;
     virtual void init() = 0;
+    virtual void update_dev_state(std::uint16_t node_id, const ExtH9Frame& frame) = 0;
     virtual nlohmann::json dev_call(const TCPClientThread* client_thread, const jsonrpcpp::Id& id, const jsonrpcpp::Parameter& params);
 };

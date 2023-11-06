@@ -29,6 +29,7 @@ class VirtualEndpoint {
     void virtual_endpoint_thread();
 
     int node_id;
+    int node_type;
     std::string python_path;
     std::string module_name;
 
@@ -44,7 +45,7 @@ class VirtualEndpoint {
     VirtualDriver* get_driver(const std::string& name);
 
     void set_python_path(const std::string& py_path);
-    void add_node(int id, const std::string& py_module_name);
+    void add_node(int id, int type, const std::string& py_module_name);
 
     bool is_configured();
 

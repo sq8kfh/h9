@@ -33,7 +33,7 @@ void VirtualEndpoint::virtual_endpoint_thread() {
 }
 
 void VirtualEndpoint::create_node() {
-    node = new VirtualPyNode(node_id, python_path, module_name, this);
+    node = new VirtualPyNode(node_id, node_type, python_path, module_name, this);
 }
 
 void VirtualEndpoint::destroy_nodes() {
@@ -46,7 +46,7 @@ void VirtualEndpoint::reload_node(int id, std::string py_module) {
     module_name = std::move(py_module);
 
     delete node;
-    node = new VirtualPyNode(node_id, python_path, module_name, this);
+    node = new VirtualPyNode(node_id, node_type, python_path, module_name, this);
 }
 
 VirtualEndpoint::VirtualEndpoint():
@@ -85,8 +85,9 @@ void VirtualEndpoint::set_python_path(const std::string& py_path) {
     python_path = py_path;
 }
 
-void VirtualEndpoint::add_node(int id, const std::string& py_module_name) {
+void VirtualEndpoint::add_node(int id, int type, const std::string& py_module_name) {
     node_id = id;
+    node_type = type;
     module_name = py_module_name;
 }
 

@@ -74,11 +74,10 @@ void NodeDevMgr::nodes_dev_update_thread() {
         update_device_last_seen_time(frame.source_id());
 
         if (frame.type() >= H9frame::Type::REG_EXTERNALLY_CHANGED) {
-            nodes_map_mtx.lock_shared();
-            if (nodes_map.count(frame.source_id())) {
-                nodes_map[frame.source_id()]->update_node_state(frame);
+            if (node_state_observers.count(frame.source_id())) {
+                for (auto d : node_state_observers[frame.source_id()])
+                d->update_dev_state(frame.source_id(), frame);
             }
-            nodes_map_mtx.unlock_shared();
         }
     }
 }
@@ -218,6 +217,7 @@ std::vector<NodeDevMgr::NodeDsc> NodeDevMgr::get_nodes_list() noexcept {
     nodes_map_mtx.lock_shared();
     std::vector<NodeDevMgr::NodeDsc> ret;
 
+    ret.reserve(nodes_map.size());
     for (auto it : nodes_map) {
         ret.push_back({it.first, it.second->device_type(), it.second->device_version_major(), it.second->device_version_minor(), it.second->device_version_patch(), it.second->device_name()});
     }
@@ -226,26 +226,12 @@ std::vector<NodeDevMgr::NodeDsc> NodeDevMgr::get_nodes_list() noexcept {
     return std::move(ret);
 }
 
-void NodeDevMgr::attach_node_state_observer(std::uint16_t node_id, Node::NodeStateObserver* obs) {
-    nodes_map_mtx.lock_shared();
-    if (nodes_map.count(node_id)) {
-        nodes_map[node_id]->attach_node_state_observer(obs);
-        nodes_map_mtx.unlock_shared();
-        return;
-    }
-    nodes_map_mtx.unlock_shared();
-    throw DeviceNotExistException();
+void NodeDevMgr::attach_node_state_observer(std::uint16_t node_id, Dev* obs) {
+    node_state_observers[node_id].push_back(obs);
 }
 
-void NodeDevMgr::detach_node_state_observer(std::uint16_t node_id, Node::NodeStateObserver* obs) {
-    nodes_map_mtx.lock_shared();
-    if (nodes_map.count(node_id)) {
-        nodes_map[node_id]->detach_node_state_observer(obs);
-        nodes_map_mtx.unlock_shared();
-        return;
-    }
-    nodes_map_mtx.unlock_shared();
-    throw DeviceNotExistException();
+void NodeDevMgr::detach_node_state_observer(std::uint16_t node_id, Dev* obs) {
+    node_state_observers[node_id].erase(std::remove(node_state_observers[node_id].begin(), node_state_observers[node_id].end(), obs), node_state_observers[node_id].end());
 }
 
 std::vector<Node::RegisterDsc> NodeDevMgr::get_registers_list(std::uint16_t node_id) noexcept {
@@ -286,6 +272,8 @@ void NodeDevMgr::node_reset(std::uint16_t node_id) {
     if (nodes_map.count(node_id)) {
         try {
             nodes_map[node_id]->node_reset();
+            nodes_map_mtx.unlock_shared();
+            return ;
         }
         catch (...) {
             nodes_map_mtx.unlock_shared();
@@ -369,6 +357,23 @@ Node::regvalue_t NodeDevMgr::toggle_register_bit(std::uint16_t node_id, std::uin
     if (nodes_map.count(node_id)) {
         try {
             auto ret = nodes_map[node_id]->toggle_register_bit(reg, bit_num);
+            nodes_map_mtx.unlock_shared();
+            return ret;
+        }
+        catch (...) {
+            nodes_map_mtx.unlock_shared();
+            throw;
+        }
+    }
+    nodes_map_mtx.unlock_shared();
+    throw DeviceNotExistException();
+}
+
+std::uint8_t NodeDevMgr::get_reg_value_from_frame(std::uint16_t node_id, const ExtH9Frame& frame, Node::regvalue_t* value) {
+    nodes_map_mtx.lock_shared();
+    if (nodes_map.count(node_id)) {
+        try {
+            auto ret = nodes_map[node_id]->get_reg_value_from_frame(frame, value);
             nodes_map_mtx.unlock_shared();
             return ret;
         }

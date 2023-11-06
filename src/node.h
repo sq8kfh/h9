@@ -29,11 +29,6 @@ class Node: protected RawNode {
     using RegisterDsc = NodeDescLoader::RegisterDesc;
     using regvalue_t = std::variant<std::string, std::int64_t, std::vector<std::uint8_t>>;
 
-    class NodeStateObserver {
-      public:
-        virtual void update_dev_state(std::uint16_t node_id, const ExtH9Frame& frame) = 0;
-    };
-
   private:
     std::shared_ptr<spdlog::logger> logger;
     static NodeDescLoader nodedescloader;
@@ -45,13 +40,9 @@ class Node: protected RawNode {
     const std::time_t _created_time;
     std::time_t _last_seen_time;
 
-    std::vector<NodeStateObserver*> node_state_observers;
     std::map<std::uint8_t, RegisterDsc> register_map;
 
     friend class NodeDevMgr;
-    void update_node_state(const ExtH9Frame& frame);
-    void attach_node_state_observer(Node::NodeStateObserver* obs);
-    void detach_node_state_observer(Node::NodeStateObserver* obs);
     void update_node_last_seen_time() noexcept;
 
   protected:
@@ -77,6 +68,12 @@ class Node: protected RawNode {
     regvalue_t set_register_bit(std::uint8_t reg, std::uint8_t bit_num);
     regvalue_t clear_register_bit(std::uint8_t reg, std::uint8_t bit_num);
     regvalue_t toggle_register_bit(std::uint8_t reg, std::uint8_t bit_num);
+
+    /// Read value from from
+    /// @param[in] frame
+    /// @param[out] value
+    /// @return Reg number or 0 when it is not reg value frame
+    std::uint8_t get_reg_value_from_frame(const ExtH9Frame& frame, regvalue_t* value);
 };
 
 #endif // H9_NODE_H

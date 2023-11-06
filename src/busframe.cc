@@ -24,6 +24,8 @@ BusFrame::BusFrame(const H9frame& frame, const std::string& origin, std::uint64_
     _send_counter = 0;
     _send_fail_counter = 0;
     _activate_promise = false;
+
+    //SPDLOG_TRACE("BusFrame id: {}; origin: {}", fmt::ptr(this), this->origin());
 }
 
 BusFrame::BusFrame(ExtH9Frame&& a, bool raw) noexcept:
@@ -34,10 +36,12 @@ BusFrame::BusFrame(ExtH9Frame&& a, bool raw) noexcept:
     _send_counter = 0;
     _send_fail_counter = 0;
     _activate_promise = false;
+
+    //SPDLOG_TRACE("BusFrame id: {}; origin: {}", fmt::ptr(this), this->origin());
 }
 
 BusFrame::~BusFrame() {
-    //SPDLOG_TRACE("~BusFrame()");
+    //SPDLOG_TRACE("~BusFrame id: {}; origin: {}, cr: {} incr: {}", fmt::ptr(this), origin(), _send_counter, _send_fail_counter);
 }
 
 bool BusFrame::raw() const {

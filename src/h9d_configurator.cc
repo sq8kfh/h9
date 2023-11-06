@@ -295,6 +295,7 @@ void H9dConfigurator::load_configuration() {
         CFG_STR("python_path", ".", CFGF_NONE),
         CFG_STR("python_node_module", nullptr, CFGF_NONE | CFGF_NODEFAULT),
         CFG_INT("node_id", 0, CFGF_NONE | CFGF_NODEFAULT),
+        CFG_INT("node_type", 0, CFGF_NONE | CFGF_NODEFAULT),
         CFG_END()};
 
     cfg_opt_t cfg_opts[] = {
@@ -309,6 +310,7 @@ void H9dConfigurator::load_configuration() {
     cfg_set_error_function(cfg, cfg_err_func);
     cfg_set_validate_func(cfg, "bus|source_id", confuse_helpers::validate_node_id);
     cfg_set_validate_func(cfg, "virtual_endpoint|node_id", confuse_helpers::validate_node_id);
+    cfg_set_validate_func(cfg, "virtual_endpoint|node_type", confuse_helpers::validate_node_type);
 
     int ret = cfg_parse(cfg, config_file.c_str());
 
@@ -497,8 +499,14 @@ void H9dConfigurator::configure_virtual_endpoint(VirtualEndpoint* vendpoint) {
 
         if (cfg_getint(cfg_vend, "node_id")) {
             int id = cfg_getint(cfg_vend, "node_id");
-
-            vendpoint->add_node(id, python_module);
+            if (cfg_getint(cfg_vend, "node_type")) {
+                int node_type = cfg_getint(cfg_vend, "node_type");
+                vendpoint->add_node(id, node_type, python_module);
+            }
+            else {
+                SPDLOG_CRITICAL("Missing option 'node_type' in virtual_endpoint section or it is equal 0.");
+                exit(EXIT_FAILURE);
+            }
         }
         else {
             SPDLOG_CRITICAL("Missing option 'node_id' in virtual_endpoint section or it is equal 0.");

@@ -182,6 +182,15 @@ void SlcanDriver::parse_buf() {
             last_send.pop();
             frame_sent_correctly(tmp);
         }
+        //SPDLOG_LOGGER_ERROR(logger, "[CR]");
+    }
+    else if (recv_buf[0] == '\a') {
+        if (!last_send.empty()) {
+            auto tmp = last_send.front();
+            last_send.pop();
+            frame_sent_incorrectly(tmp);
+        }
+        //SPDLOG_LOGGER_ERROR(logger, "[BELL]");
     }
     else if (recv_buf[0] == 'T') {
         H9frame frame;
