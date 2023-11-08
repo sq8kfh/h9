@@ -78,13 +78,13 @@ void CommandExecutor::print_response(const std::string& method, const nlohmann::
 
         auto now = std::time(nullptr);
 
-        fmt::println("Name:          {}", result["name"].get<std::string>());
-        fmt::println("ID:            {}", result["id"].get<std::uint16_t>());
-        fmt::println("Type:          {}", result["type"].get<std::uint16_t>());
-        fmt::println("Version:       {}.{}.{}", result["version_major"].get<std::uint16_t>(), result["version_minor"].get<std::uint16_t>(), result["version_patch"].get<std::uint16_t>());
-        fmt::println("Created time:  {:%F %T} ({} ago)", ct_tm, format_uptime(now - ct_utc_ts));
-        fmt::println("Last seen:     {:%F %T} ({} ago)", lst_tm, format_uptime(now - lst_utc_ts));
-        fmt::println("Description:   {}", result["description"].get<std::string>());
+        fmt::print("Name:          {}\n", result["name"].get<std::string>());
+        fmt::print("ID:            {}\n", result["id"].get<std::uint16_t>());
+        fmt::print("Type:          {}\n", result["type"].get<std::uint16_t>());
+        fmt::print("Version:       {}.{}.{}\n", result["version_major"].get<std::uint16_t>(), result["version_minor"].get<std::uint16_t>(), result["version_patch"].get<std::uint16_t>());
+        fmt::print("Created time:  {:%F %T} ({} ago)\n", ct_tm, format_uptime(now - ct_utc_ts));
+        fmt::print("Last seen:     {:%F %T} ({} ago)\n", lst_tm, format_uptime(now - lst_utc_ts));
+        fmt::print("Description:   {}\n", result["description"].get<std::string>());
     }
     else if (method == "get_tcp_clients") {
         for (auto& client : result) {
@@ -96,16 +96,16 @@ void CommandExecutor::print_response(const std::string& method, const nlohmann::
 
             auto now = std::time(nullptr);
 
-            fmt::println("{}", client["id"].get<std::string>());
-            fmt::println("    entity:              {}", client["entity"].get<std::string>());
-            fmt::println("    remote address:      {}", client["remote_address"].get<std::string>());
-            fmt::println("    remote port:         {}", client["remote_port"].get<std::string>());
-            fmt::println("    connection time:     {:%F %T} (for {})", ct_tm, format_uptime(now - ct_utc_ts));
-            fmt::println("    authenticated:       {}", client["authenticated"].get<bool>());
-            fmt::println("    frame subscription:  {}", client["frame_subscription"].get<bool>());
-            fmt::println("    dev subscription:    {}", client["dev_subscription"].get<bool>());
+            fmt::print("{}\n", client["id"].get<std::string>());
+            fmt::print("    entity:              {}\n", client["entity"].get<std::string>());
+            fmt::print("    remote address:      {}\n", client["remote_address"].get<std::string>());
+            fmt::print("    remote port:         {}\n", client["remote_port"].get<std::string>());
+            fmt::print("    connection time:     {:%F %T} (for {})\n", ct_tm, format_uptime(now - ct_utc_ts));
+            fmt::print("    authenticated:       {}\n", client["authenticated"].get<bool>());
+            fmt::print("    frame subscription:  {}\n", client["frame_subscription"].get<bool>());
+            fmt::print("    dev subscription:    {}\n", client["dev_subscription"].get<bool>());
             if (client != result.back())
-                fmt::println("");
+                fmt::print("\n");
         }
     }
     else {
